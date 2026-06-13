@@ -16,17 +16,21 @@ php artisan tenants:seed --class=TenantDatabaseSeeder  # demo user, suppliers, s
 ## Start the app
 
 ```powershell
-php artisan serve
+php artisan serve --port=8001
 ```
 
-`*.localhost` subdomains resolve to 127.0.0.1 automatically — no hosts-file edit needed.
+We use port **8001** on purpose: another local project (`bp.cm-ea`) may already hold port 8000. Pick any free port — just keep it consistent in the URLs below.
+
+`*.localhost` subdomains resolve to 127.0.0.1 automatically (Windows + Chrome), so no hosts-file edit is needed. Note the flip side: every `*.localhost` host reaches whatever server is on that port, so if a different project is running on 8000, `demo.localhost:8000` will show *that* project. Use a dedicated port for NIU Shield to avoid the mix-up.
 
 ## Two panels
 
 | Panel | URL | Login | Scope |
 |---|---|---|---|
-| Admin (central) | http://localhost:8000/admin | `admin@niushield.cm` / `password` | landlord — manages tenants |
-| App (tenant) | http://demo.localhost:8000/app | `agent@demo.cm` / `password` | the demo tenant's workspace |
+| Admin (central) | http://localhost:8001/admin | `admin@niushield.cm` / `password` | landlord — manages tenants |
+| App (tenant) | http://demo.localhost:8001/app | `agent@demo.cm` / `password` | the demo tenant's workspace |
+
+The app panel login lives at `/app/login` (not `/login`). The first page load compiles Filament views and can take ~15–20s; it's fast afterwards.
 
 The app panel is tenant-only: it identifies the tenant by subdomain and is blocked on the central domain. The admin panel is the reverse.
 
