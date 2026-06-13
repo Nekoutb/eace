@@ -27,8 +27,10 @@ We use port **9000** on purpose: another local project (`bp.cm-ea`) may already 
 
 | Panel | URL | Login | Scope |
 |---|---|---|---|
-| Admin (central) | http://localhost:9000/admin | `admin@niushield.cm` / `password` | landlord — manages tenants |
-| App (tenant) | http://demo.localhost:9000/app | `agent@demo.cm` / `password` | the demo tenant's workspace |
+| Admin (central) | http://localhost:9000/admin | `admin` / `admin` | landlord — manages tenants |
+| App (tenant) | http://demo.localhost:9000/app | `admin` / `admin` | the demo tenant's workspace |
+
+The login field is a plain identifier (not an email), so `admin` works as-is.
 
 The app panel login lives at `/app/login` (not `/login`). The first page load compiles Filament views and can take ~15–20s; it's fast afterwards.
 

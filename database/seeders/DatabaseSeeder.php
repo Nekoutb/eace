@@ -20,8 +20,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::query()->updateOrCreate(
-            ['email' => 'admin@niushield.cm'],
-            ['name' => 'Administrateur NIU Shield', 'password' => Hash::make('password')],
+            ['email' => 'admin'],
+            ['name' => 'Administrateur NIU Shield', 'password' => Hash::make('admin')],
         );
 
         if (! Tenant::query()->whereKey('demo')->exists()) {

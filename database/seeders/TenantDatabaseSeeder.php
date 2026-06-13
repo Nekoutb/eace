@@ -20,8 +20,8 @@ class TenantDatabaseSeeder extends Seeder
     public function run(): void
     {
         User::query()->updateOrCreate(
-            ['email' => 'agent@demo.cm'],
-            ['name' => 'Agent Conformité', 'password' => Hash::make('password')],
+            ['email' => 'admin'],
+            ['name' => 'Agent Conformité', 'password' => Hash::make('admin')],
         );
 
         $suppliers = [
