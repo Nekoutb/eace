@@ -17,7 +17,8 @@ return new class extends Migration
         Schema::create('verifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('third_party_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('niu', 14)->index();
+            $table->string('raw_input');                     // exactly what was submitted
+            $table->string('niu', 14)->nullable()->index();  // parsed NIU, null when format invalid
             $table->uuid('snapshot_id')->nullable(); // -> central niu_registry_snapshots.id
             $table->string('verdict');               // Verdict value
             $table->json('triggered_rules')->nullable(); // [{rule, article, exposure_xaf, message}]

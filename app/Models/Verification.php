@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * triggered (each with a CGI article and an estimated FCFA exposure), and a
  * pointer to the central evidence snapshot.
  *
- * @property string $niu
+ * @property string $raw_input
+ * @property ?string $niu
  * @property ?string $snapshot_id
  * @property Verdict $verdict
  * @property array<int, array<string, mixed>>|null $triggered_rules
