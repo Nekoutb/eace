@@ -22,6 +22,7 @@ class BrandColors
             'warning' => Color::hex('#B45309'),
             'danger' => Color::hex('#B91C1C'),
             'info' => Color::hex('#0F766E'),
+            'suspended' => Color::hex('#C2410C'), // verdict "Suspendu" — distinct from réserves (amber) and radié (red)
             'gray' => Color::Slate,
         ];
     }
