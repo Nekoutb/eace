@@ -104,6 +104,32 @@ return [
         ],
     ],
 
+    'exemption' => [
+        'none' => 'Aucune',
+        'exonere' => 'Exonérée',
+        'prise_en_charge' => 'Prise en charge État',
+    ],
+
+    'conformity' => [
+        'type_forme' => 'Conditions de forme',
+        'type_fond' => 'Conditions de fond',
+        'supplier_niu' => 'NIU du fournisseur',
+        'client_niu' => 'NIU du client',
+        'date' => 'Date de facturation',
+        'supplier_name' => 'Raison sociale du fournisseur',
+        'supplier_address' => 'Adresse complète du fournisseur',
+        'supplier_rccm' => 'RCCM du fournisseur',
+        'client_identity' => 'Identité complète du client',
+        'description' => 'Nature, objet et détail',
+        'ht' => 'Prix hors taxe (HT)',
+        'vat' => 'Taux et montant de la TVA',
+        'ttc' => 'Montant total TTC',
+        'vat_calc' => 'TVA = HT × taux',
+        'ttc_calc' => 'TTC = HT + TVA',
+        'vat_rate' => 'Taux de TVA légal (19,25 %)',
+        'niu_match' => 'NIU fournisseur cohérent',
+    ],
+
     'ui' => [
         'lang' => 'Langue',
         'identifier' => 'Identifiant',

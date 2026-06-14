@@ -104,6 +104,32 @@ return [
         ],
     ],
 
+    'exemption' => [
+        'none' => 'None',
+        'exonere' => 'Exempt',
+        'prise_en_charge' => 'State-covered',
+    ],
+
+    'conformity' => [
+        'type_forme' => 'Form conditions',
+        'type_fond' => 'Substance conditions',
+        'supplier_niu' => 'Supplier NIU',
+        'client_niu' => 'Client NIU',
+        'date' => 'Invoice date',
+        'supplier_name' => 'Supplier business name',
+        'supplier_address' => 'Supplier full address',
+        'supplier_rccm' => 'Supplier RCCM',
+        'client_identity' => 'Client full identity',
+        'description' => 'Nature, object and detail',
+        'ht' => 'Price excl. tax (HT)',
+        'vat' => 'VAT rate and amount',
+        'ttc' => 'Total incl. tax (TTC)',
+        'vat_calc' => 'VAT = HT × rate',
+        'ttc_calc' => 'TTC = HT + VAT',
+        'vat_rate' => 'Legal VAT rate (19.25%)',
+        'niu_match' => 'Supplier NIU matches',
+    ],
+
     'ui' => [
         'lang' => 'Language',
         'identifier' => 'Username',
