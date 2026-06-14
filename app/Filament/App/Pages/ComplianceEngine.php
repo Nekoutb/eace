@@ -359,7 +359,9 @@ class ComplianceEngine extends Page
                     'kind' => 'conformity',
                     'label' => $finding['label'] ?? '',
                     'article' => 'CGI art. 150',
-                    'detail' => (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
+                    'detail' => filled($finding['detail'] ?? null)
+                        ? (string) $finding['detail']
+                        : (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
                     'severity' => 'danger',
                 ];
             }

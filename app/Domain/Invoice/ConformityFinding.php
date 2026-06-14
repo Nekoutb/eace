@@ -6,7 +6,8 @@ namespace App\Domain\Invoice;
 
 /**
  * The result of one invoice-conformity check (a single mandatory mention, or a
- * single coherence rule).
+ * single coherence rule) — with a short narrative explaining how the control was
+ * performed and, when it fails, the origin of the variance.
  */
 final readonly class ConformityFinding
 {
@@ -14,6 +15,7 @@ final readonly class ConformityFinding
         public ConformityType $type,
         public string $key,
         public bool $passed,
+        public ?string $detail = null,
     ) {}
 
     public function label(): string
@@ -31,6 +33,7 @@ final readonly class ConformityFinding
             'key' => $this->key,
             'label' => $this->label(),
             'passed' => $this->passed,
+            'detail' => $this->detail,
         ];
     }
 }

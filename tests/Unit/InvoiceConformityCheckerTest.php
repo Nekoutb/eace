@@ -137,6 +137,21 @@ it('checks the client RCCM and address match the organisation profile', function
     expect(collect($badAddr->failed())->pluck('key'))->toContain('client_address_match');
 });
 
+it('narrates how the control was performed and the origin of the variance', function () {
+    // 1,000,000 × 19.25% = 192,500, but the invoice states 200,000 → variance 7,500.
+    $result = $this->checker->check(invoice(['vatAmount' => 200_000, 'ttcAmount' => 1_200_000]));
+    $vat = collect($result->findings)->firstWhere('key', 'vat_calc');
+
+    expect($vat->detail)->toContain('192 500')   // expected VAT
+        ->and($vat->detail)->toContain('200 000') // what the invoice states
+        ->and($vat->detail)->toContain('7 500');  // the variance
+
+    // Forme checks narrate presence/absence of the mandatory mention.
+    $missing = collect($this->checker->check(invoice(['supplierRccm' => null]))->findings)->firstWhere('key', 'supplier_rccm');
+    expect($missing->detail)->not->toBeNull()
+        ->and($missing->passed)->toBeFalse();
+});
+
 it('separates forme and fond findings', function () {
     $result = $this->checker->check(invoice());
 

@@ -41,15 +41,16 @@ final class InvoiceConformityChecker
             $this->forme('ttc', $invoice->ttcAmount !== null),
 
             // Conditions de fond — figures coherent, VAT valid.
-            $this->fond('vat_calc', $this->vatCalcOk($invoice)),
-            $this->fond('ttc_calc', $this->ttcCalcOk($invoice)),
-            $this->fond('vat_rate', $this->vatRateOk($invoice)),
+            $this->fond('vat_calc', $this->vatCalcOk($invoice), $this->vatCalcDetail($invoice)),
+            $this->fond('ttc_calc', $this->ttcCalcOk($invoice), $this->ttcCalcDetail($invoice)),
+            $this->fond('vat_rate', $this->vatRateOk($invoice), $this->vatRateDetail($invoice)),
         ];
 
         if ($expectedSupplierNiu !== null) {
             $findings[] = $this->fond(
                 'niu_match',
                 $invoice->supplierNiu !== null && $invoice->supplierNiu->equals($expectedSupplierNiu),
+                $this->matchDetail($invoice->supplierNiu !== null ? (string) $invoice->supplierNiu : null, (string) $expectedSupplierNiu),
             );
         }
 
@@ -58,6 +59,7 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'client_niu_match',
                 $invoice->clientNiu !== null && $invoice->clientNiu->equals($expectedClientNiu),
+                $this->matchDetail($invoice->clientNiu !== null ? (string) $invoice->clientNiu : null, (string) $expectedClientNiu),
             );
         }
 
@@ -65,6 +67,7 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'client_identity_match',
                 $this->nameMatches($invoice->clientIdentity, $expectedClientName),
+                $this->matchDetail($invoice->clientIdentity, $expectedClientName),
             );
         }
 
@@ -72,6 +75,7 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'client_rccm_match',
                 $this->nameMatches($invoice->clientRccm, $expectedClientRccm),
+                $this->matchDetail($invoice->clientRccm, $expectedClientRccm),
             );
         }
 
@@ -79,6 +83,7 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'client_address_match',
                 $this->nameMatches($invoice->clientAddress, $expectedClientAddress),
+                $this->matchDetail($invoice->clientAddress, $expectedClientAddress),
             );
         }
 
@@ -156,13 +161,91 @@ final class InvoiceConformityChecker
         return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a));
     }
 
-    private function forme(string $key, bool $passed): ConformityFinding
+    /** "VAT = HT × rate = expected; invoice states actual (variance …)." */
+    private function vatCalcDetail(InvoiceData $invoice): string
     {
-        return new ConformityFinding(ConformityType::Forme, $key, $passed);
+        if ($invoice->isExempt()) {
+            return (string) __('app.conformity.narr.vat_exempt');
+        }
+
+        if ($invoice->htAmount === null || $invoice->vatRate === null || $invoice->vatAmount === null) {
+            return (string) __('app.conformity.narr.missing_amounts');
+        }
+
+        $expected = (int) round($invoice->htAmount * $invoice->vatRate);
+
+        return (string) __('app.conformity.narr.vat_calc', [
+            'ht' => $this->fmt($invoice->htAmount),
+            'rate' => $this->pct($invoice->vatRate),
+            'expected' => $this->fmt($expected),
+            'actual' => $this->fmt($invoice->vatAmount),
+            'variance' => $this->fmt(abs($invoice->vatAmount - $expected)),
+        ]);
     }
 
-    private function fond(string $key, bool $passed): ConformityFinding
+    /** "TTC = HT + VAT = expected; invoice states actual (variance …)." */
+    private function ttcCalcDetail(InvoiceData $invoice): string
     {
-        return new ConformityFinding(ConformityType::Fond, $key, $passed);
+        if ($invoice->htAmount === null || $invoice->ttcAmount === null) {
+            return (string) __('app.conformity.narr.missing_amounts');
+        }
+
+        $vat = $invoice->isExempt() ? 0 : ($invoice->vatAmount ?? 0);
+        $expected = $invoice->htAmount + $vat;
+
+        return (string) __('app.conformity.narr.ttc_calc', [
+            'ht' => $this->fmt($invoice->htAmount),
+            'vat' => $this->fmt($vat),
+            'expected' => $this->fmt($expected),
+            'actual' => $this->fmt($invoice->ttcAmount),
+            'variance' => $this->fmt(abs($invoice->ttcAmount - $expected)),
+        ]);
+    }
+
+    private function vatRateDetail(InvoiceData $invoice): string
+    {
+        if ($invoice->isExempt()) {
+            return (string) __('app.conformity.narr.vat_rate_exempt');
+        }
+
+        return (string) __('app.conformity.narr.vat_rate', [
+            'legal' => $this->pct(self::VAT_RATE),
+            'actual' => $invoice->vatRate !== null ? $this->pct($invoice->vatRate) : '—',
+        ]);
+    }
+
+    /** "Invoice: <value> · your profile / verified: <expected>." */
+    private function matchDetail(?string $invoiceValue, ?string $expected): string
+    {
+        return (string) __('app.conformity.narr.match', [
+            'invoice' => $this->filled($invoiceValue) ? (string) $invoiceValue : '—',
+            'expected' => $this->filled($expected) ? (string) $expected : '—',
+        ]);
+    }
+
+    private function fmt(int $amount): string
+    {
+        return number_format($amount, 0, ',', ' ').' FCFA';
+    }
+
+    private function pct(float $rate): string
+    {
+        $formatted = rtrim(rtrim(number_format($rate * 100, 2, ',', ''), '0'), ',');
+
+        return $formatted.' %';
+    }
+
+    private function forme(string $key, bool $passed): ConformityFinding
+    {
+        $detail = (string) __($passed ? 'app.conformity.narr.present' : 'app.conformity.narr.absent', [
+            'mention' => (string) __('app.conformity.'.$key),
+        ]);
+
+        return new ConformityFinding(ConformityType::Forme, $key, $passed, $detail);
+    }
+
+    private function fond(string $key, bool $passed, ?string $detail = null): ConformityFinding
+    {
+        return new ConformityFinding(ConformityType::Fond, $key, $passed, $detail);
     }
 }

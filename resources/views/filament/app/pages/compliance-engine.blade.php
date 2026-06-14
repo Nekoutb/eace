@@ -410,6 +410,7 @@
                                 <th>{{ __('app.ui.check_col') }}</th>
                                 <th class="niu-ta-c">{{ __('app.ui.result') }}</th>
                                 <th>{{ __('app.ui.category') }}</th>
+                                <th>{{ __('app.ui.output') }}</th>
                             </tr></thead>
                             <tbody>
                             @foreach ($result['invoice_checks'] as $finding)
@@ -418,6 +419,7 @@
                                     <td class="niu-td-strong">{{ $finding['label'] ?? '' }}</td>
                                     <td class="niu-ta-c"><span class="{{ $p['cls'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
                                     <td><span class="niu-tag">{{ __('app.conformity.type_'.($finding['type'] ?? 'forme')) }}</span></td>
+                                    <td class="niu-td-muted">{{ $finding['detail'] ?? '' }}</td>
                                 </tr>
                             @endforeach
                             </tbody>

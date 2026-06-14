@@ -32,5 +32,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Tests must never use real OCR keys or call external APIs: force the fake reader. -->
+        <env name="ANTHROPIC_API_KEY" value=""/>
+        <env name="AZURE_DI_ENDPOINT" value=""/>
+        <env name="AZURE_DI_KEY" value=""/>
     </php>
 </phpunit>

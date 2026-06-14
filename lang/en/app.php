@@ -159,6 +159,17 @@ return [
         'client_identity_match' => 'Client name matches our profile',
         'client_rccm_match' => 'Client RCCM matches our profile',
         'client_address_match' => 'Client address matches our profile',
+        'narr' => [
+            'present' => 'Mention « :mention » present on the invoice.',
+            'absent' => 'Mention « :mention » missing — required by art. 150.',
+            'vat_calc' => 'VAT control: HT :ht × :rate = :expected expected; the invoice states :actual (variance :variance).',
+            'ttc_calc' => 'TTC control: HT :ht + VAT :vat = :expected expected; the invoice states :actual (variance :variance).',
+            'vat_rate' => 'Rate control: legal rate is :legal; the invoice applies :actual.',
+            'vat_rate_exempt' => 'Exempt operation: no VAT rate is expected.',
+            'vat_exempt' => 'Exempt operation: VAT must be zero.',
+            'missing_amounts' => 'Control not possible: an amount is missing from the invoice.',
+            'match' => 'Invoice shows: :invoice · expected: :expected.',
+        ],
     ],
 
     'ui' => [

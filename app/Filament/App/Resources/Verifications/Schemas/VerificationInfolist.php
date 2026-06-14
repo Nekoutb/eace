@@ -64,7 +64,7 @@ class VerificationInfolist
                 ->components([
                     RepeatableEntry::make('invoice_checks')
                         ->hiddenLabel()
-                        ->columns(3)
+                        ->columns(4)
                         ->schema([
                             IconEntry::make('passed')
                                 ->label('')
@@ -73,10 +73,14 @@ class VerificationInfolist
                                 ->label(__('app.ui.check_col'))
                                 ->weight(FontWeight::Medium),
                             TextEntry::make('type')
-                                ->hiddenLabel()
+                                ->label(__('app.ui.category'))
                                 ->badge()
                                 ->color('gray')
                                 ->formatStateUsing(fn (string $state): string => (string) __('app.conformity.type_'.$state)),
+                            TextEntry::make('detail')
+                                ->label(__('app.ui.output'))
+                                ->placeholder(__('app.ui.placeholder_dash'))
+                                ->columnSpanFull(),
                         ]),
                 ]),
             Section::make(__('app.ui.section_verdict_exposure'))

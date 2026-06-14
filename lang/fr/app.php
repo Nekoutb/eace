@@ -159,6 +159,17 @@ return [
         'client_identity_match' => 'Nom du client conforme à notre profil',
         'client_rccm_match' => 'RCCM du client conforme à notre profil',
         'client_address_match' => 'Adresse du client conforme à notre profil',
+        'narr' => [
+            'present' => 'Mention « :mention » présente sur la facture.',
+            'absent' => 'Mention « :mention » absente — exigée par l’art. 150.',
+            'vat_calc' => 'Contrôle TVA : HT :ht × :rate = :expected attendu ; la facture indique :actual (écart :variance).',
+            'ttc_calc' => 'Contrôle TTC : HT :ht + TVA :vat = :expected attendu ; la facture indique :actual (écart :variance).',
+            'vat_rate' => 'Contrôle du taux : taux légal :legal ; la facture applique :actual.',
+            'vat_rate_exempt' => 'Opération exonérée : aucun taux de TVA attendu.',
+            'vat_exempt' => 'Opération exonérée : la TVA doit être nulle.',
+            'missing_amounts' => 'Contrôle impossible : un montant manque sur la facture.',
+            'match' => 'Facture : :invoice · attendu : :expected.',
+        ],
     ],
 
     'ui' => [
