@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domain\Acf\AcfReader;
+use App\Domain\Niu\NiuNumber;
+
+beforeEach(function () {
+    $this->text = file_get_contents(dirname(__DIR__).'/Fixtures/acf/express-union-acf.txt');
+    $this->extract = (new AcfReader)->fromText($this->text);
+});
+
+it('reads the ACF reference from the real certificate', function () {
+    expect($this->extract->reference)->toBe('620264471967');
+});
+
+it('reads and validates the NIU', function () {
+    expect($this->extract->niu)->toBeInstanceOf(NiuNumber::class)
+        ->and($this->extract->niu->value)->toBe('M020100021296Z');
+});
+
+it('reads the taxpayer name without the legal-NIU tail', function () {
+    expect($this->extract->taxpayerName)->toBe('EXPRESS UNION FINANCE SA');
+});
+
+it('reads the issue date as day-first', function () {
+    expect($this->extract->issuedAt?->toDateString())->toBe('2026-03-19');
+});
+
+it('reads the printed validity window in months', function () {
+    expect($this->extract->validityMonths)->toBe(3);
+});
+
+it('reads the régime and centre', function () {
+    expect($this->extract->regime)->toBe('RÉEL')
+        ->and($this->extract->centre)->toBe('DGE IFU3');
+});
+
+it('reads the Harmony2 authenticity URL', function () {
+    expect($this->extract->authenticityUrl)
+        ->toContain('fanr.harmony2.cm/authentification')
+        ->toContain('reference=620264471967');
+});
+
+it('detects no moratorium on this certificate', function () {
+    expect($this->extract->hasMoratorium)->toBeFalse();
+});
+
+it('considers the certificate usable (reference + issue date present)', function () {
+    expect($this->extract->isUsable())->toBeTrue();
+});
+
+it('returns nulls and not-usable for unrelated text', function () {
+    $extract = (new AcfReader)->fromText('ceci n’est pas une attestation');
+
+    expect($extract->reference)->toBeNull()
+        ->and($extract->niu)->toBeNull()
+        ->and($extract->isUsable())->toBeFalse();
+});
