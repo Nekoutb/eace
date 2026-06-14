@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domain\Niu\Verdict;
 use App\Filament\App\Pages\ComplianceEngine;
+use App\Filament\App\Resources\AuditLogs\Pages\ListAuditLogs;
+use App\Filament\App\Resources\AuditLogs\Pages\ViewAuditLog;
 use App\Filament\App\Resources\Verifications\Pages\ListVerifications;
 use App\Models\Tenant;
 use App\Models\User;
@@ -30,6 +32,20 @@ afterEach(function () {
 
 it('renders the verifications list page', function () {
     Livewire::test(ListVerifications::class)->assertOk();
+});
+
+it('renders the audit logs list and a record view with the evidence', function () {
+    Livewire::test(ListAuditLogs::class)->assertOk();
+
+    Livewire::test(ComplianceEngine::class)
+        ->set('rawInput', 'M058712345678X')
+        ->call('run');
+
+    $verification = Verification::query()->latest('id')->first();
+
+    Livewire::test(ViewAuditLog::class, ['record' => $verification?->getKey()])
+        ->assertOk()
+        ->assertSee(__('app.audit.section_evidence'));
 });
 
 it('runs a verification inline and reveals the discrepancies on the same screen', function () {

@@ -46,7 +46,7 @@ final class NiuRegistryService
                 'activity' => $record->activity,
                 'fiscalis_status' => $record->status->value,
                 'on_active_file' => $record->onActiveFile,
-                'source' => 'fake',
+                'source' => $record->source ?? 'fake',
                 'last_checked_at' => now(),
             ],
         );
@@ -65,7 +65,7 @@ final class NiuRegistryService
             'payload' => $payload,
             'content_hash' => NiuRegistrySnapshot::hashPayload($payload),
             'previous_hash' => $previousHash,
-            'source' => 'fake',
+            'source' => $record->source ?? 'fake',
             'fetched_at' => now(),
         ]);
     }

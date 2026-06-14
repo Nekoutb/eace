@@ -54,14 +54,24 @@ class Verification extends Model
         return $this->belongsTo(AcfCertificate::class);
     }
 
+    private ?NiuRegistrySnapshot $snapshotCache = null;
+
+    private bool $snapshotLoaded = false;
+
     /**
-     * The immutable central snapshot this verification was based on.
+     * The immutable central snapshot this verification was based on — the
+     * evidence (fiscalis extract) behind its checks. Memoised per instance.
      */
     public function snapshot(): ?NiuRegistrySnapshot
     {
-        return $this->snapshot_id === null
-            ? null
-            : NiuRegistrySnapshot::find($this->snapshot_id);
+        if (! $this->snapshotLoaded) {
+            $this->snapshotCache = $this->snapshot_id === null
+                ? null
+                : NiuRegistrySnapshot::find($this->snapshot_id);
+            $this->snapshotLoaded = true;
+        }
+
+        return $this->snapshotCache;
     }
 
     /**

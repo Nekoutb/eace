@@ -24,6 +24,7 @@ final readonly class RegistryRecord
         public ?string $sigle = null,
         public ?string $centre = null,
         public ?string $activity = null,
+        public ?string $source = null,
     ) {}
 
     /** Whether the registered régime fiscal is "réel" (a deductibility condition). */

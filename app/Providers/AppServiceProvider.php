@@ -7,10 +7,12 @@ use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
 use App\Http\Middleware\InitializeTenancyForLivewire;
+use App\Models\TaxpayerFileExtraction;
 use App\Services\Invoice\AzureInvoiceReader;
 use App\Services\Invoice\ClaudeInvoiceReader;
 use App\Services\Invoice\FakeInvoiceReader;
 use App\Services\Registry\FakeRegistryResolver;
+use App\Services\Registry\TaxpayerFileResolver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -22,8 +24,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // The Fiscalis connector slots in here later by swapping the binding.
-        $this->app->bind(RegistryResolver::class, FakeRegistryResolver::class);
+        // NIU resolution: the ingested DGI taxpayer file once an extraction
+        // exists, else the fake resolver (demo data / tests). The file resolver
+        // returns null for NIUs absent from the file — a real existence check.
+        $this->app->bind(RegistryResolver::class, function () {
+            try {
+                if (TaxpayerFileExtraction::current() !== null) {
+                    return new TaxpayerFileResolver;
+                }
+            } catch (\Throwable) {
+                // taxpayer_file_extractions not migrated yet — fall back.
+            }
+
+            return new FakeRegistryResolver;
+        });
 
         // RiskEngine has no zero-arg constructor; build it with the default rule set.
         $this->app->singleton(RiskEngine::class, fn () => RiskEngine::default());

@@ -5,7 +5,20 @@ return [
         'verifications' => 'Vérifications',
         'compliance_engine' => 'Moteur de conformité',
         'certificates' => 'Attestations (ACF)',
+        'audit_logs' => 'Journaux d’audit',
         'settings' => 'Paramètres',
+    ],
+
+    'audit' => [
+        'checked_against' => 'Contrôles effectués sur :period — :count contribuables, extrait le :date.',
+        'no_extraction' => 'Aucun fichier des contribuables extrait — contrôles sur données de démonstration.',
+        'section_evidence' => 'Preuve recueillie (extrait Fiscalis)',
+        'section_evidence_help' => 'Le snapshot immuable capturé au moment de la vérification — la preuve que le fournisseur figurait au fichier des contribuables actifs.',
+        'vendor' => 'Contribuable (au fichier)',
+        'active' => 'Au fichier actif',
+        'source' => 'Fichier source',
+        'fetched_at' => 'Capturé le',
+        'hash' => 'Empreinte de preuve (SHA-256)',
     ],
 
     'verdict' => [

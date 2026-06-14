@@ -5,7 +5,20 @@ return [
         'verifications' => 'Verifications',
         'compliance_engine' => 'Compliance Engine',
         'certificates' => 'Tax certificates (ACF)',
+        'audit_logs' => 'Audit Logs',
         'settings' => 'Settings',
+    ],
+
+    'audit' => [
+        'checked_against' => 'Checks run against :period — :count taxpayers, extracted :date.',
+        'no_extraction' => 'No taxpayer file extracted yet — checks run on demo data.',
+        'section_evidence' => 'Evidence gathered (Fiscalis extract)',
+        'section_evidence_help' => 'The immutable snapshot captured at the moment of verification — the proof the vendor was on the active taxpayer file.',
+        'vendor' => 'Taxpayer (as filed)',
+        'active' => 'On active file',
+        'source' => 'Source file',
+        'fetched_at' => 'Captured at',
+        'hash' => 'Evidence hash (SHA-256)',
     ],
 
     'verdict' => [
