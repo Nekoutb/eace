@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Approval\FourCheckEvaluator;
 use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
 use App\Http\Middleware\InitializeTenancyForLivewire;
@@ -22,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
 
         // RiskEngine has no zero-arg constructor; build it with the default rule set.
         $this->app->singleton(RiskEngine::class, fn () => RiskEngine::default());
+
+        // The four-check approval evaluator (strict accept/reject).
+        $this->app->singleton(FourCheckEvaluator::class, fn () => FourCheckEvaluator::default());
     }
 
     /**

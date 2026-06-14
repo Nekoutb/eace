@@ -2,8 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Models\AcfCertificate;
 use App\Models\ThirdParty;
 use App\Models\User;
+use App\Services\Acf\AcfIngestionService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
 use Illuminate\Database\Seeder;
@@ -23,6 +26,23 @@ class TenantDatabaseSeeder extends Seeder
             ['email' => 'admin'],
             ['name' => 'Agent Conformité', 'password' => Hash::make('admin')],
         );
+
+        // A clean, authentic, in-force ACF for the active supplier — its invoice will be ACCEPTED.
+        $cleanAcf = new AcfCertificate([
+            'reference' => '620000000001',
+            'niu' => 'M058712345678X',
+            'taxpayer_name' => 'SARL EXEMPLE',
+            'issued_at' => now(),
+            'validity_months' => 3,
+            'authenticity_status' => AcfAuthenticityStatus::Authentic,
+        ]);
+        $cleanAcf->recomputeValidity()->save();
+
+        // The real EXPRESS UNION ACF (expiring soon, authenticity not yet checked) for the monitor.
+        $fixture = base_path('tests/Fixtures/acf/express-union-acf.txt');
+        if (is_file($fixture)) {
+            app(AcfIngestionService::class)->ingestFromText(file_get_contents($fixture));
+        }
 
         $suppliers = [
             ['niu' => 'M058712345678X', 'name' => 'SARL EXEMPLE', 'type' => 'supplier'],

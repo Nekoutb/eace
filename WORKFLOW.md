@@ -79,3 +79,12 @@ New libraries to add (rest already installed): `spatie/browsershot` (+ `npm i pu
   table to decide reuse vs block. The validity buffer (default 5 days) is a setting.
 - `verifications` gains `stage` (recording | settlement) and the per-check results.
 
+## Known scope boundary
+
+The four-check strict approval targets **Cameroonian-registered vendors** (those
+with a NIU in the file). **Foreign suppliers** are out of this flow: CGI art. 143
+exempts them from the registration/active-file conditions ("ces conditions ne sont
+pas exigées"), and they instead follow the TSR 15 % + VAT self-assessment path
+already handled by the graded RiskEngine (rule R11). A dedicated foreign-supplier
+approval path is a later enhancement, not part of the confirmed four-check scope.
+

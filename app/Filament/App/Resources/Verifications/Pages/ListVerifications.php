@@ -2,7 +2,8 @@
 
 namespace App\Filament\App\Resources\Verifications\Pages;
 
-use App\Domain\Niu\Verdict;
+use App\Domain\Approval\ApprovalDecision;
+use App\Domain\Approval\VerificationStage;
 use App\Domain\Risk\PaymentMethod;
 use App\Filament\App\Resources\Verifications\VerificationResource;
 use App\Services\Verification\VerificationService;
@@ -26,12 +27,23 @@ class ListVerifications extends ListRecords
                 ->icon('heroicon-o-magnifying-glass')
                 ->modalSubmitActionLabel('Vérifier')
                 ->schema([
+                    Select::make('stage')
+                        ->label('Étape')
+                        ->options(collect(VerificationStage::cases())
+                            ->mapWithKeys(fn (VerificationStage $s): array => [$s->value => $s->label()])
+                            ->all())
+                        ->default(VerificationStage::Recording->value)
+                        ->required(),
                     TextInput::make('raw_input')
                         ->label('NIU à vérifier')
                         ->placeholder('P058712345678X')
                         ->required()
                         ->extraInputAttributes(['style' => 'font-family: monospace; letter-spacing: 0.05em;'])
                         ->helperText('14 caractères : P (personne physique) ou M (personne morale) + 12 chiffres + lettre.'),
+                    TextInput::make('acf_reference')
+                        ->label('Référence ACF (optionnel)')
+                        ->placeholder('620264471967')
+                        ->helperText('Sinon, l’ACF la plus récente du NIU est utilisée.'),
                     TextInput::make('invoice_amount_xaf')
                         ->label('Montant de la facture (FCFA)')
                         ->numeric()
@@ -49,6 +61,10 @@ class ListVerifications extends ListRecords
                 ->action(function (array $data) {
                     $verification = app(VerificationService::class)->verify(new VerifyRequest(
                         rawInput: (string) $data['raw_input'],
+                        stage: VerificationStage::from($data['stage'] ?? VerificationStage::Recording->value),
+                        acfReference: filled($data['acf_reference'] ?? null)
+                            ? (string) $data['acf_reference']
+                            : null,
                         invoiceAmountXaf: filled($data['invoice_amount_xaf'] ?? null)
                             ? (int) $data['invoice_amount_xaf']
                             : null,
@@ -63,11 +79,12 @@ class ListVerifications extends ListRecords
                     ));
 
                     $notification = Notification::make()
-                        ->title('Verdict : '.$verification->verdict->label());
+                        ->title($verification->approval?->label() ?? $verification->verdict->label())
+                        ->body('Verdict : '.$verification->verdict->label());
 
-                    $verification->verdict === Verdict::Conforme
+                    $verification->approval === ApprovalDecision::Accepted
                         ? $notification->success()
-                        : $notification->warning();
+                        : $notification->danger();
 
                     $notification->send();
 

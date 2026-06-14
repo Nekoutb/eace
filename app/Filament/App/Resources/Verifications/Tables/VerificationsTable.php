@@ -2,6 +2,8 @@
 
 namespace App\Filament\App\Resources\Verifications\Tables;
 
+use App\Domain\Approval\ApprovalDecision;
+use App\Domain\Approval\VerificationStage;
 use App\Domain\Niu\Verdict;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontFamily;
@@ -21,6 +23,18 @@ class VerificationsTable
                     ->placeholder('— format invalide —')
                     ->copyable()
                     ->searchable(),
+                TextColumn::make('stage')
+                    ->label('Étape')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn (VerificationStage $state): string => $state->label()),
+                TextColumn::make('approval')
+                    ->label('Approbation')
+                    ->badge()
+                    ->placeholder('—')
+                    ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
+                    ->color(fn (ApprovalDecision $state): string => $state->color())
+                    ->icon(fn (ApprovalDecision $state): string => $state->icon()),
                 TextColumn::make('verdict')
                     ->label('Verdict')
                     ->badge()

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Verification;
 
+use App\Domain\Approval\VerificationStage;
 use App\Domain\Niu\NiuEntityType;
 use App\Domain\Risk\PaymentMethod;
 
@@ -16,6 +17,8 @@ final readonly class VerifyRequest
 {
     public function __construct(
         public string $rawInput,
+        public VerificationStage $stage = VerificationStage::Recording,
+        public ?string $acfReference = null,
         public ?int $thirdPartyId = null,
         public ?int $invoiceAmountXaf = null,
         public ?string $invoiceName = null,
