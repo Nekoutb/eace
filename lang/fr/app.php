@@ -107,6 +107,9 @@ return [
     'ui' => [
         'lang' => 'Langue',
         'identifier' => 'Identifiant',
+        'engine_intro' => 'Choisissez l’étape de vérification.',
+        'phase_recording_desc' => 'Un fournisseur dépose une facture : importez l’ACF et lancez les quatre contrôles.',
+        'phase_settlement_desc' => 'Au moment du paiement, vérifiez un lot de NIU avant de régler les factures.',
         'record_invoice' => 'Enregistrer une facture',
         'settle_batch' => 'Vérifier un lot (règlement)',
         'verify_niu' => 'Vérifier un NIU',

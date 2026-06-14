@@ -107,6 +107,9 @@ return [
     'ui' => [
         'lang' => 'Language',
         'identifier' => 'Username',
+        'engine_intro' => 'Choose the verification phase.',
+        'phase_recording_desc' => 'A vendor submits an invoice: import the ACF and run the four checks.',
+        'phase_settlement_desc' => 'At payment time, verify a batch of NIUs before settling invoices.',
         'record_invoice' => 'Record an invoice',
         'settle_batch' => 'Verify a batch (settlement)',
         'verify_niu' => 'Verify a NIU',

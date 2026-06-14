@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
-use App\Filament\App\Resources\Verifications\Pages\ListVerifications;
+use App\Filament\App\Pages\ComplianceEngine;
 use App\Models\AcfCertificate;
 use App\Models\Tenant;
 use App\Models\User;
@@ -47,7 +47,7 @@ function uiAuthenticAcf(): AcfCertificate
 it('records an accepted verification through the recording action', function () {
     uiAuthenticAcf();
 
-    Livewire::test(ListVerifications::class)
+    Livewire::test(ComplianceEngine::class)
         ->callAction('record', ['raw_input' => 'M058712345678X']);
 
     $verification = Verification::query()->where('stage', VerificationStage::Recording->value)->first();
@@ -57,14 +57,14 @@ it('records an accepted verification through the recording action', function () 
 });
 
 it('rejects a recording with neither an ACF nor a NIU', function () {
-    Livewire::test(ListVerifications::class)
+    Livewire::test(ComplianceEngine::class)
         ->callAction('record', []);
 
     expect(Verification::query()->count())->toBe(0);
 });
 
 it('runs a batch settlement through the settle action', function () {
-    Livewire::test(ListVerifications::class)
+    Livewire::test(ComplianceEngine::class)
         ->callAction('settle', ['nius' => "M111111111111A\nM222222222222A\nM111111111111A"]);
 
     // three lines, one duplicate → two settlement verifications
