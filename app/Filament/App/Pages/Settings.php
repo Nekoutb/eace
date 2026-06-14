@@ -24,11 +24,17 @@ class Settings extends Page
 
     public ?string $entityNiu = null;
 
+    public ?string $entityRccm = null;
+
+    public ?string $entityAddress = null;
+
     public function mount(): void
     {
         $profile = OrganizationProfile::current();
         $this->entityName = $profile->entity_name;
         $this->entityNiu = $profile->entity_niu;
+        $this->entityRccm = $profile->entity_rccm;
+        $this->entityAddress = $profile->entity_address;
     }
 
     public static function getNavigationLabel(): string
@@ -46,11 +52,15 @@ class Settings extends Page
         $this->validate([
             'entityName' => ['nullable', 'string', 'max:255'],
             'entityNiu' => ['nullable', 'string', 'max:32'],
+            'entityRccm' => ['nullable', 'string', 'max:64'],
+            'entityAddress' => ['nullable', 'string', 'max:255'],
         ]);
 
         $profile = OrganizationProfile::current();
         $profile->entity_name = filled($this->entityName) ? trim((string) $this->entityName) : null;
         $profile->entity_niu = filled($this->entityNiu) ? strtoupper(trim((string) $this->entityNiu)) : null;
+        $profile->entity_rccm = filled($this->entityRccm) ? trim((string) $this->entityRccm) : null;
+        $profile->entity_address = filled($this->entityAddress) ? trim((string) $this->entityAddress) : null;
         $profile->save();
 
         Notification::make()->title(__('app.ui.notif_settings_saved'))->success()->send();

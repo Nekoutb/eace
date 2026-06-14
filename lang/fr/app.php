@@ -6,6 +6,7 @@ return [
         'compliance_engine' => 'Moteur de conformité',
         'certificates' => 'Attestations (ACF)',
         'audit_logs' => 'Journaux d’audit',
+        'taxpayer_files' => 'Fichier des contribuables',
         'settings' => 'Paramètres',
     ],
 
@@ -19,6 +20,15 @@ return [
         'source' => 'Fichier source',
         'fetched_at' => 'Capturé le',
         'hash' => 'Empreinte de preuve (SHA-256)',
+        'taxpayer_files_help' => 'Chaque téléchargement du fichier des contribuables de la DGI (l’Excel de tous les contribuables), horodaté. Actualisé chaque semaine.',
+        'period' => 'Fichier (mois)',
+        'taxpayers' => 'Contribuables',
+        'downloaded_at' => 'Téléchargé le',
+        'source_file' => 'URL source',
+        'status_completed' => 'Intégré',
+        'status_unchanged' => 'Inchangé',
+        'status_pending' => 'En cours',
+        'status_failed' => 'Échec',
     ],
 
     'verdict' => [
@@ -134,6 +144,8 @@ return [
         'supplier_address' => 'Adresse complète du fournisseur',
         'supplier_rccm' => 'RCCM du fournisseur',
         'client_identity' => 'Identité complète du client',
+        'client_address' => 'Adresse du client',
+        'client_rccm' => 'RCCM du client',
         'description' => 'Nature, objet et détail',
         'ht' => 'Prix hors taxe (HT)',
         'vat' => 'Taux et montant de la TVA',
@@ -144,6 +156,8 @@ return [
         'niu_match' => 'NIU fournisseur cohérent',
         'client_niu_match' => 'NIU du client conforme à notre profil',
         'client_identity_match' => 'Nom du client conforme à notre profil',
+        'client_rccm_match' => 'RCCM du client conforme à notre profil',
+        'client_address_match' => 'Adresse du client conforme à notre profil',
     ],
 
     'ui' => [
@@ -238,6 +252,11 @@ return [
         'entity_name_help' => 'La raison sociale exacte qui doit figurer comme client sur les factures des fournisseurs.',
         'entity_niu' => 'Votre NIU',
         'entity_niu_help' => '14 caractères : P/M + 12 chiffres + une lettre. Vérifié contre le NIU client de chaque facture.',
+        'entity_rccm' => 'Votre RCCM (registre du commerce)',
+        'entity_rccm_help' => 'Votre numéro d’immatriculation. Vérifié contre le RCCM du client figurant sur les factures fournisseurs.',
+        'entity_address' => 'Votre adresse de facturation',
+        'entity_address_ph' => 'ex. BP 1234, Douala',
+        'entity_address_help' => 'L’adresse qui doit figurer comme adresse du client (facturation) sur les factures fournisseurs.',
         'save' => 'Enregistrer',
         // helper texts
         'niu_help' => '14 caractères : P (personne physique) ou M (personne morale) + 12 chiffres + lettre.',

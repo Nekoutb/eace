@@ -68,6 +68,20 @@
                 @error('entityNiu') <p class="niu-set__err">{{ $message }}</p> @enderror
             </div>
 
+            <div class="niu-set__field">
+                <label class="niu-set__label" for="set-rccm">{{ __('app.ui.entity_rccm') }}</label>
+                <input id="set-rccm" type="text" wire:model="entityRccm" class="niu-set__input niu-set__input--mono" placeholder="RC/YAO/2019/B/1234" autocomplete="off">
+                <p class="niu-set__help">{{ __('app.ui.entity_rccm_help') }}</p>
+                @error('entityRccm') <p class="niu-set__err">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="niu-set__field">
+                <label class="niu-set__label" for="set-addr">{{ __('app.ui.entity_address') }}</label>
+                <input id="set-addr" type="text" wire:model="entityAddress" class="niu-set__input" placeholder="{{ __('app.ui.entity_address_ph') }}">
+                <p class="niu-set__help">{{ __('app.ui.entity_address_help') }}</p>
+                @error('entityAddress') <p class="niu-set__err">{{ $message }}</p> @enderror
+            </div>
+
             <div class="niu-set__actions">
                 <button type="submit" class="niu-set__btn">@svg('heroicon-o-check', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.save') }}</button>
             </div>

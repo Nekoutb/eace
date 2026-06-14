@@ -289,6 +289,8 @@ class ComplianceEngine extends Page
             'client_niu' => $invoice->clientNiu?->value,
             'supplier_name' => $invoice->supplierName,
             'client_identity' => $invoice->clientIdentity,
+            'client_address' => $invoice->clientAddress,
+            'client_rccm' => $invoice->clientRccm,
             'supplier_rccm' => $invoice->supplierRccm,
             'date' => $invoice->date?->toDateString(),
             'ht_amount' => $invoice->htAmount,

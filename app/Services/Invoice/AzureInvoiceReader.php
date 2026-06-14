@@ -96,6 +96,8 @@ final class AzureInvoiceReader implements InvoiceReader
             supplierAddress: $this->string($fields, 'VendorAddress'),
             supplierRccm: $this->rccm($content),
             clientIdentity: $this->string($fields, 'CustomerName'),
+            clientAddress: $this->string($fields, 'CustomerAddress'),
+            clientRccm: null, // prebuilt-invoice has no client RCCM field; use the Claude reader for it
             description: $this->string($fields, 'Items'),
             htAmount: $this->amount($fields, 'SubTotal'),
             vatRate: $this->vatRate($fields),

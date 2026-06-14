@@ -295,6 +295,8 @@
                                     'supplier_rccm' => __('app.conformity.supplier_rccm'),
                                     'client_niu' => __('app.conformity.client_niu'),
                                     'client_identity' => __('app.conformity.client_identity'),
+                                    'client_rccm' => __('app.conformity.client_rccm'),
+                                    'client_address' => __('app.conformity.client_address'),
                                     'date' => __('app.conformity.date'),
                                     'ht_amount' => __('app.conformity.ht'),
                                     'vat_amount' => __('app.conformity.vat'),

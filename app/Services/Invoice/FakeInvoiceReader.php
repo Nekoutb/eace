@@ -29,6 +29,8 @@ final class FakeInvoiceReader implements InvoiceReader
             supplierAddress: 'BP 1234, Douala',
             supplierRccm: 'RC/DLA/2020/B/123',
             clientIdentity: 'EXPRESS UNION FINANCE SA',
+            clientAddress: 'BP 5000, Douala',
+            clientRccm: 'RC/DLA/2015/B/777',
             description: 'Prestation de services',
             htAmount: 1_000_000,
             vatRate: 0.1925,

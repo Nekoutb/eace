@@ -6,6 +6,7 @@ use App\Domain\Niu\Verdict;
 use App\Filament\App\Pages\ComplianceEngine;
 use App\Filament\App\Resources\AuditLogs\Pages\ListAuditLogs;
 use App\Filament\App\Resources\AuditLogs\Pages\ViewAuditLog;
+use App\Filament\App\Resources\TaxpayerFiles\Pages\ListTaxpayerFiles;
 use App\Filament\App\Resources\Verifications\Pages\ListVerifications;
 use App\Models\Tenant;
 use App\Models\User;
@@ -46,6 +47,10 @@ it('renders the audit logs list and a record view with the evidence', function (
     Livewire::test(ViewAuditLog::class, ['record' => $verification?->getKey()])
         ->assertOk()
         ->assertSee(__('app.audit.section_evidence'));
+});
+
+it('renders the taxpayer-file download log', function () {
+    Livewire::test(ListTaxpayerFiles::class)->assertOk();
 });
 
 it('runs a verification inline and reveals the discrepancies on the same screen', function () {

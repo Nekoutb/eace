@@ -29,13 +29,17 @@ it('saves the organisation buyer identity through the settings page', function (
     Livewire::test(Settings::class)
         ->set('entityName', 'Ma Société SARL')
         ->set('entityNiu', 'm020100021296z') // lower-case → stored upper-cased
+        ->set('entityRccm', 'RC/DLA/2015/B/777')
+        ->set('entityAddress', 'BP 5000, Douala')
         ->call('save')
         ->assertHasNoErrors();
 
     $profile = OrganizationProfile::current();
 
     expect($profile->entity_name)->toBe('Ma Société SARL')
-        ->and($profile->entity_niu)->toBe('M020100021296Z');
+        ->and($profile->entity_niu)->toBe('M020100021296Z')
+        ->and($profile->entity_rccm)->toBe('RC/DLA/2015/B/777')
+        ->and($profile->entity_address)->toBe('BP 5000, Douala');
 });
 
 it('keeps a single profile row (singleton)', function () {

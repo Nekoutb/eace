@@ -6,6 +6,7 @@ return [
         'compliance_engine' => 'Compliance Engine',
         'certificates' => 'Tax certificates (ACF)',
         'audit_logs' => 'Audit Logs',
+        'taxpayer_files' => 'Taxpayer file',
         'settings' => 'Settings',
     ],
 
@@ -19,6 +20,15 @@ return [
         'source' => 'Source file',
         'fetched_at' => 'Captured at',
         'hash' => 'Evidence hash (SHA-256)',
+        'taxpayer_files_help' => 'Every download of the DGI taxpayer file (the Excel of all taxpayers), stored with a date/time stamp. Refreshed weekly.',
+        'period' => 'File (month)',
+        'taxpayers' => 'Taxpayers',
+        'downloaded_at' => 'Downloaded at',
+        'source_file' => 'Source URL',
+        'status_completed' => 'Ingested',
+        'status_unchanged' => 'Unchanged',
+        'status_pending' => 'In progress',
+        'status_failed' => 'Failed',
     ],
 
     'verdict' => [
@@ -134,6 +144,8 @@ return [
         'supplier_address' => 'Supplier full address',
         'supplier_rccm' => 'Supplier RCCM',
         'client_identity' => 'Client full identity',
+        'client_address' => 'Client address',
+        'client_rccm' => 'Client RCCM',
         'description' => 'Nature, object and detail',
         'ht' => 'Price excl. tax (HT)',
         'vat' => 'VAT rate and amount',
@@ -144,6 +156,8 @@ return [
         'niu_match' => 'Supplier NIU matches',
         'client_niu_match' => 'Client NIU matches our profile',
         'client_identity_match' => 'Client name matches our profile',
+        'client_rccm_match' => 'Client RCCM matches our profile',
+        'client_address_match' => 'Client address matches our profile',
     ],
 
     'ui' => [
@@ -236,6 +250,11 @@ return [
         'entity_name_help' => 'The exact business name that must appear as the client on suppliers’ invoices.',
         'entity_niu' => 'Your NIU',
         'entity_niu_help' => '14 characters: P/M + 12 digits + a letter. Checked against the client NIU on each invoice.',
+        'entity_rccm' => 'Your RCCM (trade register)',
+        'entity_rccm_help' => 'Your registration number. Checked against the client RCCM shown on suppliers’ invoices.',
+        'entity_address' => 'Your billing address',
+        'entity_address_ph' => 'e.g. BP 1234, Douala',
+        'entity_address_help' => 'The address that must appear as the client (billing) address on suppliers’ invoices.',
         'save' => 'Save',
         'niu_help' => '14 characters: P (individual) or M (legal entity) + 12 digits + a letter.',
         'acf_help' => 'Import the ACF: the NIU and reference are extracted automatically.',

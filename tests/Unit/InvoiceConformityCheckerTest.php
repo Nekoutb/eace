@@ -20,6 +20,8 @@ function invoice(array $o = []): InvoiceData
         'supplierAddress' => 'BP 1234, Douala',
         'supplierRccm' => 'RC/DLA/2020/B/123',
         'clientIdentity' => 'EXPRESS UNION FINANCE SA',
+        'clientAddress' => 'BP 5000, Douala',
+        'clientRccm' => 'RC/DLA/2015/B/777',
         'description' => 'Prestation de services informatiques',
         'htAmount' => 1_000_000,
         'vatRate' => 0.1925,
@@ -36,6 +38,8 @@ function invoice(array $o = []): InvoiceData
         supplierAddress: $d['supplierAddress'],
         supplierRccm: $d['supplierRccm'],
         clientIdentity: $d['clientIdentity'],
+        clientAddress: $d['clientAddress'],
+        clientRccm: $d['clientRccm'],
         description: $d['description'],
         htAmount: $d['htAmount'],
         vatRate: $d['vatRate'],
@@ -118,6 +122,19 @@ it('checks the client NIU and name match the organisation profile', function () 
     $wrongName = $this->checker->check(invoice(['clientIdentity' => 'AUTRE CLIENT SARL']), null, null, 'EXPRESS UNION FINANCE SA');
     expect($wrongName->conform)->toBeFalse()
         ->and(collect($wrongName->failed())->pluck('key'))->toContain('client_identity_match');
+});
+
+it('checks the client RCCM and address match the organisation profile', function () {
+    // Conform when both match (punctuation/whitespace tolerant).
+    expect($this->checker->check(invoice(), null, null, null, 'RC/DLA/2015/B/777', 'BP 5000 Douala')->conform)->toBeTrue();
+
+    // Wrong client RCCM on the invoice.
+    $badRccm = $this->checker->check(invoice(['clientRccm' => 'RC/XXX/0000/Z/0']), null, null, null, 'RC/DLA/2015/B/777', null);
+    expect(collect($badRccm->failed())->pluck('key'))->toContain('client_rccm_match');
+
+    // Wrong client address on the invoice.
+    $badAddr = $this->checker->check(invoice(['clientAddress' => 'Autre adresse, Yaoundé']), null, null, null, null, 'BP 5000 Douala');
+    expect(collect($badAddr->failed())->pluck('key'))->toContain('client_address_match');
 });
 
 it('separates forme and fond findings', function () {

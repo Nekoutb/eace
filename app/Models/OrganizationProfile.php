@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property ?string $entity_name
  * @property ?string $entity_niu
+ * @property ?string $entity_rccm
+ * @property ?string $entity_address
  */
 class OrganizationProfile extends Model
 {

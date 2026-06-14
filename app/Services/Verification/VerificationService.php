@@ -81,6 +81,8 @@ final class VerificationService
                 $niu,
                 $expectedClientNiu,
                 $profile->entity_name,
+                $profile->entity_rccm,
+                $profile->entity_address,
             );
         }
 

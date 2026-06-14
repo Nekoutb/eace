@@ -144,6 +144,8 @@ final class ClaudeInvoiceReader implements InvoiceReader
                     'supplier_address' => ['type' => 'string', 'description' => 'Supplier full address'],
                     'supplier_rccm' => ['type' => 'string', 'description' => 'Supplier RCCM number'],
                     'client_identity' => ['type' => 'string', 'description' => 'Client full identity/name'],
+                    'client_address' => ['type' => 'string', 'description' => 'Client (buyer) full billing address'],
+                    'client_rccm' => ['type' => 'string', 'description' => 'Client (buyer) RCCM / trade-register number, if shown'],
                     'description' => ['type' => 'string', 'description' => 'Nature/object of the operation'],
                     'ht_amount' => ['type' => 'integer', 'description' => 'Total excl. tax, whole FCFA'],
                     'vat_rate' => ['type' => 'number', 'description' => 'VAT rate as a fraction (0.1925)'],

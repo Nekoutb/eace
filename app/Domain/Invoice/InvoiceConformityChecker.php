@@ -23,6 +23,8 @@ final class InvoiceConformityChecker
         ?NiuNumber $expectedSupplierNiu = null,
         ?NiuNumber $expectedClientNiu = null,
         ?string $expectedClientName = null,
+        ?string $expectedClientRccm = null,
+        ?string $expectedClientAddress = null,
     ): InvoiceConformityResult {
         $findings = [
             // Conditions de forme — every mandatory mention of art. 150 present.
@@ -63,6 +65,20 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'client_identity_match',
                 $this->nameMatches($invoice->clientIdentity, $expectedClientName),
+            );
+        }
+
+        if ($this->filled($expectedClientRccm)) {
+            $findings[] = $this->fond(
+                'client_rccm_match',
+                $this->nameMatches($invoice->clientRccm, $expectedClientRccm),
+            );
+        }
+
+        if ($this->filled($expectedClientAddress)) {
+            $findings[] = $this->fond(
+                'client_address_match',
+                $this->nameMatches($invoice->clientAddress, $expectedClientAddress),
             );
         }
 
@@ -117,21 +133,27 @@ final class InvoiceConformityChecker
     }
 
     /**
-     * The invoice's client identity carries our organisation's name. Tolerant:
-     * case-insensitive, whitespace-collapsed, and matches if either string
-     * contains the other (the invoice often adds the legal form or an address).
+     * Tolerant comparison used for the client name, RCCM and address: lower-cased,
+     * punctuation stripped, whitespace collapsed, and a match if either string
+     * contains the other (the invoice often adds the legal form or extra detail).
      */
-    private function nameMatches(?string $invoiceClient, ?string $expectedName): bool
+    private function nameMatches(?string $invoiceValue, ?string $expected): bool
     {
-        if (! $this->filled($invoiceClient) || ! $this->filled($expectedName)) {
+        if (! $this->filled($invoiceValue) || ! $this->filled($expected)) {
             return false;
         }
 
-        $normalise = static fn (string $s): string => mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $s)));
-        $a = $normalise((string) $invoiceClient);
-        $b = $normalise((string) $expectedName);
+        $normalise = static function (string $s): string {
+            $s = (string) preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $s); // drop punctuation
+            $s = (string) preg_replace('/\s+/u', ' ', $s);
 
-        return str_contains($a, $b) || str_contains($b, $a);
+            return mb_strtolower(trim($s));
+        };
+
+        $a = $normalise((string) $invoiceValue);
+        $b = $normalise((string) $expected);
+
+        return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a));
     }
 
     private function forme(string $key, bool $passed): ConformityFinding
