@@ -2,10 +2,14 @@
 
 namespace App\Filament\App\Resources\TaxpayerFiles\Tables;
 
+use App\Models\TaxpayerFileExtraction;
+use Filament\Actions\Action;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TaxpayerFilesTable
 {
@@ -13,6 +17,13 @@ class TaxpayerFilesTable
     {
         return $table
             ->defaultSort('id', 'desc')
+            ->recordActions([
+                Action::make('download')
+                    ->label(__('app.audit.download'))
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->visible(fn (TaxpayerFileExtraction $record): bool => filled($record->file_path) && is_file(storage_path('app/'.$record->file_path)))
+                    ->action(fn (TaxpayerFileExtraction $record): BinaryFileResponse => response()->download(storage_path('app/'.$record->file_path))),
+            ])
             ->columns([
                 TextColumn::make('period_label')
                     ->label(__('app.audit.period'))

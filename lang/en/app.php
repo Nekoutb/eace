@@ -29,6 +29,7 @@ return [
         'status_unchanged' => 'Unchanged',
         'status_pending' => 'In progress',
         'status_failed' => 'Failed',
+        'download' => 'Download',
     ],
 
     'verdict' => [
