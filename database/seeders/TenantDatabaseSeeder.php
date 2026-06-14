@@ -3,10 +3,12 @@
 namespace Database\Seeders;
 
 use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Domain\Approval\VerificationStage;
 use App\Models\AcfCertificate;
 use App\Models\ThirdParty;
 use App\Models\User;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
 use Illuminate\Database\Seeder;
@@ -62,10 +64,17 @@ class TenantDatabaseSeeder extends Seeder
             $service->verify(new VerifyRequest(
                 rawInput: $row['niu'],
                 thirdPartyId: $supplier->id,
+                stage: VerificationStage::Recording,
                 invoiceAmountXaf: 1_000_000,
                 invoiceName: $row['name'],
                 vatCharged: true,
             ));
         }
+
+        // A settlement-stage batch so the stage filter shows both stages.
+        app(BatchVerificationService::class)->verifyBatch(
+            ['M058712345678X', 'M111111111111A'],
+            VerificationStage::Settlement,
+        );
     }
 }

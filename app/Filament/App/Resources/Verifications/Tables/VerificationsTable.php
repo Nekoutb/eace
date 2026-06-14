@@ -8,6 +8,7 @@ use App\Domain\Niu\Verdict;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class VerificationsTable
@@ -54,6 +55,18 @@ class VerificationsTable
                     ->label('Vérifié le')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+            ])
+            ->filters([
+                SelectFilter::make('stage')
+                    ->label('Étape')
+                    ->options(collect(VerificationStage::cases())
+                        ->mapWithKeys(fn (VerificationStage $s): array => [$s->value => $s->label()])
+                        ->all()),
+                SelectFilter::make('approval')
+                    ->label('Approbation')
+                    ->options(collect(ApprovalDecision::cases())
+                        ->mapWithKeys(fn (ApprovalDecision $d): array => [$d->value => $d->label()])
+                        ->all()),
             ])
             ->recordActions([
                 ViewAction::make(),

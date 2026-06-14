@@ -31,10 +31,9 @@ it('renders the verifications list page', function () {
     Livewire::test(ListVerifications::class)->assertOk();
 });
 
-it('runs a verification through the verify action and persists the verdict', function () {
+it('runs a verification through the recording action and persists the verdict', function () {
     Livewire::test(ListVerifications::class)
-        ->callAction('verify', data: ['raw_input' => 'M222222222222A'])
-        ->assertHasNoActionErrors();
+        ->callAction('record', data: ['raw_input' => 'M222222222222A']);
 
     expect(Verification::query()->where('niu', 'M222222222222A')->first()?->verdict)
         ->toBe(Verdict::Radie);

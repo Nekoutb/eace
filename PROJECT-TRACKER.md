@@ -18,8 +18,8 @@ Status legend: ⬜ Pending · 🔨 In progress · 🚀 Deployed — awaiting app
 |---|--------|--------------------------------------|----------------|--------|----------|
 | 0 | Foundation | Multi-tenant app, **admin/admin** login, styled UI, verify-a-NIU on demo data, all earlier fixes | — | ✅ Approved | ✅ |
 | 1 | ACF intake + certificate monitor | Upload/scan an ACF → it reads reference, NIU, issue date → recorded in a **certificate monitor** with validity (valid / expiring / expired), 5-day buffer | — | ✅ Approved | ✅ |
-| 2 | Four-check strict engine + stages | A verification runs the **4 checks**, applies **strict** accept/reject, records the `stage`; shows verdict + FCFA exposure | — | 🔨 In progress | ⬜ |
-| 3 | Two-stage UI | The **Enregistrement ↔ Règlement** toggle: recording (scan + upload, one vendor) vs settlement (batch of NIUs) | — | ⬜ Pending | ⬜ |
+| 2 | Four-check strict engine + stages | A verification runs the **4 checks**, applies **strict** accept/reject, records the `stage`; shows verdict + FCFA exposure | — | ✅ Approved | ✅ |
+| 3 | Two-stage UI | The **Enregistrement ↔ Règlement** toggle: recording (scan + upload, one vendor) vs settlement (batch of NIUs) | — | 🔨 In progress | ⬜ |
 | 4 | Monthly file ingestion (check 3) | Import a monthly **FICHIER xlsx** → real offline existence + régime/centre lookup | **1 monthly FICHIER xlsx** | ⛔ Blocked | ⬜ |
 | 5 | Live status connector (check 2) | Real **NIU status** from the consultation portal (ViewState POST), tested on fixtures | **1 NIU-search result page (HTML)** | ⛔ Blocked | ⬜ |
 | 6 | Authenticity connector (check 1) | Real **document authenticity** via Browsershot rendering the Harmony2 page | **1 rendered Harmony2 page** + puppeteer | ⛔ Blocked | ⬜ |
