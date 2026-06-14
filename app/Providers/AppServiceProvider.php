@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
+use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Services\Registry\FakeRegistryResolver;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Make Livewire's shared update endpoint tenancy-aware so the app
+        // (tenant) panel's actions — including login — run against the tenant
+        // database, while the central admin panel keeps working on localhost.
+        Livewire::setUpdateRoute(fn ($handle) => Route::post('/livewire/update', $handle)
+            ->middleware(['web', InitializeTenancyForLivewire::class]));
     }
 }
