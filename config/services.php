@@ -35,8 +35,14 @@ return [
         ],
     ],
 
-    // Azure Document Intelligence (prebuilt-invoice) for invoice OCR. When both
-    // are set, the real reader is used; otherwise the fake reader backs the demo.
+    // Invoice OCR providers. Resolution order (see AppServiceProvider): Anthropic
+    // Claude when its key is set, else Azure Document Intelligence, else the fake
+    // reader that backs the demo. Keys live in .env — never handled in code.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
+    ],
+
     'azure_di' => [
         'endpoint' => env('AZURE_DI_ENDPOINT'),
         'key' => env('AZURE_DI_KEY'),

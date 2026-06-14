@@ -8,6 +8,7 @@ use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Services\Invoice\AzureInvoiceReader;
+use App\Services\Invoice\ClaudeInvoiceReader;
 use App\Services\Invoice\FakeInvoiceReader;
 use App\Services\Registry\FakeRegistryResolver;
 use Illuminate\Support\Facades\Route;
@@ -30,14 +31,21 @@ class AppServiceProvider extends ServiceProvider
         // The four-check approval evaluator (strict accept/reject).
         $this->app->singleton(FourCheckEvaluator::class, fn () => FourCheckEvaluator::default());
 
-        // Invoice OCR: the real Azure reader when configured, else the fake one.
+        // Invoice OCR: Anthropic Claude when its key is set, else Azure Document
+        // Intelligence when configured, else the fake reader for the demo.
         $this->app->bind(InvoiceReader::class, function () {
-            $endpoint = config('services.azure_di.endpoint');
-            $key = config('services.azure_di.key');
+            $anthropicKey = config('services.anthropic.key');
+            if (filled($anthropicKey)) {
+                return new ClaudeInvoiceReader((string) $anthropicKey, (string) config('services.anthropic.model'));
+            }
 
-            return (filled($endpoint) && filled($key))
-                ? new AzureInvoiceReader((string) $endpoint, (string) $key)
-                : new FakeInvoiceReader;
+            $endpoint = config('services.azure_di.endpoint');
+            $azureKey = config('services.azure_di.key');
+            if (filled($endpoint) && filled($azureKey)) {
+                return new AzureInvoiceReader((string) $endpoint, (string) $azureKey);
+            }
+
+            return new FakeInvoiceReader;
         });
     }
 
