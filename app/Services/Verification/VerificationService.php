@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Verification;
 
 use App\Domain\Approval\ApprovalContext;
+use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\FourCheckEvaluator;
+use App\Domain\Invoice\InvoiceConformityChecker;
 use App\Domain\Niu\NiuNumber;
 use App\Domain\Risk\RiskEngine;
 use App\Domain\Risk\VerificationContext;
@@ -18,8 +20,8 @@ use App\Services\Registry\RegistryLookup;
 /**
  * Orchestrates one verification end to end (tenant context): parse the NIU,
  * look it up in the central registry, resolve any ACF, run the four-check
- * approval AND the graded rule engine, and persist a Verification with the
- * accept/reject decision, the checks, the verdict and the FCFA exposure.
+ * approval AND the graded rule engine, fold in the invoice conditions de forme
+ * et de fond when an invoice was submitted, and persist the result.
  */
 final class VerificationService
 {
@@ -27,6 +29,7 @@ final class VerificationService
         private NiuRegistryService $registry,
         private RiskEngine $engine,
         private FourCheckEvaluator $approval,
+        private InvoiceConformityChecker $conformity,
     ) {}
 
     public function verify(VerifyRequest $request): Verification
@@ -64,6 +67,18 @@ final class VerificationService
             hasValidAcf: $request->hasValidAcf,
         ));
 
+        // At recording, a submitted invoice must also satisfy art. 150
+        // (conditions de forme et de fond) for the invoice to be accepted.
+        $invoiceConformity = $request->invoiceData !== null
+            ? $this->conformity->check($request->invoiceData, $niu)
+            : null;
+
+        $invoiceConform = $invoiceConformity === null || $invoiceConformity->conform;
+
+        $decision = ($approval->accepted() && $invoiceConform)
+            ? ApprovalDecision::Accepted
+            : ApprovalDecision::Rejected;
+
         $verification = Verification::query()->create([
             'third_party_id' => $request->thirdPartyId,
             'stage' => $request->stage,
@@ -72,8 +87,10 @@ final class VerificationService
             'snapshot_id' => $lookup->snapshotId,
             'acf_certificate_id' => $certificate?->id,
             'verdict' => $result->verdict,
-            'approval' => $approval->decision,
+            'approval' => $decision,
             'checks' => $approval->checksToArray(),
+            'invoice_data' => $request->invoiceData?->toArray(),
+            'invoice_checks' => $invoiceConformity?->toArray(),
             'triggered_rules' => $result->findingsToArray(),
             'exposure_xaf' => $result->totalExposureXaf,
             'checked_by' => $request->checkedBy,

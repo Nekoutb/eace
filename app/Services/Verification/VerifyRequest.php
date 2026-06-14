@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Verification;
 
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Invoice\InvoiceData;
 use App\Domain\Niu\NiuEntityType;
 use App\Domain\Risk\PaymentMethod;
 
@@ -28,6 +29,7 @@ final readonly class VerifyRequest
         public bool $publicSettlementOrExport = false,
         public bool $foreignSupplier = false,
         public bool $hasValidAcf = false,
+        public ?InvoiceData $invoiceData = null,
         public ?int $checkedBy = null,
     ) {}
 }

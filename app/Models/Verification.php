@@ -37,6 +37,8 @@ class Verification extends Model
             'verdict' => Verdict::class,
             'approval' => ApprovalDecision::class,
             'checks' => 'array',
+            'invoice_data' => 'array',
+            'invoice_checks' => 'array',
             'triggered_rules' => 'array',
             'exposure_xaf' => 'integer',
         ];
