@@ -103,6 +103,23 @@ it('checks the supplier NIU matches the verified one', function () {
         ->toBeFalse();
 });
 
+it('checks the client NIU and name match the organisation profile', function () {
+    $clientNiu = NiuNumber::fromString('M020100021296Z');
+
+    // Conform when both match (case-insensitive, substring-tolerant name).
+    expect($this->checker->check(invoice(), null, $clientNiu, 'express union finance')->conform)->toBeTrue();
+
+    // Wrong client NIU on the invoice → client_niu_match fails.
+    $wrongNiu = $this->checker->check(invoice(['clientNiu' => NiuNumber::fromString('P111111111111A')]), null, $clientNiu, null);
+    expect($wrongNiu->conform)->toBeFalse()
+        ->and(collect($wrongNiu->failed())->pluck('key'))->toContain('client_niu_match');
+
+    // Wrong client name on the invoice → client_identity_match fails.
+    $wrongName = $this->checker->check(invoice(['clientIdentity' => 'AUTRE CLIENT SARL']), null, null, 'EXPRESS UNION FINANCE SA');
+    expect($wrongName->conform)->toBeFalse()
+        ->and(collect($wrongName->failed())->pluck('key'))->toContain('client_identity_match');
+});
+
 it('separates forme and fond findings', function () {
     $result = $this->checker->check(invoice());
 

@@ -6,8 +6,8 @@ use App\Domain\Acf\UnreadableAcfException;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\CheckKey;
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Invoice\InvoiceData;
 use App\Domain\Invoice\InvoiceReader;
-use App\Domain\Risk\PaymentMethod;
 use App\Filament\App\Resources\Verifications\VerificationResource;
 use App\Models\Verification;
 use App\Services\Acf\AcfIngestionService;
@@ -22,11 +22,11 @@ use Livewire\WithFileUploads;
 
 /**
  * The Compliance Engine — the single working surface. A live toggle switches
- * between invoice **recording** (one vendor: ACF + scanned invoice) and invoice
- * **settlement** (a batch of NIUs). Both run the four strict checks (plus the
- * art. 150 conditions de forme et de fond at recording) and reveal every test's
- * output inline — a results table and a closing list of discrepancies — without
- * ever leaving the page.
+ * between invoice **recording** (one vendor: ACF + scanned invoice, which OCR
+ * auto-populates the control fields) and invoice **settlement** (a batch of
+ * NIUs). Both run the four strict checks (plus the art. 150 conditions de forme
+ * et de fond at recording) and reveal every test's output inline — a results
+ * table and a closing list of discrepancies — without ever leaving the page.
  */
 class ComplianceEngine extends Page
 {
@@ -54,9 +54,16 @@ class ComplianceEngine extends Page
 
     public ?string $invoiceName = null;
 
-    public ?string $paymentMethod = null;
+    // Captured as the uploads are read (auto-populate).
+    public ?string $acfReference = null;
 
-    public bool $vatCharged = false;
+    public ?string $invoiceStoredPath = null;
+
+    /** @var array<string, mixed>|null the scanned invoice, cached so run() needs no second OCR */
+    public ?array $invoiceArray = null;
+
+    /** @var array<string, mixed>|null human-readable summary of what the scan extracted */
+    public ?array $extracted = null;
 
     // Settlement input.
     public ?string $nius = null;
@@ -102,12 +109,89 @@ class ComplianceEngine extends Page
         $this->reset(['result', 'batch', 'discrepancies']);
     }
 
+    /**
+     * The ACF was selected — read it now: record the certificate and auto-fill
+     * the NIU under verification.
+     */
+    public function updatedAcfUpload(): void
+    {
+        if (! $this->acfUpload instanceof TemporaryUploadedFile) {
+            return;
+        }
+
+        $this->validate(['acfUpload' => ['file', 'mimes:pdf', 'max:10240']]);
+
+        $path = $this->acfUpload->store('acf', 'local');
+        if (! is_string($path)) {
+            Notification::make()->title(__('app.ui.notif_acf_unreadable'))->danger()->send();
+
+            return;
+        }
+
+        try {
+            $certificate = app(AcfIngestionService::class)->ingestFromUpload($path, 'local', auth()->id());
+        } catch (UnreadableAcfException $e) {
+            Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
+
+            return;
+        }
+
+        $this->acfReference = $certificate->reference;
+        if (blank($this->rawInput)) {
+            $this->rawInput = $certificate->niu;
+        }
+
+        Notification::make()->title(__('app.ui.notif_acf_read'))->success()->send();
+    }
+
+    /**
+     * The invoice was selected — OCR it now and auto-populate the control fields
+     * (supplier NIU, amount, name). The full extraction is cached for run().
+     */
+    public function updatedInvoiceUpload(): void
+    {
+        if (! $this->invoiceUpload instanceof TemporaryUploadedFile) {
+            return;
+        }
+
+        $this->validate(['invoiceUpload' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240']]);
+
+        $path = $this->invoiceUpload->store('invoices', 'local');
+        if (! is_string($path)) {
+            Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->danger()->send();
+
+            return;
+        }
+
+        try {
+            $invoice = app(InvoiceReader::class)->read($path, 'local');
+        } catch (\Throwable $e) {
+            Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
+
+            return;
+        }
+
+        $this->invoiceStoredPath = $path;
+        $this->invoiceArray = $invoice->toArray();
+        $this->extracted = $this->extractedSummary($invoice);
+
+        if (blank($this->rawInput) && $invoice->supplierNiu !== null) {
+            $this->rawInput = $invoice->supplierNiu->value;
+        }
+        if (blank($this->invoiceAmount) && $invoice->ttcAmount !== null) {
+            $this->invoiceAmount = (string) $invoice->ttcAmount;
+        }
+        if (blank($this->invoiceName) && $this->filled($invoice->supplierName)) {
+            $this->invoiceName = $invoice->supplierName;
+        }
+
+        Notification::make()->title(__('app.ui.notif_invoice_scanned'))->success()->send();
+    }
+
     /** Run the checks for the current phase and reveal the results inline. */
     public function run(): void
     {
         $this->validate([
-            'acfUpload' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
-            'invoiceUpload' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
             'rawInput' => ['nullable', 'string', 'max:32'],
             'invoiceAmount' => ['nullable', 'numeric', 'min:0'],
             'invoiceName' => ['nullable', 'string', 'max:255'],
@@ -123,33 +207,7 @@ class ComplianceEngine extends Page
 
     private function runRecording(): void
     {
-        $acfReference = null;
         $rawInput = filled($this->rawInput) ? trim((string) $this->rawInput) : null;
-
-        if ($this->acfUpload instanceof TemporaryUploadedFile) {
-            $path = $this->acfUpload->store('acf', 'local');
-
-            if (! is_string($path)) {
-                Notification::make()->title(__('app.ui.notif_acf_unreadable'))->danger()->send();
-
-                return;
-            }
-
-            try {
-                $certificate = app(AcfIngestionService::class)->ingestFromUpload(
-                    diskPath: $path,
-                    disk: 'local',
-                    uploadedBy: auth()->id(),
-                );
-            } catch (UnreadableAcfException $e) {
-                Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
-
-                return;
-            }
-
-            $acfReference = $certificate->reference;
-            $rawInput ??= $certificate->niu;
-        }
 
         if (blank($rawInput)) {
             Notification::make()
@@ -161,33 +219,16 @@ class ComplianceEngine extends Page
             return;
         }
 
-        $invoiceData = null;
-        if ($this->invoiceUpload instanceof TemporaryUploadedFile) {
-            $path = $this->invoiceUpload->store('invoices', 'local');
-
-            if (! is_string($path)) {
-                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->danger()->send();
-
-                return;
-            }
-
-            try {
-                $invoiceData = app(InvoiceReader::class)->read($path, 'local');
-            } catch (\Throwable $e) {
-                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
-
-                return;
-            }
-        }
+        $invoiceData = is_array($this->invoiceArray) && $this->invoiceArray !== []
+            ? InvoiceData::fromArray($this->invoiceArray)
+            : null;
 
         $verification = app(VerificationService::class)->verify(new VerifyRequest(
             rawInput: $rawInput,
             stage: VerificationStage::Recording,
-            acfReference: $acfReference,
+            acfReference: $this->acfReference,
             invoiceAmountXaf: filled($this->invoiceAmount) ? (int) $this->invoiceAmount : null,
             invoiceName: filled($this->invoiceName) ? (string) $this->invoiceName : null,
-            vatCharged: $this->vatCharged,
-            paymentMethod: filled($this->paymentMethod) ? PaymentMethod::from((string) $this->paymentMethod) : null,
             invoiceData: $invoiceData,
             checkedBy: auth()->id(),
         ));
@@ -234,6 +275,26 @@ class ComplianceEngine extends Page
             ->body(__('app.ui.notif_batch_body', ['total' => $summary['total']]))
             ->status($summary['rejected'] > 0 ? 'warning' : 'success')
             ->send();
+    }
+
+    /**
+     * A flat, human-readable summary of what the scan pulled off the invoice.
+     *
+     * @return array<string, mixed>
+     */
+    private function extractedSummary(InvoiceData $invoice): array
+    {
+        return [
+            'supplier_niu' => $invoice->supplierNiu?->value,
+            'client_niu' => $invoice->clientNiu?->value,
+            'supplier_name' => $invoice->supplierName,
+            'client_identity' => $invoice->clientIdentity,
+            'supplier_rccm' => $invoice->supplierRccm,
+            'date' => $invoice->date?->toDateString(),
+            'ht_amount' => $invoice->htAmount,
+            'vat_amount' => $invoice->vatAmount,
+            'ttc_amount' => $invoice->ttcAmount,
+        ];
     }
 
     /**
@@ -313,5 +374,10 @@ class ComplianceEngine extends Page
         }
 
         return $items;
+    }
+
+    private function filled(?string $value): bool
+    {
+        return $value !== null && trim($value) !== '';
     }
 }

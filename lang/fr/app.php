@@ -5,6 +5,7 @@ return [
         'verifications' => 'Vérifications',
         'compliance_engine' => 'Moteur de conformité',
         'certificates' => 'Attestations (ACF)',
+        'settings' => 'Paramètres',
     ],
 
     'verdict' => [
@@ -128,6 +129,8 @@ return [
         'ttc_calc' => 'TTC = HT + TVA',
         'vat_rate' => 'Taux de TVA légal (19,25 %)',
         'niu_match' => 'NIU fournisseur cohérent',
+        'client_niu_match' => 'NIU du client conforme à notre profil',
+        'client_identity_match' => 'Nom du client conforme à notre profil',
     ],
 
     'ui' => [
@@ -212,6 +215,17 @@ return [
         'no_discrepancies' => 'Tous les contrôles sont conformes — aucune anomalie détectée.',
         'no_results_title' => 'Aucun contrôle lancé',
         'no_results_body' => 'Choisissez une étape, remplissez le formulaire et lancez les contrôles. Les résultats et les anomalies s’affichent ici.',
+        'scan_extract' => 'Lu sur la facture scannée',
+        'notif_acf_read' => 'ACF lue — NIU renseigné',
+        'notif_invoice_scanned' => 'Facture scannée — champs renseignés',
+        'notif_settings_saved' => 'Paramètres enregistrés',
+        'settings_intro' => 'Votre organisation en tant qu’acheteur. Chaque facture fournisseur scannée est vérifiée par rapport à ce nom et ce NIU (les mentions « client » exigées par l’art. 150 du CGI).',
+        'entity_name' => 'Nom de votre entité (raison sociale)',
+        'entity_name_ph' => 'ex. MA SOCIÉTÉ SARL',
+        'entity_name_help' => 'La raison sociale exacte qui doit figurer comme client sur les factures des fournisseurs.',
+        'entity_niu' => 'Votre NIU',
+        'entity_niu_help' => '14 caractères : P/M + 12 chiffres + une lettre. Vérifié contre le NIU client de chaque facture.',
+        'save' => 'Enregistrer',
         // helper texts
         'niu_help' => '14 caractères : P (personne physique) ou M (personne morale) + 12 chiffres + lettre.',
         'acf_help' => 'Importez l’ACF : le NIU et la référence en sont extraits automatiquement.',

@@ -37,6 +37,40 @@ final readonly class InvoiceData
     }
 
     /**
+     * Rebuild from the array produced by toArray() — lets a scanned invoice be
+     * cached on the page (round-tripped through JSON) and reused at run time
+     * without a second OCR call. rawText is not round-tripped.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fromArray(array $data): self
+    {
+        $str = static fn (string $k): ?string => isset($data[$k]) && is_scalar($data[$k]) ? trim((string) $data[$k]) : null;
+        $int = static fn (string $k): ?int => isset($data[$k]) && is_numeric($data[$k]) ? (int) $data[$k] : null;
+
+        $supplierNiu = $str('supplier_niu');
+        $clientNiu = $str('client_niu');
+        $date = $str('date');
+        $exemption = $str('exemption');
+
+        return new self(
+            supplierNiu: $supplierNiu !== null ? NiuNumber::tryFrom($supplierNiu) : null,
+            clientNiu: $clientNiu !== null ? NiuNumber::tryFrom($clientNiu) : null,
+            date: $date !== null ? CarbonImmutable::parse($date)->startOfDay() : null,
+            supplierName: $str('supplier_name'),
+            supplierAddress: $str('supplier_address'),
+            supplierRccm: $str('supplier_rccm'),
+            clientIdentity: $str('client_identity'),
+            description: $str('description'),
+            htAmount: $int('ht_amount'),
+            vatRate: isset($data['vat_rate']) && is_numeric($data['vat_rate']) ? (float) $data['vat_rate'] : null,
+            vatAmount: $int('vat_amount'),
+            ttcAmount: $int('ttc_amount'),
+            exemption: $exemption !== null ? ExemptionMention::tryFrom($exemption) : null,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array

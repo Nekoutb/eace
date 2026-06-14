@@ -18,8 +18,12 @@ final class InvoiceConformityChecker
 
     private const AMOUNT_TOLERANCE = 2; // FCFA, absorbs rounding
 
-    public function check(InvoiceData $invoice, ?NiuNumber $expectedSupplierNiu = null): InvoiceConformityResult
-    {
+    public function check(
+        InvoiceData $invoice,
+        ?NiuNumber $expectedSupplierNiu = null,
+        ?NiuNumber $expectedClientNiu = null,
+        ?string $expectedClientName = null,
+    ): InvoiceConformityResult {
         $findings = [
             // Conditions de forme — every mandatory mention of art. 150 present.
             $this->forme('supplier_niu', $invoice->supplierNiu !== null),
@@ -44,6 +48,21 @@ final class InvoiceConformityChecker
             $findings[] = $this->fond(
                 'niu_match',
                 $invoice->supplierNiu !== null && $invoice->supplierNiu->equals($expectedSupplierNiu),
+            );
+        }
+
+        // The buyer the invoice names must be us (the organisation profile).
+        if ($expectedClientNiu !== null) {
+            $findings[] = $this->fond(
+                'client_niu_match',
+                $invoice->clientNiu !== null && $invoice->clientNiu->equals($expectedClientNiu),
+            );
+        }
+
+        if ($this->filled($expectedClientName)) {
+            $findings[] = $this->fond(
+                'client_identity_match',
+                $this->nameMatches($invoice->clientIdentity, $expectedClientName),
             );
         }
 
@@ -95,6 +114,24 @@ final class InvoiceConformityChecker
     private function filled(?string $value): bool
     {
         return $value !== null && trim($value) !== '';
+    }
+
+    /**
+     * The invoice's client identity carries our organisation's name. Tolerant:
+     * case-insensitive, whitespace-collapsed, and matches if either string
+     * contains the other (the invoice often adds the legal form or an address).
+     */
+    private function nameMatches(?string $invoiceClient, ?string $expectedName): bool
+    {
+        if (! $this->filled($invoiceClient) || ! $this->filled($expectedName)) {
+            return false;
+        }
+
+        $normalise = static fn (string $s): string => mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $s)));
+        $a = $normalise((string) $invoiceClient);
+        $b = $normalise((string) $expectedName);
+
+        return str_contains($a, $b) || str_contains($b, $a);
     }
 
     private function forme(string $key, bool $passed): ConformityFinding

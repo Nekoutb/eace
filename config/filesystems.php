@@ -47,6 +47,18 @@ return [
             'report' => false,
         ],
 
+        // Livewire temporary uploads. Deliberately NOT listed in
+        // tenancy.filesystem.disks, so it stays a single CENTRAL location: the
+        // root string is captured at boot (central context) and never re-rooted
+        // per tenant. Without this, temp uploads land on the tenant-scoped
+        // `local` disk and validation's getSize() throws UnableToRetrieveMetadata.
+        'livewire-tmp' => [
+            'driver' => 'local',
+            'root' => storage_path('app/livewire-tmp'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -5,6 +5,7 @@ return [
         'verifications' => 'Verifications',
         'compliance_engine' => 'Compliance Engine',
         'certificates' => 'Tax certificates (ACF)',
+        'settings' => 'Settings',
     ],
 
     'verdict' => [
@@ -128,6 +129,8 @@ return [
         'ttc_calc' => 'TTC = HT + VAT',
         'vat_rate' => 'Legal VAT rate (19.25%)',
         'niu_match' => 'Supplier NIU matches',
+        'client_niu_match' => 'Client NIU matches our profile',
+        'client_identity_match' => 'Client name matches our profile',
     ],
 
     'ui' => [
@@ -210,6 +213,17 @@ return [
         'no_discrepancies' => 'All checks passed — no discrepancy found.',
         'no_results_title' => 'No checks run yet',
         'no_results_body' => 'Choose a phase, fill in the form and run the checks. The results and any discrepancies appear here.',
+        'scan_extract' => 'Read from the scanned invoice',
+        'notif_acf_read' => 'ACF read — NIU filled in',
+        'notif_invoice_scanned' => 'Invoice scanned — fields filled in',
+        'notif_settings_saved' => 'Settings saved',
+        'settings_intro' => 'Your organisation as the buyer. Each scanned supplier invoice is checked against this name and NIU (the client mentions required by CGI art. 150).',
+        'entity_name' => 'Your entity name (business name)',
+        'entity_name_ph' => 'e.g. MA SOCIÉTÉ SARL',
+        'entity_name_help' => 'The exact business name that must appear as the client on suppliers’ invoices.',
+        'entity_niu' => 'Your NIU',
+        'entity_niu_help' => '14 characters: P/M + 12 digits + a letter. Checked against the client NIU on each invoice.',
+        'save' => 'Save',
         'niu_help' => '14 characters: P (individual) or M (legal entity) + 12 digits + a letter.',
         'acf_help' => 'Import the ACF: the NIU and reference are extracted automatically.',
         'niu_if_no_acf_help' => 'Leave empty if you import an ACF above.',

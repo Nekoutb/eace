@@ -131,7 +131,7 @@ return [
     */
 
     'temporary_file_upload' => [
-        'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK'), // Example: 'local', 's3'             | Default: 'default'
+        'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 'livewire-tmp'), // central disk — see config/filesystems.php
         'rules' => null,                                      // Example: ['file', 'mimes:png,jpg'] | Default: ['required', 'file', 'max:12288'] (12MB)
         'directory' => null,                                  // Example: 'tmp'                     | Default: 'livewire-tmp'
         // Session + tenancy aware: without these the upload route runs in central

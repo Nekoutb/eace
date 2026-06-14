@@ -12,6 +12,7 @@ use App\Domain\Niu\NiuNumber;
 use App\Domain\Risk\RiskEngine;
 use App\Domain\Risk\VerificationContext;
 use App\Models\AcfCertificate;
+use App\Models\OrganizationProfile;
 use App\Models\ThirdParty;
 use App\Models\Verification;
 use App\Services\Registry\NiuRegistryService;
@@ -68,10 +69,20 @@ final class VerificationService
         ));
 
         // At recording, a submitted invoice must also satisfy art. 150
-        // (conditions de forme et de fond) for the invoice to be accepted.
-        $invoiceConformity = $request->invoiceData !== null
-            ? $this->conformity->check($request->invoiceData, $niu)
-            : null;
+        // (conditions de forme et de fond) for the invoice to be accepted —
+        // including that the buyer it names is us (the organisation profile).
+        $invoiceConformity = null;
+        if ($request->invoiceData !== null) {
+            $profile = OrganizationProfile::current();
+            $expectedClientNiu = filled($profile->entity_niu) ? NiuNumber::tryFrom((string) $profile->entity_niu) : null;
+
+            $invoiceConformity = $this->conformity->check(
+                $request->invoiceData,
+                $niu,
+                $expectedClientNiu,
+                $profile->entity_name,
+            );
+        }
 
         $invoiceConform = $invoiceConformity === null || $invoiceConformity->conform;
 

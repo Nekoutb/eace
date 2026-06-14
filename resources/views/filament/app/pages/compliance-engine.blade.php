@@ -94,6 +94,15 @@
             .niu-drop__hint{display:block;font-size:.76rem;color:var(--ink-soft);overflow-wrap:anywhere}
             .niu-file{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0}
 
+            /* Scan extract panel */
+            .niu-extract{padding:.9rem 1rem;border-radius:14px;background:rgba(220,252,231,.5);border:1px solid var(--g200)}
+            .niu-extract__h{display:flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:700;color:var(--g800);margin-bottom:.6rem}
+            .niu-extract__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+            .niu-extract__cell{padding:.4rem .55rem;border-radius:9px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+            .niu-extract__k{display:block;font-size:.66rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em}
+            .niu-extract__v{font-size:.82rem;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+            @media (max-width:640px){.niu-extract__grid{grid-template-columns:1fr 1fr}}
+
             /* Switch */
             .niu-switch{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
             .niu-switch input{position:absolute;opacity:0;width:0;height:0}
@@ -276,6 +285,30 @@
                     </label>
                     @error('invoiceUpload') <p class="niu-err niu-field--full">{{ $message }}</p> @enderror
 
+                    @if ($extracted)
+                        <div class="niu-extract niu-field--full">
+                            <div class="niu-extract__h">@svg('heroicon-o-sparkles', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.scan_extract') }}</div>
+                            <div class="niu-extract__grid">
+                                @foreach ([
+                                    'supplier_niu' => __('app.conformity.supplier_niu'),
+                                    'supplier_name' => __('app.conformity.supplier_name'),
+                                    'supplier_rccm' => __('app.conformity.supplier_rccm'),
+                                    'client_niu' => __('app.conformity.client_niu'),
+                                    'client_identity' => __('app.conformity.client_identity'),
+                                    'date' => __('app.conformity.date'),
+                                    'ht_amount' => __('app.conformity.ht'),
+                                    'vat_amount' => __('app.conformity.vat'),
+                                    'ttc_amount' => __('app.conformity.ttc'),
+                                ] as $key => $label)
+                                    <div class="niu-extract__cell">
+                                        <span class="niu-extract__k">{{ $label }}</span>
+                                        <span class="niu-extract__v niu-mono">{{ filled($extracted[$key] ?? null) ? $extracted[$key] : '—' }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="niu-field niu-field--full">
                         <label class="niu-label" for="niu-raw">{{ __('app.ui.niu_if_no_acf') }}</label>
                         <input id="niu-raw" type="text" wire:model="rawInput" placeholder="P058712345678X" autocomplete="off" class="niu-input niu-input--mono">
@@ -292,24 +325,6 @@
                     <div class="niu-field">
                         <label class="niu-label" for="niu-name">{{ __('app.ui.invoice_name') }}</label>
                         <input id="niu-name" type="text" wire:model="invoiceName" class="niu-input">
-                    </div>
-
-                    <div class="niu-field">
-                        <label class="niu-label" for="niu-pay">{{ __('app.ui.payment_method') }}</label>
-                        <select id="niu-pay" wire:model="paymentMethod" class="niu-input">
-                            <option value="">{{ __('app.ui.select_placeholder') }}</option>
-                            @foreach (\App\Domain\Risk\PaymentMethod::cases() as $method)
-                                <option value="{{ $method->value }}">{{ $method->label() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="niu-field" style="justify-content:flex-end">
-                        <label class="niu-switch">
-                            <input type="checkbox" wire:model="vatCharged">
-                            <span class="niu-switch__track"><span class="niu-switch__thumb"></span></span>
-                            <span class="niu-switch__label">{{ __('app.ui.vat_charged') }}</span>
-                        </label>
                     </div>
                 </div>
             @else
