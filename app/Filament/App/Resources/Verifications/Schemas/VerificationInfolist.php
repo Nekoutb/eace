@@ -59,6 +59,26 @@ class VerificationInfolist
                                 ->columnSpanFull(),
                         ]),
                 ]),
+            Section::make(__('app.ui.section_invoice_conformity'))
+                ->visible(fn ($record): bool => filled($record->invoice_checks))
+                ->components([
+                    RepeatableEntry::make('invoice_checks')
+                        ->hiddenLabel()
+                        ->columns(3)
+                        ->schema([
+                            IconEntry::make('passed')
+                                ->label('')
+                                ->boolean(),
+                            TextEntry::make('label')
+                                ->label(__('app.ui.check_col'))
+                                ->weight(FontWeight::Medium),
+                            TextEntry::make('type')
+                                ->hiddenLabel()
+                                ->badge()
+                                ->color('gray')
+                                ->formatStateUsing(fn (string $state): string => (string) __('app.conformity.type_'.$state)),
+                        ]),
+                ]),
             Section::make(__('app.ui.section_verdict_exposure'))
                 ->columns(2)
                 ->components([

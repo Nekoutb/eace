@@ -23,7 +23,7 @@ Status legend: ⬜ Pending · 🔨 In progress · 🚀 Deployed — awaiting app
 | 3.1 | Hotfix: upload-route tenancy | Uploading an ACF no longer bounces to login (Livewire upload route made session + tenant aware) | — | ✅ Approved | ✅ |
 | 4 | Bilingual EN/FR | Every screen in English or French, browser-auto-detected with a header switcher (remembered); all new UI bilingual from here | — | ✅ Approved | ✅ |
 | 5 | "Compliance Engine" + phase gate | Rename Attestations → **Compliance Engine**; entering it prompts **Invoice recording** vs **Invoice settlement** first | — | 🚀 Deployed — awaiting approval | ⬜ |
-| 6 | Invoice conformity (conditions de forme et de fond) | At recording, submit the scanned invoice → **OCR auto-extracts** the art. 150 fields → forme (mentions present) + fond (HT×taux=TVA, HT+TVA=TTC, NIU match) checks, **blocking** (strict) | — | ⬜ Pending | ⬜ |
+| 6 | Invoice conformity (conditions de forme et de fond) | At recording, submit the scanned invoice → **OCR auto-extracts** the art. 150 fields → forme (mentions present) + fond (HT×taux=TVA, HT+TVA=TTC, NIU match) checks, **blocking** (strict) | *(optional)* Azure key + 1 sample invoice to validate the live OCR mapping | 🚀 Deployed — awaiting approval | ⬜ |
 | 7 | Monthly file ingestion (NIU existence) | Import a monthly **FICHIER xlsx** → real offline existence + régime/centre lookup | **1 monthly FICHIER xlsx** | ⛔ Blocked | ⬜ |
 | 8 | Live status connector | Real **NIU status** from the consultation portal (ViewState POST), tested on fixtures | **1 NIU-search result page (HTML)** | ⛔ Blocked | ⬜ |
 | 9 | Authenticity connector | Real **document authenticity** via Browsershot rendering the Harmony2 page | **1 rendered Harmony2 page** + puppeteer | ⛔ Blocked | ⬜ |
@@ -39,5 +39,5 @@ Status legend: ⬜ Pending · 🔨 In progress · 🚀 Deployed — awaiting app
 ## Notes
 
 - "Deploy" = a local preview on port 9000 you can click through. A real cloud/staging deploy comes once the core is approved.
-- Deploys 3.1, 4, 5, 6, 10, 11 are **unblocked** — buildable now.
+- Deploys 10, 11 are **unblocked** — buildable now. Deploy 6 ships with a built-in fake OCR reader so it is fully testable today; the real Azure reader switches on automatically once `AZURE_DI_ENDPOINT` + `AZURE_DI_KEY` are set in `.env`.
 - Deploys 7, 8, 9 wire the three real DGI sources and need one captured sample each (saved into the repo) so tests never hit the live portals.

@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Risk\PaymentMethod;
 use App\Filament\App\Resources\Verifications\VerificationResource;
 use App\Services\Acf\AcfIngestionService;
@@ -66,6 +67,16 @@ class ComplianceEngine extends Page
                     ->directory('acf')
                     ->storeFiles(true)
                     ->previewable(false),
+                FileUpload::make('invoice_pdf')
+                    ->label(__('app.ui.invoice_file'))
+                    ->helperText(__('app.ui.invoice_file_help'))
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                    ->maxSize(10 * 1024)
+                    ->disk('local')
+                    ->visibility('private')
+                    ->directory('invoices')
+                    ->storeFiles(true)
+                    ->previewable(false),
                 TextInput::make('raw_input')
                     ->label(__('app.ui.niu_if_no_acf'))
                     ->placeholder('P058712345678X')
@@ -115,6 +126,17 @@ class ComplianceEngine extends Page
                     return;
                 }
 
+                $invoiceData = null;
+                if (filled($data['invoice_pdf'] ?? null)) {
+                    try {
+                        $invoiceData = app(InvoiceReader::class)->read((string) $data['invoice_pdf'], 'local');
+                    } catch (\Throwable $e) {
+                        Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
+
+                        return;
+                    }
+                }
+
                 $verification = app(VerificationService::class)->verify(new VerifyRequest(
                     rawInput: $rawInput,
                     stage: VerificationStage::Recording,
@@ -123,6 +145,7 @@ class ComplianceEngine extends Page
                     invoiceName: filled($data['invoice_name'] ?? null) ? (string) $data['invoice_name'] : null,
                     vatCharged: (bool) ($data['vat_charged'] ?? false),
                     paymentMethod: filled($data['payment_method'] ?? null) ? PaymentMethod::from($data['payment_method']) : null,
+                    invoiceData: $invoiceData,
                     checkedBy: auth()->id(),
                 ));
 

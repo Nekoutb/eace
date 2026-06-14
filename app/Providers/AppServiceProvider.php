@@ -3,9 +3,12 @@
 namespace App\Providers;
 
 use App\Domain\Approval\FourCheckEvaluator;
+use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
 use App\Http\Middleware\InitializeTenancyForLivewire;
+use App\Services\Invoice\AzureInvoiceReader;
+use App\Services\Invoice\FakeInvoiceReader;
 use App\Services\Registry\FakeRegistryResolver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +29,16 @@ class AppServiceProvider extends ServiceProvider
 
         // The four-check approval evaluator (strict accept/reject).
         $this->app->singleton(FourCheckEvaluator::class, fn () => FourCheckEvaluator::default());
+
+        // Invoice OCR: the real Azure reader when configured, else the fake one.
+        $this->app->bind(InvoiceReader::class, function () {
+            $endpoint = config('services.azure_di.endpoint');
+            $key = config('services.azure_di.key');
+
+            return (filled($endpoint) && filled($key))
+                ? new AzureInvoiceReader((string) $endpoint, (string) $key)
+                : new FakeInvoiceReader;
+        });
     }
 
     /**
