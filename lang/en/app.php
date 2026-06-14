@@ -30,6 +30,10 @@ return [
         'status_pending' => 'In progress',
         'status_failed' => 'Failed',
         'download' => 'Download',
+        'export' => 'Export evidence',
+        'archive' => 'Archive (free space)',
+        'archived' => 'Archived',
+        'archive_confirm' => 'This deletes the scanned PDFs to free space, keeping a tamper-proof manifest (facts + SHA-256 hashes). Export the evidence first if you want to keep the files — this cannot be undone.',
     ],
 
     'verdict' => [

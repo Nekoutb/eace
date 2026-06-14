@@ -30,6 +30,10 @@ return [
         'status_pending' => 'En cours',
         'status_failed' => 'Échec',
         'download' => 'Télécharger',
+        'export' => 'Exporter les preuves',
+        'archive' => 'Archiver (libérer l’espace)',
+        'archived' => 'Archivé',
+        'archive_confirm' => 'Ceci supprime les PDF scannés pour libérer de l’espace, en conservant un manifeste inviolable (faits + empreintes SHA-256). Exportez les preuves d’abord si vous voulez garder les fichiers — action irréversible.',
     ],
 
     'verdict' => [

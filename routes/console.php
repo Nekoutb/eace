@@ -13,3 +13,8 @@ Schedule::command('taxpayer-file:fetch')
     ->weeklyOn(1, '03:00') // Mondays at 03:00
     ->withoutOverlapping()
     ->runInBackground();
+
+// Retention: purge expired audit evidence monthly (no-op unless NIU_RETENTION_MONTHS is set).
+Schedule::command('audit:archive-expired')
+    ->monthlyOn(1, '04:00')
+    ->withoutOverlapping();

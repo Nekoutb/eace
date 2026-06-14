@@ -230,6 +230,7 @@ class ComplianceEngine extends Page
             invoiceAmountXaf: filled($this->invoiceAmount) ? (int) $this->invoiceAmount : null,
             invoiceName: filled($this->invoiceName) ? (string) $this->invoiceName : null,
             invoiceData: $invoiceData,
+            invoiceFilePath: $this->invoiceStoredPath,
             checkedBy: auth()->id(),
         ));
 

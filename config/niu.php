@@ -7,4 +7,13 @@ return [
      * A setting, not a constant — tenants may tighten it later.
      */
     'acf_validity_buffer_days' => (int) env('NIU_ACF_BUFFER_DAYS', 5),
+
+    /*
+     * Audit-log retention. After this many months a verification's bulky evidence
+     * (the scanned PDFs) is purged to free space, keeping only the tamper-proof
+     * manifest. The scheduled job only runs when this is set — null disables the
+     * automatic purge, so evidence is never deleted until you opt in (export it
+     * first via the Audit Log). Manual export + archive always work in the UI.
+     */
+    'retention_months' => env('NIU_RETENTION_MONTHS') !== null ? (int) env('NIU_RETENTION_MONTHS') : null,
 ];

@@ -67,29 +67,38 @@ final class TaxpayerFileIngestionService
         $buffer = [];
 
         foreach ($reader->getSheetIterator() as $sheet) {
-            $first = true;
+            /** @var array<string, int> $columns header name => column index */
+            $columns = [];
+            $header = true;
+
             foreach ($sheet->getRowIterator() as $row) {
-                if ($first) {
-                    $first = false; // header
+                $cells = $row->toArray();
+
+                if ($header) {
+                    $header = false;
+                    foreach ($cells as $index => $name) {
+                        $key = $this->headerKey($name);
+                        if ($key !== '') {
+                            $columns[$key] = $index;
+                        }
+                    }
 
                     continue;
                 }
 
-                $cells = $row->toArray();
-                $niu = $this->str($cells[3] ?? null);
-
+                $niu = $this->cell($cells, $columns, 'NIU');
                 if ($niu === null) {
                     continue;
                 }
 
                 $buffer[] = [
                     'niu' => $niu,
-                    'raison_sociale' => $this->str($cells[1] ?? null),
-                    'sigle' => $this->str($cells[2] ?? null),
-                    'activite' => $this->str($cells[4] ?? null),
-                    'regime' => $this->str($cells[5] ?? null),
-                    'cri' => $this->str($cells[6] ?? null),
-                    'centre' => $this->str($cells[7] ?? null),
+                    'raison_sociale' => $this->cell($cells, $columns, 'RAISON_SOCIALE'),
+                    'sigle' => $this->cell($cells, $columns, 'SIGLE'),
+                    'activite' => $this->cell($cells, $columns, 'ACTIVITE_PRINCIPALE'),
+                    'regime' => $this->cell($cells, $columns, 'REGIME'),
+                    'cri' => $this->cell($cells, $columns, 'CRI'),
+                    'centre' => $this->cell($cells, $columns, 'CENTRE_DE_RATTACHEMENT'),
                     'taxpayer_file_extraction_id' => $extractionId,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -112,6 +121,34 @@ final class TaxpayerFileIngestionService
         $reader->close();
 
         return $count;
+    }
+
+    /**
+     * Read a cell by HEADER NAME, not fixed index — the monthly archive (8 cols)
+     * and the live "Exporter" list (12 cols, with TELEPHONE/VILLE/…) order their
+     * columns differently.
+     *
+     * @param  array<int, mixed>  $cells
+     * @param  array<string, int>  $columns
+     */
+    private function cell(array $cells, array $columns, string $header): ?string
+    {
+        $index = $columns[$this->headerKey($header)] ?? null;
+
+        return $index !== null ? $this->str($cells[$index] ?? null) : null;
+    }
+
+    /** Normalise a header to A–Z/0–9/underscore for resilient matching. */
+    private function headerKey(mixed $name): string
+    {
+        if (! is_scalar($name)) {
+            return '';
+        }
+
+        $key = mb_strtoupper(trim((string) $name));
+        $key = (string) preg_replace('/\s+/u', '_', $key);
+
+        return (string) preg_replace('/[^A-Z0-9_]/u', '', $key);
     }
 
     /**

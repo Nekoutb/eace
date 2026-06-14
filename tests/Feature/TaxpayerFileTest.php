@@ -74,7 +74,7 @@ it('resolves a NIU present in the file as active and on the active file', functi
         ->and($record->status)->toBe(FiscalisStatus::Actif)
         ->and($record->onActiveFile)->toBeTrue()
         ->and($record->taxpayerName)->toBe('NEMECHI')
-        ->and($record->source)->toBe('FICHIER MARS 2026');
+        ->and($record->source)->toBe('MARS 2026');
 });
 
 it('resolves a NIU absent from the file to null (introuvable)', function () {

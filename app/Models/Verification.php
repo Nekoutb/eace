@@ -10,6 +10,7 @@ use App\Domain\Niu\Verdict;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Tenant-owned. The record of one NIU verification: the stage it ran at, the
@@ -27,6 +28,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array<int, array<string, mixed>>|null $invoice_checks
  * @property array<int, array<string, mixed>>|null $triggered_rules
  * @property int $exposure_xaf
+ * @property ?string $invoice_file_path
+ * @property array<string, mixed>|null $manifest
+ * @property ?Carbon $archived_at
  */
 class Verification extends Model
 {
@@ -43,7 +47,14 @@ class Verification extends Model
             'invoice_checks' => 'array',
             'triggered_rules' => 'array',
             'exposure_xaf' => 'integer',
+            'manifest' => 'array',
+            'archived_at' => 'datetime',
         ];
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 
     /**

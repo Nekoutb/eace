@@ -50,7 +50,7 @@ final class TaxpayerFileResolver implements RegistryResolver
     {
         if (! $this->sourceLoaded) {
             $extraction = TaxpayerFileExtraction::current();
-            $this->source = $extraction !== null ? 'FICHIER '.$extraction->period_label : 'taxpayer_file';
+            $this->source = $extraction !== null ? $extraction->period_label : 'taxpayer_file';
             $this->sourceLoaded = true;
         }
 

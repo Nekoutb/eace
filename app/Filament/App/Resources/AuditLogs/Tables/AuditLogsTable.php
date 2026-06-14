@@ -4,10 +4,14 @@ namespace App\Filament\App\Resources\AuditLogs\Tables;
 
 use App\Domain\Approval\ApprovalDecision;
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceArchiveService;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontFamily;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AuditLogsTable
 {
@@ -47,9 +51,29 @@ class AuditLogsTable
                     ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                     ->color(fn (ApprovalDecision $state): string => $state->color())
                     ->icon(fn (ApprovalDecision $state): string => $state->icon()),
+                TextColumn::make('archived_at')
+                    ->label(__('app.audit.archived'))
+                    ->dateTime('d/m/Y')
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->badge()
+                    ->color('gray'),
             ])
             ->recordActions([
                 ViewAction::make(),
+                Action::make('export')
+                    ->label(__('app.audit.export'))
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->action(fn (Verification $record): BinaryFileResponse => response()
+                        ->download(app(EvidenceArchiveService::class)->exportZip($record), 'evidence-'.($record->niu ?? $record->getKey()).'.zip')
+                        ->deleteFileAfterSend()),
+                Action::make('archive')
+                    ->label(__('app.audit.archive'))
+                    ->icon(Heroicon::OutlinedArchiveBoxArrowDown)
+                    ->color('warning')
+                    ->visible(fn (Verification $record): bool => ! $record->isArchived())
+                    ->requiresConfirmation()
+                    ->modalDescription(__('app.audit.archive_confirm'))
+                    ->action(fn (Verification $record) => app(EvidenceArchiveService::class)->archive($record)),
             ]);
     }
 

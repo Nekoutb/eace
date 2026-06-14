@@ -104,6 +104,7 @@ final class VerificationService
             'checks' => $approval->checksToArray(),
             'invoice_data' => $request->invoiceData?->toArray(),
             'invoice_checks' => $invoiceConformity?->toArray(),
+            'invoice_file_path' => $request->invoiceFilePath,
             'triggered_rules' => $result->findingsToArray(),
             'exposure_xaf' => $result->totalExposureXaf,
             'checked_by' => $request->checkedBy,

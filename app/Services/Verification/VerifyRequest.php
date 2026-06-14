@@ -30,6 +30,7 @@ final readonly class VerifyRequest
         public bool $foreignSupplier = false,
         public bool $hasValidAcf = false,
         public ?InvoiceData $invoiceData = null,
+        public ?string $invoiceFilePath = null,
         public ?int $checkedBy = null,
     ) {}
 }
