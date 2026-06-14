@@ -78,7 +78,7 @@ describe('entity type', function () {
     it('detects a personne morale', function () {
         $niu = NiuNumber::fromString('M058712345678X');
         expect($niu->isPersonneMorale())->toBeTrue()
-            ->and($niu->entityType()->label())->toBe('Personne morale');
+            ->and($niu->entityType()->label())->toBe((string) __('app.entity_type.morale'));
     });
 });
 

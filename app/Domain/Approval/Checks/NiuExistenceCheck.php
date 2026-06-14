@@ -20,18 +20,18 @@ final class NiuExistenceCheck implements Check
         if ($context->niu === null) {
             return CheckResult::fail(
                 CheckKey::NiuExistence,
-                'NIU absent ou de format invalide — impossible à rechercher.',
+                (string) __('app.check.msg.existence_invalid'),
             );
         }
 
         return $context->foundInFile
             ? CheckResult::pass(
                 CheckKey::NiuExistence,
-                'NIU présent au fichier national des contribuables.',
+                (string) __('app.check.msg.existence_present'),
             )
             : CheckResult::fail(
                 CheckKey::NiuExistence,
-                'NIU introuvable au fichier : probablement fictif. Refusez la transaction.',
+                (string) __('app.check.msg.existence_absent'),
             );
     }
 }

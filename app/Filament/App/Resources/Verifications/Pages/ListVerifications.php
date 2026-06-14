@@ -32,21 +32,17 @@ class ListVerifications extends ListRecords
         ];
     }
 
-    /**
-     * Stage A — Invoice recording: one vendor, import the ACF (or type the NIU),
-     * run the four checks at the recording stage.
-     */
     private function recordingAction(): Action
     {
         return Action::make('record')
-            ->label('Enregistrer une facture')
+            ->label(__('app.ui.record_invoice'))
             ->icon('heroicon-o-document-plus')
-            ->modalHeading('Enregistrement facture — un fournisseur')
-            ->modalSubmitActionLabel('Vérifier')
+            ->modalHeading(__('app.ui.record_invoice'))
+            ->modalSubmitActionLabel(__('app.ui.verify'))
             ->schema([
                 FileUpload::make('acf_pdf')
-                    ->label('Attestation de Conformité Fiscale (PDF)')
-                    ->helperText('Importez l’ACF : le NIU et la référence en sont extraits automatiquement.')
+                    ->label(__('app.ui.acf_pdf'))
+                    ->helperText(__('app.ui.acf_help'))
                     ->acceptedFileTypes(['application/pdf'])
                     ->maxSize(10 * 1024)
                     ->disk('local')
@@ -55,22 +51,22 @@ class ListVerifications extends ListRecords
                     ->storeFiles(true)
                     ->previewable(false),
                 TextInput::make('raw_input')
-                    ->label('NIU (si pas d’ACF)')
+                    ->label(__('app.ui.niu_if_no_acf'))
                     ->placeholder('P058712345678X')
                     ->extraInputAttributes(['style' => 'font-family: monospace; letter-spacing: 0.05em;'])
-                    ->helperText('Laissez vide si vous importez une ACF ci-dessus.'),
+                    ->helperText(__('app.ui.niu_if_no_acf_help')),
                 TextInput::make('invoice_amount_xaf')
-                    ->label('Montant de la facture (FCFA)')
+                    ->label(__('app.ui.invoice_amount'))
                     ->numeric()
                     ->minValue(0),
                 TextInput::make('invoice_name')
-                    ->label('Nom / raison sociale sur la facture'),
+                    ->label(__('app.ui.invoice_name')),
                 Select::make('payment_method')
-                    ->label('Mode de paiement')
+                    ->label(__('app.ui.payment_method'))
                     ->options(collect(PaymentMethod::cases())
                         ->mapWithKeys(fn (PaymentMethod $m): array => [$m->value => $m->label()])
                         ->all()),
-                Toggle::make('vat_charged')->label('TVA facturée'),
+                Toggle::make('vat_charged')->label(__('app.ui.vat_charged')),
             ])
             ->action(function (array $data) {
                 $acfReference = null;
@@ -84,7 +80,7 @@ class ListVerifications extends ListRecords
                             uploadedBy: auth()->id(),
                         );
                     } catch (UnreadableAcfException $e) {
-                        Notification::make()->title('ACF illisible')->body($e->getMessage())->danger()->send();
+                        Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
 
                         return;
                     }
@@ -95,8 +91,8 @@ class ListVerifications extends ListRecords
 
                 if (blank($rawInput)) {
                     Notification::make()
-                        ->title('NIU manquant')
-                        ->body('Importez une ACF ou saisissez un NIU.')
+                        ->title(__('app.ui.notif_niu_missing'))
+                        ->body(__('app.ui.notif_niu_missing_body'))
                         ->warning()
                         ->send();
 
@@ -115,38 +111,37 @@ class ListVerifications extends ListRecords
                 ));
 
                 $notification = Notification::make()->title($verification->approval?->label() ?? $verification->verdict->label());
-                $verification->approval === ApprovalDecision::Accepted ? $notification->success() : $notification->danger();
+                $verification->approval === ApprovalDecision::Accepted
+                    ? $notification->success()
+                    : $notification->danger();
                 $notification->send();
 
                 return redirect(VerificationResource::getUrl('view', ['record' => $verification]));
             });
     }
 
-    /**
-     * Stage B — Invoice settlement: a batch of NIUs re-checked at payment time.
-     */
     private function settlementAction(): Action
     {
         return Action::make('settle')
-            ->label('Vérifier un lot (règlement)')
+            ->label(__('app.ui.settle_batch'))
             ->icon('heroicon-o-queue-list')
             ->color('gray')
-            ->modalHeading('Règlement facture — lot de NIU')
-            ->modalSubmitActionLabel('Vérifier le lot')
+            ->modalHeading(__('app.ui.settle_batch'))
+            ->modalSubmitActionLabel(__('app.ui.verify_batch'))
             ->schema([
                 Textarea::make('nius')
-                    ->label('NIU à régler')
+                    ->label(__('app.ui.niu_batch'))
                     ->required()
                     ->rows(8)
                     ->extraInputAttributes(['style' => 'font-family: monospace;'])
-                    ->helperText('Un NIU par ligne (ou séparés par des virgules).'),
+                    ->helperText(__('app.ui.batch_help')),
             ])
             ->action(function (array $data) {
                 $batch = app(BatchVerificationService::class);
                 $nius = $batch->parse((string) $data['nius']);
 
                 if ($nius === []) {
-                    Notification::make()->title('Aucun NIU valide fourni')->warning()->send();
+                    Notification::make()->title(__('app.ui.notif_no_niu'))->warning()->send();
 
                     return;
                 }
@@ -155,8 +150,8 @@ class ListVerifications extends ListRecords
                 $summary = $batch->summarise($results);
 
                 Notification::make()
-                    ->title("Lot vérifié : {$summary['accepted']} acceptés / {$summary['rejected']} refusés")
-                    ->body("{$summary['total']} NIU traités au règlement.")
+                    ->title(__('app.ui.notif_batch_done', ['accepted' => $summary['accepted'], 'rejected' => $summary['rejected']]))
+                    ->body(__('app.ui.notif_batch_body', ['total' => $summary['total']]))
                     ->status($summary['rejected'] > 0 ? 'warning' : 'success')
                     ->send();
             });

@@ -18,12 +18,6 @@ enum PaymentMethod: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Cash => 'Espèces',
-            self::Transfer => 'Virement',
-            self::MobileMoney => 'Mobile Money',
-            self::Cheque => 'Chèque',
-            self::Other => 'Autre',
-        };
+        return (string) __('app.payment_method.'.$this->value);
     }
 }

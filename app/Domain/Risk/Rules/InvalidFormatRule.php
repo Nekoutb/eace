@@ -29,10 +29,9 @@ final class InvalidFormatRule implements RiskRule
 
         return new RuleFinding(
             code: 'R1',
-            title: 'NIU absent ou de format invalide',
+            title: (string) __('rules.r1.title'),
             article: 'CGI art. L 101 & L 102',
-            message: 'Le NIU est absent ou mal formé : la TVA portée sur la facture '
-                .'n’est pas déductible et la facture est réputée incomplète.',
+            message: (string) __('rules.r1.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $exposure,
         );

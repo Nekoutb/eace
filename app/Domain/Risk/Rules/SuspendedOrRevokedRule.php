@@ -32,13 +32,9 @@ final class SuspendedOrRevokedRule implements RiskRule
 
         return new RuleFinding(
             code: 'R3',
-            title: $isRevoked ? 'NIU radié' : 'NIU suspendu',
+            title: (string) __($isRevoked ? 'rules.r3.title_revoked' : 'rules.r3.title_suspended'),
             article: 'CGI art. 143',
-            message: $isRevoked
-                ? 'Le NIU est radié : toute facture émise après la radiation est nulle '
-                    .'fiscalement et la TVA non déductible.'
-                : 'Le NIU est suspendu : n’engagez aucun nouveau paiement tant que le '
-                    .'statut n’est pas redevenu « Actif ».',
+            message: (string) __($isRevoked ? 'rules.r3.message_revoked' : 'rules.r3.message_suspended'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $this->calc->rejectedInvoiceExposure($context->invoiceAmountXaf),
         );

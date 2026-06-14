@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
+use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -11,6 +12,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -32,6 +34,10 @@ class AppPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandName('NIU Shield')
             ->colors(BrandColors::palette())
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.locale-switcher')->render(),
+            )
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
             ->pages([
@@ -52,6 +58,7 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SetLocale::class,
                 // The app panel is tenant-only: identify the tenant by domain and
                 // block access from the central domains (which the admin panel owns).
                 InitializeTenancyByDomain::class,

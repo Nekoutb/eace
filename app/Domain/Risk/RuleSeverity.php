@@ -16,11 +16,11 @@ enum RuleSeverity: int
 
     public function label(): string
     {
-        return match ($this) {
-            self::Info => 'Information',
-            self::Warning => 'Avertissement',
-            self::Blocking => 'Bloquant',
-        };
+        return (string) __('app.severity.'.match ($this) {
+            self::Info => 'info',
+            self::Warning => 'warning',
+            self::Blocking => 'blocking',
+        });
     }
 
     public function color(): string

@@ -19,13 +19,7 @@ enum DocumentType: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Acf => 'Attestation de Conformité Fiscale',
-            self::Rccm => 'RCCM',
-            self::Cnps => 'Attestation CNPS',
-            self::Rib => 'RIB',
-            self::Other => 'Autre',
-        };
+        return (string) __('app.document_type.'.$this->value);
     }
 
     public function expires(): bool

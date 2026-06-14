@@ -31,10 +31,9 @@ final class RegimeMismatchRule implements RiskRule
 
         return new RuleFinding(
             code: 'R5',
-            title: 'Régime fiscal incompatible avec la TVA',
+            title: (string) __('rules.r5.title'),
             article: 'CGI art. 143',
-            message: 'La facture porte de la TVA alors que le fournisseur n’est pas au '
-                .'régime du réel : cette TVA n’est pas déductible.',
+            message: (string) __('rules.r5.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $vat + $this->calc->badFaithMajoration($vat),
         );

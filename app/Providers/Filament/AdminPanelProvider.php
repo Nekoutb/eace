@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
+use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -11,6 +12,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -31,6 +33,10 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandName('NIU Shield — Administration')
             ->colors(BrandColors::palette())
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.locale-switcher')->render(),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -51,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SetLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

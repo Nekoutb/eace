@@ -25,11 +25,9 @@ final class AcfRequiredRule implements RiskRule
 
         return new RuleFinding(
             code: 'R10',
-            title: 'ACF en cours de validité requise',
+            title: (string) __('rules.r10.title'),
             article: 'CGI art. L 94 ter / quater',
-            message: 'Cette opération (règlement public, export ou transfert à l’étranger) '
-                .'exige une Attestation de Conformité Fiscale en cours de validité. '
-                .'Son absence entraîne l’irrecevabilité.',
+            message: (string) __('rules.r10.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: 0,
         );

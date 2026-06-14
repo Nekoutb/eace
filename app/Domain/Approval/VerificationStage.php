@@ -15,9 +15,6 @@ enum VerificationStage: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Recording => 'Enregistrement facture',
-            self::Settlement => 'Règlement facture',
-        };
+        return (string) __('app.stage.'.$this->value);
     }
 }

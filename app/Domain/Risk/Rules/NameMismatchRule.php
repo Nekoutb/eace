@@ -34,10 +34,9 @@ final class NameMismatchRule implements RiskRule
 
         return new RuleFinding(
             code: 'R7',
-            title: 'Discordance de raison sociale',
+            title: (string) __('rules.r7.title'),
             article: 'CGI art. L 102',
-            message: 'Le nom sur la facture diffère de la raison sociale enregistrée au '
-                .'fichier pour ce NIU. Toute discordance impose une clarification écrite.',
+            message: (string) __('rules.r7.message'),
             severity: RuleSeverity::Warning,
             exposureXaf: $this->calc->invoiceFine($context->invoiceAmountXaf),
         );

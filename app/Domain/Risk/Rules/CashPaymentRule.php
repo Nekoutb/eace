@@ -31,10 +31,9 @@ final class CashPaymentRule implements RiskRule
 
         return new RuleFinding(
             code: 'R9',
-            title: 'Paiement en espèces ≥ 100 000 F',
+            title: (string) __('rules.r9.title'),
             article: 'CGI art. 143 (1)(d)',
-            message: 'Une opération d’au moins 100 000 F payée en espèces n’ouvre pas droit '
-                .'à déduction de la TVA. Réglez par voie bancaire.',
+            message: (string) __('rules.r9.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $exposure,
         );

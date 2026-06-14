@@ -19,12 +19,7 @@ enum AcfStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Valid => 'Valide',
-            self::ExpiringSoon => 'Bientôt expirée',
-            self::Expired => 'Expirée',
-            self::NotAuthentic => 'Non authentique',
-        };
+        return (string) __('app.acf_status.'.$this->value);
     }
 
     /** BrandColors / Filament colour key. */

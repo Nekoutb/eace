@@ -20,8 +20,8 @@ Status legend: ⬜ Pending · 🔨 In progress · 🚀 Deployed — awaiting app
 | 1 | ACF intake + certificate monitor | Upload/scan an ACF → it reads reference, NIU, issue date → recorded in a **certificate monitor** with validity (valid / expiring / expired), 5-day buffer | — | ✅ Approved | ✅ |
 | 2 | Four-check strict engine + stages | A verification runs the **4 checks**, applies **strict** accept/reject, records the `stage`; shows verdict + FCFA exposure | — | ✅ Approved | ✅ |
 | 3 | Two-stage UI | The **Enregistrement ↔ Règlement** toggle: recording (upload ACF / NIU, one vendor) vs settlement (batch of NIUs); camera scan deferred | — | ✅ Approved | ✅ |
-| 3.1 | Hotfix: upload-route tenancy | Uploading an ACF no longer bounces to login (Livewire upload route made session + tenant aware) | — | 🔨 In progress | ⬜ |
-| 4 | Bilingual EN/FR | Every screen in English or French, browser-auto-detected with a header switcher (remembered); all new UI bilingual from here | — | ⬜ Pending | ⬜ |
+| 3.1 | Hotfix: upload-route tenancy | Uploading an ACF no longer bounces to login (Livewire upload route made session + tenant aware) | — | ✅ Approved | ✅ |
+| 4 | Bilingual EN/FR | Every screen in English or French, browser-auto-detected with a header switcher (remembered); all new UI bilingual from here | — | 🔨 In progress | ⬜ |
 | 5 | "Compliance Engine" + phase gate | Rename Attestations → **Compliance Engine**; entering it prompts **Invoice recording** vs **Invoice settlement** first | — | ⬜ Pending | ⬜ |
 | 6 | Invoice conformity (conditions de forme et de fond) | At recording, submit the scanned invoice → **OCR auto-extracts** the art. 150 fields → forme (mentions present) + fond (HT×taux=TVA, HT+TVA=TTC, NIU match) checks, **blocking** (strict) | — | ⬜ Pending | ⬜ |
 | 7 | Monthly file ingestion (NIU existence) | Import a monthly **FICHIER xlsx** → real offline existence + régime/centre lookup | **1 monthly FICHIER xlsx** | ⛔ Blocked | ⬜ |

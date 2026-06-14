@@ -16,9 +16,6 @@ enum NiuEntityType: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::PersonnePhysique => 'Personne physique',
-            self::PersonneMorale => 'Personne morale',
-        };
+        return (string) __('app.entity_type.'.($this === self::PersonnePhysique ? 'physique' : 'morale'));
     }
 }

@@ -24,23 +24,23 @@ final class NiuStatusCheck implements Check
             FiscalisStatus::Actif => $context->onActiveFile
                 ? CheckResult::pass(
                     CheckKey::NiuStatus,
-                    'NIU actif et inscrit au fichier des contribuables actifs.',
+                    (string) __('app.check.msg.status_actif_on_file'),
                 )
                 : CheckResult::fail(
                     CheckKey::NiuStatus,
-                    'NIU immatriculé mais absent du fichier des contribuables actifs : TVA non déductible (art. 143 (1)(b)).',
+                    (string) __('app.check.msg.status_actif_off_file'),
                 ),
             FiscalisStatus::Suspendu => CheckResult::fail(
                 CheckKey::NiuStatus,
-                'NIU suspendu : aucun nouveau paiement tant qu’il n’est pas réactivé.',
+                (string) __('app.check.msg.status_suspendu'),
             ),
             FiscalisStatus::Radie => CheckResult::fail(
                 CheckKey::NiuStatus,
-                'NIU radié : toute facture émise après la radiation est nulle fiscalement.',
+                (string) __('app.check.msg.status_radie'),
             ),
             default => CheckResult::fail(
                 CheckKey::NiuStatus,
-                'Statut du NIU indéterminé (NIU introuvable au fichier).',
+                (string) __('app.check.msg.status_unknown'),
             ),
         };
     }

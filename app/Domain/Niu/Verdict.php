@@ -23,14 +23,7 @@ enum Verdict: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Conforme => 'Conforme',
-            self::ConformeAvecReserves => 'Conforme avec réserves',
-            self::Suspendu => 'Suspendu',
-            self::Radie => 'Radié',
-            self::Introuvable => 'Introuvable',
-            self::FormatInvalide => 'Format invalide',
-        };
+        return (string) __('app.verdict.'.$this->value);
     }
 
     /** Filament/BrandColors colour key. */

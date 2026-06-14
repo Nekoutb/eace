@@ -32,11 +32,9 @@ final class ForeignSupplierRule implements RiskRule
 
         return new RuleFinding(
             code: 'R11',
-            title: 'Fournisseur étranger',
+            title: (string) __('rules.r11.title'),
             article: 'CGI (TSR 15 %, autoliquidation TVA)',
-            message: 'Fournisseur étranger hors fichier camerounais : opérez la TSR de 15 % '
-                .'sur le brut versé et auto-liquidez la TVA si le service est consommé au '
-                .'Cameroun. Conservez le contrat et les justificatifs.',
+            message: (string) __('rules.r11.message'),
             severity: RuleSeverity::Warning,
             exposureXaf: $tsr,
         );

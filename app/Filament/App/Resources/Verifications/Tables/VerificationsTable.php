@@ -19,51 +19,51 @@ class VerificationsTable
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('niu')
-                    ->label('NIU')
+                    ->label(__('app.ui.niu'))
                     ->fontFamily(FontFamily::Mono)
-                    ->placeholder('— format invalide —')
+                    ->placeholder(__('app.ui.placeholder_invalid'))
                     ->copyable()
                     ->searchable(),
                 TextColumn::make('stage')
-                    ->label('Étape')
+                    ->label(__('app.ui.stage'))
                     ->badge()
                     ->color('gray')
                     ->formatStateUsing(fn (VerificationStage $state): string => $state->label()),
                 TextColumn::make('approval')
-                    ->label('Approbation')
+                    ->label(__('app.ui.approval'))
                     ->badge()
-                    ->placeholder('—')
+                    ->placeholder(__('app.ui.placeholder_dash'))
                     ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                     ->color(fn (ApprovalDecision $state): string => $state->color())
                     ->icon(fn (ApprovalDecision $state): string => $state->icon()),
                 TextColumn::make('verdict')
-                    ->label('Verdict')
+                    ->label(__('app.ui.verdict'))
                     ->badge()
                     ->formatStateUsing(fn (Verdict $state): string => $state->label())
                     ->color(fn (Verdict $state): string => $state->color())
                     ->icon(fn (Verdict $state): string => $state->icon()),
                 TextColumn::make('thirdParty.name')
-                    ->label('Tiers')
-                    ->placeholder('—')
+                    ->label(__('app.ui.third_party'))
+                    ->placeholder(__('app.ui.placeholder_dash'))
                     ->searchable(),
                 TextColumn::make('exposure_xaf')
-                    ->label('Exposition')
+                    ->label(__('app.ui.exposure'))
                     ->money('XAF', locale: 'fr')
                     ->alignEnd()
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->label('Vérifié le')
+                    ->label(__('app.ui.verified_at'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('stage')
-                    ->label('Étape')
+                    ->label(__('app.ui.stage'))
                     ->options(collect(VerificationStage::cases())
                         ->mapWithKeys(fn (VerificationStage $s): array => [$s->value => $s->label()])
                         ->all()),
                 SelectFilter::make('approval')
-                    ->label('Approbation')
+                    ->label(__('app.ui.approval'))
                     ->options(collect(ApprovalDecision::cases())
                         ->mapWithKeys(fn (ApprovalDecision $d): array => [$d->value => $d->label()])
                         ->all()),

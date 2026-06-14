@@ -21,15 +21,15 @@ final class DocumentAuthenticityCheck implements Check
         return match ($context->acfAuthenticity) {
             AcfAuthenticityStatus::Authentic => CheckResult::pass(
                 CheckKey::DocumentAuthenticity,
-                'Document confirmé authentique auprès du système Harmony2.',
+                (string) __('app.check.msg.auth_authentic'),
             ),
             AcfAuthenticityStatus::NotAuthentic => CheckResult::fail(
                 CheckKey::DocumentAuthenticity,
-                'Document non authentique : absent de la liste publiée par la DGI.',
+                (string) __('app.check.msg.auth_not_authentic'),
             ),
             default => CheckResult::fail(
                 CheckKey::DocumentAuthenticity,
-                'Authenticité non vérifiée : aucune ACF authentifiée n’est rattachée.',
+                (string) __('app.check.msg.auth_unverified'),
             ),
         };
     }

@@ -33,11 +33,9 @@ final class EntityTypeMismatchRule implements RiskRule
 
         return new RuleFinding(
             code: 'R6',
-            title: 'Type de NIU incohérent (P/M)',
+            title: (string) __('rules.r6.title'),
             article: 'CGI art. L 102',
-            message: 'La première lettre du NIU ne correspond pas au type attendu : le NIU '
-                .'appartient probablement au dirigeant à titre personnel, pas à l’entité '
-                .'facturante. Exigez une clarification écrite.',
+            message: (string) __('rules.r6.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $exposure,
         );

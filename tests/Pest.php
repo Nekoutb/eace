@@ -18,6 +18,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Unit tests boot the app (no database) so translated enum labels via __() resolve.
+pest()->extend(TestCase::class)
+    ->in('Unit');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

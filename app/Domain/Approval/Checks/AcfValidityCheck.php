@@ -27,28 +27,28 @@ final class AcfValidityCheck implements Check
         return match ($context->acfStatus) {
             AcfStatus::Valid => CheckResult::pass(
                 CheckKey::AcfValidity,
-                'ACF en cours de validité.',
+                (string) __('app.check.msg.validity_valid'),
             ),
             AcfStatus::ExpiringSoon => $context->stage === VerificationStage::Recording
                 ? CheckResult::pass(
                     CheckKey::AcfValidity,
-                    'ACF en cours de validité (proche de l’échéance — à renouveler avant le règlement).',
+                    (string) __('app.check.msg.validity_expiring_recording'),
                 )
                 : CheckResult::fail(
                     CheckKey::AcfValidity,
-                    'ACF bientôt expirée : paiement impossible au règlement, exigez une attestation à jour.',
+                    (string) __('app.check.msg.validity_expiring_settlement'),
                 ),
             AcfStatus::Expired => CheckResult::fail(
                 CheckKey::AcfValidity,
-                'ACF expirée : la clearance fiscale n’est plus valable.',
+                (string) __('app.check.msg.validity_expired'),
             ),
             AcfStatus::NotAuthentic => CheckResult::fail(
                 CheckKey::AcfValidity,
-                'ACF non authentique : validité sans valeur.',
+                (string) __('app.check.msg.validity_not_authentic'),
             ),
             default => CheckResult::fail(
                 CheckKey::AcfValidity,
-                'Aucune ACF rattachée à cette vérification.',
+                (string) __('app.check.msg.validity_none'),
             ),
         };
     }

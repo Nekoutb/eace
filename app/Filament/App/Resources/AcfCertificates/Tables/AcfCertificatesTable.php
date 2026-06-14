@@ -16,31 +16,31 @@ class AcfCertificatesTable
             ->defaultSort('expires_at', 'asc')
             ->columns([
                 TextColumn::make('reference')
-                    ->label('Référence ACF')
+                    ->label(__('app.ui.reference'))
                     ->fontFamily(FontFamily::Mono)
                     ->copyable()
                     ->searchable(),
                 TextColumn::make('niu')
-                    ->label('NIU')
+                    ->label(__('app.ui.niu'))
                     ->fontFamily(FontFamily::Mono)
-                    ->placeholder('—')
+                    ->placeholder(__('app.ui.placeholder_dash'))
                     ->searchable(),
                 TextColumn::make('taxpayer_name')
-                    ->label('Contribuable')
-                    ->placeholder('—')
+                    ->label(__('app.ui.taxpayer'))
+                    ->placeholder(__('app.ui.placeholder_dash'))
                     ->searchable(),
                 TextColumn::make('status')
-                    ->label('Validité')
+                    ->label(__('app.ui.validity'))
                     ->badge()
                     ->formatStateUsing(fn (AcfStatus $state): string => $state->label())
                     ->color(fn (AcfStatus $state): string => $state->color())
                     ->icon(fn (AcfStatus $state): string => $state->icon()),
                 TextColumn::make('issued_at')
-                    ->label('Signée le')
+                    ->label(__('app.ui.issued_at'))
                     ->date('d/m/Y')
                     ->sortable(),
                 TextColumn::make('expires_at')
-                    ->label('Expire le')
+                    ->label(__('app.ui.expires_at'))
                     ->date('d/m/Y')
                     ->sortable(),
             ])

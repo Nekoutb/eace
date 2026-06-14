@@ -18,26 +18,26 @@ class VerificationInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Décision')
+            Section::make(__('app.ui.section_decision'))
                 ->columns(3)
                 ->components([
                     TextEntry::make('approval')
-                        ->label('Approbation de la facture')
+                        ->label(__('app.ui.approval_invoice'))
                         ->badge()
-                        ->placeholder('—')
+                        ->placeholder(__('app.ui.placeholder_dash'))
                         ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                         ->color(fn (ApprovalDecision $state): string => $state->color())
                         ->icon(fn (ApprovalDecision $state): string => $state->icon()),
                     TextEntry::make('stage')
-                        ->label('Étape')
+                        ->label(__('app.ui.stage'))
                         ->badge()
                         ->color('gray')
                         ->formatStateUsing(fn (VerificationStage $state): string => $state->label()),
                     TextEntry::make('created_at')
-                        ->label('Vérifié le')
+                        ->label(__('app.ui.verified_at'))
                         ->dateTime('d/m/Y H:i'),
                 ]),
-            Section::make('Les quatre contrôles')
+            Section::make(__('app.ui.section_four_checks'))
                 ->visible(fn ($record): bool => filled($record->checks))
                 ->components([
                     RepeatableEntry::make('checks')
@@ -48,10 +48,10 @@ class VerificationInfolist
                                 ->label('')
                                 ->boolean(),
                             TextEntry::make('label')
-                                ->label('Contrôle')
+                                ->label(__('app.ui.check_col'))
                                 ->weight(FontWeight::Medium),
                             TextEntry::make('article')
-                                ->label('Fondement')
+                                ->label(__('app.ui.basis'))
                                 ->badge()
                                 ->color('gray'),
                             TextEntry::make('detail')
@@ -59,35 +59,35 @@ class VerificationInfolist
                                 ->columnSpanFull(),
                         ]),
                 ]),
-            Section::make('Verdict & exposition')
+            Section::make(__('app.ui.section_verdict_exposure'))
                 ->columns(2)
                 ->components([
                     TextEntry::make('verdict')
-                        ->label('Verdict')
+                        ->label(__('app.ui.verdict'))
                         ->badge()
                         ->formatStateUsing(fn (Verdict $state): string => $state->label())
                         ->color(fn (Verdict $state): string => $state->color())
                         ->icon(fn (Verdict $state): string => $state->icon()),
                     TextEntry::make('exposure_xaf')
-                        ->label('Exposition estimée')
+                        ->label(__('app.ui.exposure_estimated'))
                         ->money('XAF', locale: 'fr'),
                     TextEntry::make('niu')
-                        ->label('NIU')
+                        ->label(__('app.ui.niu'))
                         ->fontFamily(FontFamily::Mono)
-                        ->placeholder('— format invalide —')
+                        ->placeholder(__('app.ui.placeholder_invalid'))
                         ->copyable(),
                     TextEntry::make('raw_input')
-                        ->label('Saisie d’origine'),
+                        ->label(__('app.ui.raw_input')),
                     TextEntry::make('thirdParty.name')
-                        ->label('Tiers')
-                        ->placeholder('—'),
+                        ->label(__('app.ui.third_party'))
+                        ->placeholder(__('app.ui.placeholder_dash')),
                     TextEntry::make('snapshot_id')
-                        ->label('Preuve (snapshot central)')
-                        ->placeholder('— aucune (NIU non trouvé) —')
+                        ->label(__('app.ui.snapshot'))
+                        ->placeholder(__('app.ui.placeholder_no_snapshot'))
                         ->copyable()
                         ->columnSpanFull(),
                 ]),
-            Section::make('Règles déclenchées')
+            Section::make(__('app.ui.section_triggered_rules'))
                 ->visible(fn ($record): bool => filled($record->triggered_rules))
                 ->components([
                     RepeatableEntry::make('triggered_rules')
@@ -95,14 +95,14 @@ class VerificationInfolist
                         ->columns(3)
                         ->schema([
                             TextEntry::make('title')
-                                ->label('Règle')
+                                ->label(__('app.ui.rule'))
                                 ->weight(FontWeight::Medium),
                             TextEntry::make('article')
-                                ->label('Fondement')
+                                ->label(__('app.ui.basis'))
                                 ->badge()
                                 ->color('gray'),
                             TextEntry::make('exposure_xaf')
-                                ->label('Exposition')
+                                ->label(__('app.ui.exposure'))
                                 ->money('XAF', locale: 'fr'),
                             TextEntry::make('message')
                                 ->hiddenLabel()

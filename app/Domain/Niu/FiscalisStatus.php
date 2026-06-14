@@ -17,11 +17,7 @@ enum FiscalisStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Actif => 'Actif',
-            self::Suspendu => 'Suspendu',
-            self::Radie => 'Radié',
-        };
+        return (string) __('app.fiscalis_status.'.$this->value);
     }
 
     public function isActive(): bool

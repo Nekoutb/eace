@@ -18,13 +18,17 @@ class AcfCertificateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-check';
 
-    protected static ?string $navigationLabel = 'Attestations (ACF)';
-
-    protected static ?string $modelLabel = 'attestation';
-
-    protected static ?string $pluralModelLabel = 'attestations';
-
     protected static ?string $recordTitleAttribute = 'reference';
+
+    public static function getNavigationLabel(): string
+    {
+        return (string) __('app.nav.certificates');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return (string) __('app.nav.certificates');
+    }
 
     public static function infolist(Schema $schema): Schema
     {

@@ -15,10 +15,7 @@ enum ApprovalDecision: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Accepted => 'Facture acceptée',
-            self::Rejected => 'Facture refusée',
-        };
+        return (string) __('app.approval.'.$this->value);
     }
 
     public function color(): string

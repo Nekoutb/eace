@@ -16,12 +16,7 @@ enum CheckKey: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::DocumentAuthenticity => 'Authenticité du document',
-            self::NiuStatus => 'Statut du NIU',
-            self::NiuExistence => 'Existence au fichier',
-            self::AcfValidity => 'Validité de l’ACF',
-        };
+        return (string) __('app.check.'.$this->value);
     }
 
     public function article(): string

@@ -18,16 +18,16 @@ class ListAcfCertificates extends ListRecords
     {
         return [
             Action::make('ingestAcf')
-                ->label('Importer une ACF')
+                ->label(__('app.ui.import_acf'))
                 ->icon('heroicon-o-arrow-up-tray')
-                ->modalSubmitActionLabel('Importer')
+                ->modalSubmitActionLabel(__('app.ui.import'))
                 ->schema([
                     FileUpload::make('acf_pdf')
-                        ->label('Attestation de Conformité Fiscale (PDF)')
+                        ->label(__('app.ui.acf_pdf'))
                         ->required()
                         ->acceptedFileTypes(['application/pdf'])
-                        ->maxSize(10 * 1024) // 10 MB
-                        ->disk('local')        // private, tenant-suffixed by the filesystem bootstrapper
+                        ->maxSize(10 * 1024)
+                        ->disk('local')
                         ->visibility('private')
                         ->directory('acf')
                         ->storeFiles(true)
@@ -42,7 +42,7 @@ class ListAcfCertificates extends ListRecords
                         );
                     } catch (UnreadableAcfException $e) {
                         Notification::make()
-                            ->title('Import échoué')
+                            ->title(__('app.ui.notif_import_failed'))
                             ->body($e->getMessage())
                             ->danger()
                             ->send();
@@ -51,8 +51,11 @@ class ListAcfCertificates extends ListRecords
                     }
 
                     Notification::make()
-                        ->title('ACF importée — '.$certificate->status->label())
-                        ->body('Réf. '.$certificate->reference.' · valide jusqu’au '.$certificate->expires_at->format('d/m/Y'))
+                        ->title(__('app.ui.notif_acf_imported', ['status' => $certificate->status->label()]))
+                        ->body(__('app.ui.notif_acf_detail', [
+                            'reference' => $certificate->reference,
+                            'date' => $certificate->expires_at->format('d/m/Y'),
+                        ]))
                         ->success()
                         ->send();
                 }),

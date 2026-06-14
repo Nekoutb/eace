@@ -17,10 +17,6 @@ enum ThirdPartyType: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Supplier => 'Fournisseur',
-            self::Client => 'Client',
-            self::Both => 'Fournisseur et client',
-        };
+        return (string) __('app.third_party_type.'.$this->value);
     }
 }

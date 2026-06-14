@@ -34,10 +34,9 @@ final class NotOnActiveFileRule implements RiskRule
 
         return new RuleFinding(
             code: 'R4',
-            title: 'Hors fichier des contribuables actifs',
+            title: (string) __('rules.r4.title'),
             article: 'CGI art. 143 (1)(b)',
-            message: 'Le contribuable est immatriculé mais absent du fichier des '
-                .'contribuables actifs : la TVA d’amont n’ouvre pas droit à déduction.',
+            message: (string) __('rules.r4.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $vat + $this->calc->badFaithMajoration($vat),
         );

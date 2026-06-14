@@ -19,13 +19,17 @@ class VerificationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
-    protected static ?string $navigationLabel = 'Vérifications';
-
-    protected static ?string $modelLabel = 'vérification';
-
-    protected static ?string $pluralModelLabel = 'vérifications';
-
     protected static ?string $recordTitleAttribute = 'niu';
+
+    public static function getNavigationLabel(): string
+    {
+        return (string) __('app.nav.verifications');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return (string) __('app.nav.verifications');
+    }
 
     public static function infolist(Schema $schema): Schema
     {

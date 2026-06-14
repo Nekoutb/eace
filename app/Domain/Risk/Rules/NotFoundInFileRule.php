@@ -30,11 +30,9 @@ final class NotFoundInFileRule implements RiskRule
 
         return new RuleFinding(
             code: 'R2',
-            title: 'NIU introuvable au fichier',
+            title: (string) __('rules.r2.title'),
             article: 'CGI art. L 100 (3)',
-            message: 'Le NIU n’apparaît pas au fichier des contribuables. Vérifiez les '
-                .'caractères ambigus ; à défaut, le NIU est probablement fictif — '
-                .'refusez la transaction et signalez-le.',
+            message: (string) __('rules.r2.message'),
             severity: RuleSeverity::Blocking,
             exposureXaf: $exposure,
         );

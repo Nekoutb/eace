@@ -16,11 +16,7 @@ enum AcfAuthenticityStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Authentic => 'Authentique',
-            self::NotAuthentic => 'Non authentique',
-            self::Unverified => 'Non vérifiée',
-        };
+        return (string) __('app.acf_auth.'.$this->value);
     }
 
     public function color(): string
