@@ -6,8 +6,10 @@ use Filament\Support\Colors\Color;
 
 /**
  * NIU Shield design tokens — see design-system.md at the repository root.
- * Verdict semantics: success = conforme, warning = réserves,
- * danger = radié, info = accent vérification (teal).
+ * The brand is built on a light-green "compliance" palette (green = conforme):
+ * primary = fresh green, success = a deeper green for verdicts. Verdict
+ * semantics: success = conforme, warning = réserves, danger = radié,
+ * info = accent vérification (teal).
  */
 class BrandColors
 {
@@ -17,7 +19,7 @@ class BrandColors
     public static function palette(): array
     {
         return [
-            'primary' => Color::hex('#0B4A8B'),
+            'primary' => Color::hex('#16A34A'), // light-green brand accent (buttons, active nav, focus)
             'success' => Color::hex('#15803D'),
             'warning' => Color::hex('#B45309'),
             'danger' => Color::hex('#B91C1C'),

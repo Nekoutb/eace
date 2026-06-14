@@ -32,10 +32,16 @@ it('renders the verifications list page', function () {
     Livewire::test(ListVerifications::class)->assertOk();
 });
 
-it('runs a verification through the Compliance Engine recording action', function () {
-    Livewire::test(ComplianceEngine::class)
-        ->callAction('record', data: ['raw_input' => 'M222222222222A']);
+it('runs a verification inline and reveals the discrepancies on the same screen', function () {
+    $page = Livewire::test(ComplianceEngine::class)
+        ->set('rawInput', 'M222222222222A')
+        ->call('run')
+        ->assertSet('result.verdict.label', Verdict::Radie->label())
+        ->assertSee(__('app.ui.results'))
+        ->assertSee(__('app.ui.discrepancies'));
 
-    expect(Verification::query()->where('niu', 'M222222222222A')->first()?->verdict)
+    // A struck-off NIU fails checks, so the comments section must list them inline.
+    expect($page->get('discrepancies'))->not->toBeEmpty()
+        ->and(Verification::query()->where('niu', 'M222222222222A')->first()?->verdict)
         ->toBe(Verdict::Radie);
 });

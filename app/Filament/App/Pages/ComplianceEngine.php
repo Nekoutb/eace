@@ -4,36 +4,72 @@ namespace App\Filament\App\Pages;
 
 use App\Domain\Acf\UnreadableAcfException;
 use App\Domain\Approval\ApprovalDecision;
+use App\Domain\Approval\CheckKey;
 use App\Domain\Approval\VerificationStage;
 use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Risk\PaymentMethod;
 use App\Filament\App\Resources\Verifications\VerificationResource;
+use App\Models\Verification;
 use App\Services\Acf\AcfIngestionService;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
 use BackedEnum;
-use Filament\Actions\Action;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
- * The Compliance Engine — the entry point. The user first picks the verification
- * phase (invoice recording vs invoice settlement); each card opens the matching
- * flow, which runs the four-check strict approval at that stage.
+ * The Compliance Engine — the single working surface. A live toggle switches
+ * between invoice **recording** (one vendor: ACF + scanned invoice) and invoice
+ * **settlement** (a batch of NIUs). Both run the four strict checks (plus the
+ * art. 150 conditions de forme et de fond at recording) and reveal every test's
+ * output inline — a results table and a closing list of discrepancies — without
+ * ever leaving the page.
  */
 class ComplianceEngine extends Page
 {
+    use WithFileUploads;
+
     protected string $view = 'filament.app.pages.compliance-engine';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?int $navigationSort = -2;
+
+    /** recording | settlement — the live phase toggle. */
+    public string $stage = 'recording';
+
+    // Recording inputs.
+    /** @var TemporaryUploadedFile|null */
+    public $acfUpload = null;
+
+    /** @var TemporaryUploadedFile|null */
+    public $invoiceUpload = null;
+
+    public ?string $rawInput = null;
+
+    public ?string $invoiceAmount = null;
+
+    public ?string $invoiceName = null;
+
+    public ?string $paymentMethod = null;
+
+    public bool $vatCharged = false;
+
+    // Settlement input.
+    public ?string $nius = null;
+
+    // Results (plain serialisable arrays — rendered inline).
+    /** @var array<string, mixed>|null */
+    public ?array $result = null;
+
+    /** @var array<string, mixed>|null */
+    public ?array $batch = null;
+
+    /** @var array<int, array<string, mixed>> */
+    public array $discrepancies = [];
 
     public static function getNavigationLabel(): string
     {
@@ -46,156 +82,236 @@ class ComplianceEngine extends Page
     }
 
     /**
-     * Phase A — invoice recording: one vendor, import the ACF (or type the NIU),
-     * run the four checks at the recording stage.
+     * The four checks, in order — used as the column headers of the settlement
+     * batch table so each NIU shows the output of every test on one row.
+     *
+     * @return array<int, array{key: string, label: string}>
      */
-    public function recordAction(): Action
+    public function checkColumns(): array
     {
-        return Action::make('record')
-            ->label(__('app.ui.record_invoice'))
-            ->icon('heroicon-o-document-plus')
-            ->modalHeading(__('app.ui.record_invoice'))
-            ->modalSubmitActionLabel(__('app.ui.verify'))
-            ->schema([
-                FileUpload::make('acf_pdf')
-                    ->label(__('app.ui.acf_pdf'))
-                    ->helperText(__('app.ui.acf_help'))
-                    ->acceptedFileTypes(['application/pdf'])
-                    ->maxSize(10 * 1024)
-                    ->disk('local')
-                    ->visibility('private')
-                    ->directory('acf')
-                    ->storeFiles(true)
-                    ->previewable(false),
-                FileUpload::make('invoice_pdf')
-                    ->label(__('app.ui.invoice_file'))
-                    ->helperText(__('app.ui.invoice_file_help'))
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                    ->maxSize(10 * 1024)
-                    ->disk('local')
-                    ->visibility('private')
-                    ->directory('invoices')
-                    ->storeFiles(true)
-                    ->previewable(false),
-                TextInput::make('raw_input')
-                    ->label(__('app.ui.niu_if_no_acf'))
-                    ->placeholder('P058712345678X')
-                    ->extraInputAttributes(['style' => 'font-family: monospace; letter-spacing: 0.05em;'])
-                    ->helperText(__('app.ui.niu_if_no_acf_help')),
-                TextInput::make('invoice_amount_xaf')
-                    ->label(__('app.ui.invoice_amount'))
-                    ->numeric()
-                    ->minValue(0),
-                TextInput::make('invoice_name')
-                    ->label(__('app.ui.invoice_name')),
-                Select::make('payment_method')
-                    ->label(__('app.ui.payment_method'))
-                    ->options(collect(PaymentMethod::cases())
-                        ->mapWithKeys(fn (PaymentMethod $m): array => [$m->value => $m->label()])
-                        ->all()),
-                Toggle::make('vat_charged')->label(__('app.ui.vat_charged')),
-            ])
-            ->action(function (array $data) {
-                $acfReference = null;
-                $rawInput = filled($data['raw_input'] ?? null) ? (string) $data['raw_input'] : null;
+        return array_map(
+            fn (CheckKey $k): array => ['key' => $k->value, 'label' => $k->label()],
+            CheckKey::cases(),
+        );
+    }
 
-                if (filled($data['acf_pdf'] ?? null)) {
-                    try {
-                        $certificate = app(AcfIngestionService::class)->ingestFromUpload(
-                            diskPath: (string) $data['acf_pdf'],
-                            disk: 'local',
-                            uploadedBy: auth()->id(),
-                        );
-                    } catch (UnreadableAcfException $e) {
-                        Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
+    /** Switch phase and clear any results so the screen never mixes the two. */
+    public function setStage(string $stage): void
+    {
+        $this->stage = $stage === 'settlement' ? 'settlement' : 'recording';
+        $this->reset(['result', 'batch', 'discrepancies']);
+    }
 
-                        return;
-                    }
+    /** Run the checks for the current phase and reveal the results inline. */
+    public function run(): void
+    {
+        $this->validate([
+            'acfUpload' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'invoiceUpload' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'rawInput' => ['nullable', 'string', 'max:32'],
+            'invoiceAmount' => ['nullable', 'numeric', 'min:0'],
+            'invoiceName' => ['nullable', 'string', 'max:255'],
+            'nius' => $this->stage === 'settlement' ? ['required', 'string'] : ['nullable', 'string'],
+        ]);
 
-                    $acfReference = $certificate->reference;
-                    $rawInput ??= $certificate->niu;
-                }
+        $this->reset(['result', 'batch', 'discrepancies']);
 
-                if (blank($rawInput)) {
-                    Notification::make()
-                        ->title(__('app.ui.notif_niu_missing'))
-                        ->body(__('app.ui.notif_niu_missing_body'))
-                        ->warning()
-                        ->send();
+        $this->stage === 'settlement'
+            ? $this->runSettlement()
+            : $this->runRecording();
+    }
 
-                    return;
-                }
+    private function runRecording(): void
+    {
+        $acfReference = null;
+        $rawInput = filled($this->rawInput) ? trim((string) $this->rawInput) : null;
 
-                $invoiceData = null;
-                if (filled($data['invoice_pdf'] ?? null)) {
-                    try {
-                        $invoiceData = app(InvoiceReader::class)->read((string) $data['invoice_pdf'], 'local');
-                    } catch (\Throwable $e) {
-                        Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
+        if ($this->acfUpload instanceof TemporaryUploadedFile) {
+            $path = $this->acfUpload->store('acf', 'local');
 
-                        return;
-                    }
-                }
+            if (! is_string($path)) {
+                Notification::make()->title(__('app.ui.notif_acf_unreadable'))->danger()->send();
 
-                $verification = app(VerificationService::class)->verify(new VerifyRequest(
-                    rawInput: $rawInput,
-                    stage: VerificationStage::Recording,
-                    acfReference: $acfReference,
-                    invoiceAmountXaf: filled($data['invoice_amount_xaf'] ?? null) ? (int) $data['invoice_amount_xaf'] : null,
-                    invoiceName: filled($data['invoice_name'] ?? null) ? (string) $data['invoice_name'] : null,
-                    vatCharged: (bool) ($data['vat_charged'] ?? false),
-                    paymentMethod: filled($data['payment_method'] ?? null) ? PaymentMethod::from($data['payment_method']) : null,
-                    invoiceData: $invoiceData,
-                    checkedBy: auth()->id(),
-                ));
+                return;
+            }
 
-                $notification = Notification::make()->title($verification->approval?->label() ?? $verification->verdict->label());
-                $verification->approval === ApprovalDecision::Accepted
-                    ? $notification->success()
-                    : $notification->danger();
-                $notification->send();
+            try {
+                $certificate = app(AcfIngestionService::class)->ingestFromUpload(
+                    diskPath: $path,
+                    disk: 'local',
+                    uploadedBy: auth()->id(),
+                );
+            } catch (UnreadableAcfException $e) {
+                Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
 
-                return redirect(VerificationResource::getUrl('view', ['record' => $verification]));
-            });
+                return;
+            }
+
+            $acfReference = $certificate->reference;
+            $rawInput ??= $certificate->niu;
+        }
+
+        if (blank($rawInput)) {
+            Notification::make()
+                ->title(__('app.ui.notif_niu_missing'))
+                ->body(__('app.ui.notif_niu_missing_body'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $invoiceData = null;
+        if ($this->invoiceUpload instanceof TemporaryUploadedFile) {
+            $path = $this->invoiceUpload->store('invoices', 'local');
+
+            if (! is_string($path)) {
+                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->danger()->send();
+
+                return;
+            }
+
+            try {
+                $invoiceData = app(InvoiceReader::class)->read($path, 'local');
+            } catch (\Throwable $e) {
+                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
+
+                return;
+            }
+        }
+
+        $verification = app(VerificationService::class)->verify(new VerifyRequest(
+            rawInput: $rawInput,
+            stage: VerificationStage::Recording,
+            acfReference: $acfReference,
+            invoiceAmountXaf: filled($this->invoiceAmount) ? (int) $this->invoiceAmount : null,
+            invoiceName: filled($this->invoiceName) ? (string) $this->invoiceName : null,
+            vatCharged: $this->vatCharged,
+            paymentMethod: filled($this->paymentMethod) ? PaymentMethod::from((string) $this->paymentMethod) : null,
+            invoiceData: $invoiceData,
+            checkedBy: auth()->id(),
+        ));
+
+        $this->result = $this->present($verification);
+        $this->discrepancies = $this->discrepanciesFor($verification);
+
+        $notification = Notification::make()->title($verification->approval?->label() ?? $verification->verdict->label());
+        $verification->approval === ApprovalDecision::Accepted
+            ? $notification->success()
+            : $notification->danger();
+        $notification->send();
+    }
+
+    private function runSettlement(): void
+    {
+        $batch = app(BatchVerificationService::class);
+        $nius = $batch->parse((string) $this->nius);
+
+        if ($nius === []) {
+            Notification::make()->title(__('app.ui.notif_no_niu'))->warning()->send();
+
+            return;
+        }
+
+        $results = $batch->verifyBatch($nius, VerificationStage::Settlement, auth()->id());
+        $summary = $batch->summarise($results);
+
+        $discrepancies = [];
+        foreach ($results as $verification) {
+            foreach ($this->discrepanciesFor($verification) as $item) {
+                $discrepancies[] = $item + ['niu' => $verification->niu ?? $verification->raw_input];
+            }
+        }
+
+        $this->batch = [
+            'summary' => $summary,
+            'rows' => $results->map(fn (Verification $v): array => $this->present($v))->all(),
+        ];
+        $this->discrepancies = $discrepancies;
+
+        Notification::make()
+            ->title(__('app.ui.notif_batch_done', ['accepted' => $summary['accepted'], 'rejected' => $summary['rejected']]))
+            ->body(__('app.ui.notif_batch_body', ['total' => $summary['total']]))
+            ->status($summary['rejected'] > 0 ? 'warning' : 'success')
+            ->send();
     }
 
     /**
-     * Phase B — invoice settlement: a batch of NIUs re-checked at payment time.
+     * Shape a verification into the plain arrays the Blade renders.
+     *
+     * @return array<string, mixed>
      */
-    public function settleAction(): Action
+    private function present(Verification $verification): array
     {
-        return Action::make('settle')
-            ->label(__('app.ui.settle_batch'))
-            ->icon('heroicon-o-queue-list')
-            ->color('gray')
-            ->modalHeading(__('app.ui.settle_batch'))
-            ->modalSubmitActionLabel(__('app.ui.verify_batch'))
-            ->schema([
-                Textarea::make('nius')
-                    ->label(__('app.ui.niu_batch'))
-                    ->required()
-                    ->rows(8)
-                    ->extraInputAttributes(['style' => 'font-family: monospace;'])
-                    ->helperText(__('app.ui.batch_help')),
-            ])
-            ->action(function (array $data) {
-                $batch = app(BatchVerificationService::class);
-                $nius = $batch->parse((string) $data['nius']);
+        $checks = $verification->checks ?? [];
 
-                if ($nius === []) {
-                    Notification::make()->title(__('app.ui.notif_no_niu'))->warning()->send();
+        return [
+            'niu' => $verification->niu,
+            'raw_input' => $verification->raw_input,
+            'verdict' => [
+                'label' => $verification->verdict->label(),
+                'color' => $verification->verdict->color(),
+                'icon' => $verification->verdict->icon(),
+            ],
+            'approval' => $verification->approval !== null ? [
+                'label' => $verification->approval->label(),
+                'color' => $verification->approval->color(),
+                'icon' => $verification->approval->icon(),
+                'accepted' => $verification->approval === ApprovalDecision::Accepted,
+            ] : null,
+            'exposure_xaf' => (int) $verification->exposure_xaf,
+            'checks' => $checks,
+            'checks_by_key' => collect($checks)->keyBy('key')->all(),
+            'invoice_checks' => $verification->invoice_checks,
+            'triggered_rules' => $verification->triggered_rules ?? [],
+            'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
+        ];
+    }
 
-                    return;
-                }
+    /**
+     * Every failed check, failed art. 150 finding, and triggered risk rule —
+     * the raw material for the closing "comments" section.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function discrepanciesFor(Verification $verification): array
+    {
+        $items = [];
 
-                $results = $batch->verifyBatch($nius, VerificationStage::Settlement, auth()->id());
-                $summary = $batch->summarise($results);
+        foreach ($verification->checks ?? [] as $check) {
+            if (($check['passed'] ?? true) === false) {
+                $items[] = [
+                    'kind' => 'check',
+                    'label' => $check['label'] ?? '',
+                    'article' => $check['article'] ?? '',
+                    'detail' => $check['detail'] ?? '',
+                    'severity' => 'danger',
+                ];
+            }
+        }
 
-                Notification::make()
-                    ->title(__('app.ui.notif_batch_done', ['accepted' => $summary['accepted'], 'rejected' => $summary['rejected']]))
-                    ->body(__('app.ui.notif_batch_body', ['total' => $summary['total']]))
-                    ->status($summary['rejected'] > 0 ? 'warning' : 'success')
-                    ->send();
-            });
+        foreach ($verification->invoice_checks ?? [] as $finding) {
+            if (($finding['passed'] ?? true) === false) {
+                $items[] = [
+                    'kind' => 'conformity',
+                    'label' => $finding['label'] ?? '',
+                    'article' => 'CGI art. 150',
+                    'detail' => (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
+                    'severity' => 'danger',
+                ];
+            }
+        }
+
+        foreach ($verification->triggered_rules ?? [] as $rule) {
+            $items[] = [
+                'kind' => 'rule',
+                'label' => $rule['title'] ?? '',
+                'article' => $rule['article'] ?? '',
+                'detail' => $rule['message'] ?? '',
+                'severity' => 'warning',
+            ];
+        }
+
+        return $items;
     }
 }

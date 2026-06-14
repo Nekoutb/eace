@@ -44,11 +44,15 @@ function uiAuthenticAcf(): AcfCertificate
     return $acf;
 }
 
-it('records an accepted verification through the recording action', function () {
+it('records an accepted verification inline through the recording phase', function () {
     uiAuthenticAcf();
 
     Livewire::test(ComplianceEngine::class)
-        ->callAction('record', ['raw_input' => 'M058712345678X']);
+        ->set('rawInput', 'M058712345678X')
+        ->call('run')
+        ->assertSet('result.approval.accepted', true)
+        ->assertSee(__('app.ui.results'))
+        ->assertSee(__('app.ui.discrepancies'));
 
     $verification = Verification::query()->where('stage', VerificationStage::Recording->value)->first();
 
@@ -58,15 +62,25 @@ it('records an accepted verification through the recording action', function () 
 
 it('rejects a recording with neither an ACF nor a NIU', function () {
     Livewire::test(ComplianceEngine::class)
-        ->callAction('record', []);
+        ->call('run');
 
     expect(Verification::query()->count())->toBe(0);
 });
 
-it('runs a batch settlement through the settle action', function () {
-    Livewire::test(ComplianceEngine::class)
-        ->callAction('settle', ['nius' => "M111111111111A\nM222222222222A\nM111111111111A"]);
+it('runs a batch settlement inline and tags each discrepancy with its NIU', function () {
+    $page = Livewire::test(ComplianceEngine::class)
+        ->set('stage', 'settlement')
+        ->set('nius', "M111111111111A\nM222222222222A\nM111111111111A")
+        ->call('run')
+        ->assertSet('batch.summary.total', 2)
+        ->assertSee(__('app.ui.discrepancies'));
 
     // three lines, one duplicate → two settlement verifications
     expect(Verification::query()->where('stage', VerificationStage::Settlement->value)->count())->toBe(2);
+
+    // Unseeded NIUs are rejected at settlement, so each must surface a discrepancy
+    // carrying the offending NIU (the per-row attribution the batch view relies on).
+    $discrepancies = $page->get('discrepancies');
+    expect($discrepancies)->not->toBeEmpty()
+        ->and(collect($discrepancies)->every(fn (array $d): bool => array_key_exists('niu', $d)))->toBeTrue();
 });

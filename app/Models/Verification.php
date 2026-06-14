@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Verdict $verdict
  * @property ?ApprovalDecision $approval
  * @property array<int, array<string, mixed>>|null $checks
+ * @property array<string, mixed>|null $invoice_data
+ * @property array<int, array<string, mixed>>|null $invoice_checks
  * @property array<int, array<string, mixed>>|null $triggered_rules
  * @property int $exposure_xaf
  */
