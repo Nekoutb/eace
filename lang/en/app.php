@@ -64,6 +64,14 @@ return [
         'hub_open_evidence' => 'Open third parties & evidence',
         'hub_journal_desc' => 'The detailed, per-invoice audit journal: every check, its result, and the immutable evidence behind it.',
         'hub_open_journal' => 'Open the audit journal',
+        'ev_item' => 'Evidence',
+        'ev_ref' => 'Reference / link',
+        'ev_open' => 'Open',
+        'ev_stored' => 'Stored',
+        'ev_absent' => 'Not attached',
+        'pending_live' => 'Pending live status connector',
+        'pending_harmony' => 'Pending Harmony2 authentication',
+        'evidence_empty' => 'No evidence captured for this verification yet.',
     ],
 
     'verdict' => [

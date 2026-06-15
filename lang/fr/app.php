@@ -64,6 +64,14 @@ return [
         'hub_open_evidence' => 'Ouvrir Tiers & preuves',
         'hub_journal_desc' => 'Le journal d’audit détaillé, facture par facture : chaque contrôle, son résultat et la preuve immuable associée.',
         'hub_open_journal' => 'Ouvrir les journaux d’audit',
+        'ev_item' => 'Preuve',
+        'ev_ref' => 'Référence / lien',
+        'ev_open' => 'Ouvrir',
+        'ev_stored' => 'Conservé',
+        'ev_absent' => 'Non joint',
+        'pending_live' => 'En attente du connecteur de statut en direct',
+        'pending_harmony' => 'En attente de l’authentification Harmony2',
+        'evidence_empty' => 'Aucune preuve enregistrée pour cette vérification.',
     ],
 
     'verdict' => [

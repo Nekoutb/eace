@@ -1,0 +1,2 @@
+@php($passed = $passed ?? null)
+<span class="ev-pill {{ $passed === true ? 'ev-pill--ok' : ($passed === false ? 'ev-pill--no' : 'ev-pill--idle') }}">@svg($passed === true ? 'heroicon-m-check-circle' : ($passed === false ? 'heroicon-m-x-circle' : 'heroicon-m-minus'), 'ev-ico', ['aria-hidden' => 'true'])<span>{{ $passed === true ? __('app.ui.passed') : ($passed === false ? __('app.ui.failed') : __('app.ui.not_run')) }}</span></span>
