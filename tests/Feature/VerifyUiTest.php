@@ -59,7 +59,7 @@ it('runs a verification inline and reveals the discrepancies on the same screen'
         ->call('run')
         ->assertSet('result.verdict.label', Verdict::Radie->label())
         ->assertSee(__('app.ui.results'))
-        ->assertSee(__('app.ui.discrepancies'));
+        ->assertSee(__('app.ui.section_remediation'));
 
     // A struck-off NIU fails checks, so the comments section must list them inline.
     expect($page->get('discrepancies'))->not->toBeEmpty()

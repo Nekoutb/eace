@@ -52,7 +52,7 @@ it('records an accepted verification inline through the recording phase', functi
         ->call('run')
         ->assertSet('result.approval.accepted', true)
         ->assertSee(__('app.ui.results'))
-        ->assertSee(__('app.ui.discrepancies'));
+        ->assertSee(__('app.ui.section_remediation'));
 
     $verification = Verification::query()->where('stage', VerificationStage::Recording->value)->first();
 
@@ -73,7 +73,7 @@ it('runs a batch settlement inline and tags each discrepancy with its NIU', func
         ->set('nius', "M111111111111A\nM222222222222A\nM111111111111A")
         ->call('run')
         ->assertSet('batch.summary.total', 2)
-        ->assertSee(__('app.ui.discrepancies'));
+        ->assertSee(__('app.ui.section_remediation'));
 
     // three lines, one duplicate → two settlement verifications
     expect(Verification::query()->where('stage', VerificationStage::Settlement->value)->count())->toBe(2);

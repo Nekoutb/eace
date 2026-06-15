@@ -206,6 +206,20 @@
             .niu-disc__d{margin:.25rem 0 0;font-size:.83rem;color:var(--ink-soft)}
             .niu-allgood{display:flex;align-items:center;gap:.6rem;padding:.95rem 1.1rem;border-radius:13px;font-weight:600;
                 color:var(--g800);background:var(--g100);border:1px solid var(--g200)}
+            .niu-disc__lbl{font-weight:700;text-transform:uppercase;font-size:.66rem;letter-spacing:.03em;opacity:.75;margin-right:.15rem}
+            .niu-disc__act{display:flex;align-items:flex-start;gap:.35rem;color:var(--g800);font-weight:600;margin-top:.25rem}
+
+            /* Conformity matrix + draft email */
+            .niu-matrix th{min-width:88px}
+            .niu-email{padding:1rem;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid var(--line)}
+            .niu-email__row{display:flex;gap:.5rem;align-items:baseline;margin-bottom:.5rem;flex-wrap:wrap}
+            .niu-email__k{font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--ink-soft);letter-spacing:.04em}
+            .niu-email__subject{font-weight:700;color:var(--ink)}
+            .niu-email__body{width:100%;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.85);
+                padding:.7rem .85rem;font-size:.85rem;line-height:1.5;color:var(--ink);font-family:inherit;resize:vertical}
+            .niu-email__body:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+            .niu-email__actions{display:flex;justify-content:flex-end;margin-top:.55rem}
+            .niu-btn--sm{padding:.5rem 1.05rem;font-size:.84rem;box-shadow:0 6px 14px rgba(20,83,45,.28)}
 
             /* Empty state */
             .niu-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.5rem;
@@ -403,27 +417,43 @@
                 </div>
 
                 @if (! empty($result['invoice_checks']))
-                    <h3 class="niu-subh">@svg('heroicon-o-receipt-percent', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_invoice_conformity') }}</h3>
+                    <h3 class="niu-subh">@svg('heroicon-o-receipt-percent', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_conformity_matrix') }}</h3>
+                    <p class="niu-help" style="margin:-.35rem 0 .55rem">{{ __('app.ui.matrix_hint') }}</p>
                     <div class="niu-tablewrap">
-                        <table class="niu-table">
+                        <table class="niu-table niu-matrix">
                             <thead><tr>
-                                <th>{{ __('app.ui.check_col') }}</th>
-                                <th class="niu-ta-c">{{ __('app.ui.result') }}</th>
-                                <th>{{ __('app.ui.category') }}</th>
-                                <th>{{ __('app.ui.output') }}</th>
+                                <th>{{ __('app.ui.niu') }}</th>
+                                @foreach ($result['invoice_checks'] as $finding)
+                                    <th class="niu-ta-c" title="{{ __('app.conformity.type_'.($finding['type'] ?? 'forme')) }}">{{ $finding['label'] ?? '' }}</th>
+                                @endforeach
                             </tr></thead>
-                            <tbody>
-                            @foreach ($result['invoice_checks'] as $finding)
-                                @php($p = $pill($finding['passed'] ?? null))
-                                <tr>
-                                    <td class="niu-td-strong">{{ $finding['label'] ?? '' }}</td>
-                                    <td class="niu-ta-c"><span class="{{ $p['cls'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
-                                    <td><span class="niu-tag">{{ __('app.conformity.type_'.($finding['type'] ?? 'forme')) }}</span></td>
-                                    <td class="niu-td-muted">{{ $finding['detail'] ?? '' }}</td>
-                                </tr>
-                            @endforeach
-                            </tbody>
+                            <tbody><tr>
+                                <td class="niu-td-strong niu-mono">{{ $result['niu'] ?? $result['raw_input'] }}</td>
+                                @foreach ($result['invoice_checks'] as $finding)
+                                    @php($p = $pill($finding['passed'] ?? null))
+                                    <td class="niu-ta-c">
+                                        <span class="{{ $p['cls'] }} niu-pill--icon" title="{{ ($finding['label'] ?? '').' — '.($finding['detail'] ?? $p['label']) }}" aria-label="{{ ($finding['label'] ?? '').': '.$p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span>
+                                    </td>
+                                @endforeach
+                            </tr></tbody>
                         </table>
+                    </div>
+                @endif
+
+                @if (! empty($result['vendor_email']))
+                    <h3 class="niu-subh">@svg('heroicon-o-envelope', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_vendor_email') }}</h3>
+                    <p class="niu-help" style="margin:-.35rem 0 .55rem">{{ __('app.ui.vendor_email_help') }}</p>
+                    <div class="niu-email" x-data="{ copied: false }">
+                        <div class="niu-email__row"><span class="niu-email__k">{{ __('app.ui.subject_label') }}</span><span class="niu-email__subject">{{ $result['vendor_email']['subject'] }}</span></div>
+                        <textarea class="niu-email__body" readonly rows="9" x-ref="body">{{ $result['vendor_email']['subject'] }}
+
+{{ $result['vendor_email']['body'] }}</textarea>
+                        <div class="niu-email__actions">
+                            <button type="button" class="niu-btn niu-btn--sm"
+                                x-on:click="navigator.clipboard.writeText($refs.body.value); copied = true; setTimeout(() => copied = false, 1500)">
+                                <span class="niu-btn__c">@svg('heroicon-o-clipboard-document', 'niu-ico', ['aria-hidden' => 'true'])<span x-text="copied ? @js(__('app.ui.copied')) : @js(__('app.ui.copy'))">{{ __('app.ui.copy') }}</span></span>
+                            </button>
+                        </div>
                     </div>
                 @endif
             </section>
@@ -475,7 +505,7 @@
         {{-- Comments — discrepancies & non-compliance --}}
         @if ($result || $batch)
             <section class="glass niu-disc">
-                <h3 class="niu-subh" style="margin-top:0">@svg('heroicon-o-chat-bubble-bottom-center-text', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.discrepancies') }}</h3>
+                <h3 class="niu-subh" style="margin-top:0">@svg('heroicon-o-chat-bubble-bottom-center-text', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_remediation') }}</h3>
                 @if (count($discrepancies))
                     <ul class="niu-disc__list">
                         @foreach ($discrepancies as $d)
@@ -487,7 +517,10 @@
                                         <strong>{{ $d['label'] }}</strong>
                                         @if (! empty($d['article']))<span class="niu-tag">{{ $d['article'] }}</span>@endif
                                     </div>
-                                    <p class="niu-disc__d">{{ $d['detail'] }}</p>
+                                    <p class="niu-disc__d"><span class="niu-disc__lbl">{{ __('app.ui.reason_col') }}:</span> {{ $d['detail'] }}</p>
+                                    @if (! empty($d['action']))
+                                        <p class="niu-disc__d niu-disc__act">@svg('heroicon-o-wrench-screwdriver', 'niu-ico', ['aria-hidden' => 'true'])<span><span class="niu-disc__lbl">{{ __('app.ui.action_col') }}:</span> {{ $d['action'] }}</span></p>
+                                    @endif
                                 </div>
                             </li>
                         @endforeach

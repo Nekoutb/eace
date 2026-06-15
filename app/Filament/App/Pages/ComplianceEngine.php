@@ -9,8 +9,10 @@ use App\Domain\Approval\VerificationStage;
 use App\Domain\Invoice\InvoiceData;
 use App\Domain\Invoice\InvoiceReader;
 use App\Filament\App\Resources\Verifications\VerificationResource;
+use App\Models\OrganizationProfile;
 use App\Models\Verification;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Invoice\InvoiceNoticeService;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
@@ -328,8 +330,30 @@ class ComplianceEngine extends Page
             'checks_by_key' => collect($checks)->keyBy('key')->all(),
             'invoice_checks' => $verification->invoice_checks,
             'triggered_rules' => $verification->triggered_rules ?? [],
+            'vendor_email' => $this->draftVendorEmail($verification),
             'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
         ];
+    }
+
+    /**
+     * A drafted accept/reject email to the vendor — only for recorded invoices.
+     *
+     * @return array{subject: string, body: string}|null
+     */
+    private function draftVendorEmail(Verification $verification): ?array
+    {
+        if (blank($verification->invoice_checks)) {
+            return null;
+        }
+
+        $supplier = is_array($verification->invoice_data) ? ($verification->invoice_data['supplier_name'] ?? null) : null;
+
+        return app(InvoiceNoticeService::class)->draft(
+            accepted: $verification->approval === ApprovalDecision::Accepted,
+            supplierName: is_string($supplier) ? $supplier : null,
+            buyerName: OrganizationProfile::current()->entity_name,
+            discrepancies: $this->discrepanciesFor($verification),
+        );
     }
 
     /**
@@ -349,6 +373,7 @@ class ComplianceEngine extends Page
                     'label' => $check['label'] ?? '',
                     'article' => $check['article'] ?? '',
                     'detail' => $check['detail'] ?? '',
+                    'action' => (string) __('app.remediation.check'),
                     'severity' => 'danger',
                 ];
             }
@@ -363,6 +388,7 @@ class ComplianceEngine extends Page
                     'detail' => filled($finding['detail'] ?? null)
                         ? (string) $finding['detail']
                         : (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
+                    'action' => (string) __('app.remediation.conformity'),
                     'severity' => 'danger',
                 ];
             }
@@ -374,6 +400,7 @@ class ComplianceEngine extends Page
                 'label' => $rule['title'] ?? '',
                 'article' => $rule['article'] ?? '',
                 'detail' => $rule['message'] ?? '',
+                'action' => (string) __('app.remediation.rule'),
                 'severity' => 'warning',
             ];
         }

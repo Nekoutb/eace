@@ -176,6 +176,22 @@ return [
         ],
     ],
 
+    'remediation' => [
+        'conformity' => 'Demander une facture corrigée rectifiant cette mention/ce montant (CGI art. 150).',
+        'check' => 'Le fournisseur doit régulariser sa situation fiscale avant le paiement de la facture.',
+        'rule' => 'Examiner ce risque avant de régler la facture.',
+    ],
+
+    'notice' => [
+        'the_vendor' => 'Madame, Monsieur',
+        'our_company' => 'Notre société',
+        'accept_subject' => 'Votre facture a été acceptée',
+        'accept_body' => "Madame, Monsieur (:supplier),\n\nÀ l’issue de notre contrôle de conformité (CGI art. 150 et vérification du NIU), votre facture a été acceptée pour paiement.\n\nCordialement,\n:buyer",
+        'reject_subject' => 'Votre facture — corrections requises',
+        'reject_body' => "Madame, Monsieur (:supplier),\n\nÀ l’issue de notre contrôle de conformité, nous ne pouvons accepter votre facture car elle présente les non-conformités suivantes :\n\n:issues\n\nMerci de nous transmettre une facture corrigée intégrant ces corrections afin que nous puissions procéder au paiement.\n\nCordialement,\n:buyer",
+        'no_issue_line' => '• (voir la vérification jointe)',
+    ],
+
     'ui' => [
         'lang' => 'Langue',
         'identifier' => 'Identifiant',
@@ -258,6 +274,16 @@ return [
         'no_discrepancies' => 'Tous les contrôles sont conformes — aucune anomalie détectée.',
         'no_results_title' => 'Aucun contrôle lancé',
         'no_results_body' => 'Choisissez une étape, remplissez le formulaire et lancez les contrôles. Les résultats et les anomalies s’affichent ici.',
+        'section_conformity_matrix' => 'Conformité de la facture — tous les contrôles (art. 150)',
+        'section_remediation' => 'Synthèse & remédiation',
+        'section_vendor_email' => 'Brouillon d’e-mail au fournisseur',
+        'vendor_email_help' => 'Relisez et envoyez-le depuis votre propre messagerie — l’application ne l’envoie jamais à votre place.',
+        'matrix_hint' => 'Survolez une coche/croix pour voir le motif. Faites défiler latéralement pour plus de contrôles.',
+        'copy' => 'Copier',
+        'copied' => 'Copié',
+        'reason_col' => 'Motif',
+        'action_col' => 'Remédiation',
+        'subject_label' => 'Objet',
         'scan_extract' => 'Lu sur la facture scannée',
         'notif_acf_read' => 'ACF lue — NIU renseigné',
         'notif_invoice_scanned' => 'Facture scannée — champs renseignés',

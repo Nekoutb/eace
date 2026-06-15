@@ -176,6 +176,22 @@ return [
         ],
     ],
 
+    'remediation' => [
+        'conformity' => 'Request a corrected invoice fixing this mention/figure (CGI art. 150).',
+        'check' => 'The vendor must regularise their tax standing before this invoice can be paid.',
+        'rule' => 'Review this risk before settling the invoice.',
+    ],
+
+    'notice' => [
+        'the_vendor' => 'Dear Sir/Madam',
+        'our_company' => 'Our company',
+        'accept_subject' => 'Your invoice has been accepted',
+        'accept_body' => "Dear :supplier,\n\nFollowing our compliance verification (CGI art. 150 and the NIU checks), your invoice has been accepted for payment.\n\nBest regards,\n:buyer",
+        'reject_subject' => 'Your invoice — corrections required',
+        'reject_body' => "Dear :supplier,\n\nFollowing our compliance verification, we are unable to accept your invoice as it shows the following non-conformities:\n\n:issues\n\nPlease send us a corrected invoice addressing these points so we can proceed with payment.\n\nBest regards,\n:buyer",
+        'no_issue_line' => '• (see the attached verification)',
+    ],
+
     'ui' => [
         'lang' => 'Language',
         'identifier' => 'Username',
@@ -256,6 +272,16 @@ return [
         'no_discrepancies' => 'All checks passed — no discrepancy found.',
         'no_results_title' => 'No checks run yet',
         'no_results_body' => 'Choose a phase, fill in the form and run the checks. The results and any discrepancies appear here.',
+        'section_conformity_matrix' => 'Invoice conformity — all checks (art. 150)',
+        'section_remediation' => 'Summary & remediation',
+        'section_vendor_email' => 'Draft email to the vendor',
+        'vendor_email_help' => 'Review and send this from your own mailbox — the app never sends it for you.',
+        'matrix_hint' => 'Hover a tick/cross to see why it passed or failed. Scroll sideways for more checks.',
+        'copy' => 'Copy',
+        'copied' => 'Copied',
+        'reason_col' => 'Reason',
+        'action_col' => 'Remediation',
+        'subject_label' => 'Subject',
         'scan_extract' => 'Read from the scanned invoice',
         'notif_acf_read' => 'ACF read — NIU filled in',
         'notif_invoice_scanned' => 'Invoice scanned — fields filled in',
