@@ -26,6 +26,9 @@ class AuditLogResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'niu';
 
+    // Distinct slug so it does not collide with the Audit Logs hub page (/app/audit-logs).
+    protected static ?string $slug = 'audit-journal';
+
     protected static ?int $navigationSort = 5;
 
     /** Reached from the Audit Logs hub, not the top-level sidebar. */
