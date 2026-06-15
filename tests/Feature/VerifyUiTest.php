@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use App\Domain\Niu\Verdict;
+use App\Filament\App\Pages\AuditLogs;
 use App\Filament\App\Pages\ComplianceEngine;
+use App\Filament\App\Pages\Dashboard;
 use App\Filament\App\Resources\AuditLogs\Pages\ListAuditLogs;
 use App\Filament\App\Resources\AuditLogs\Pages\ViewAuditLog;
 use App\Filament\App\Resources\TaxpayerFiles\Pages\ListTaxpayerFiles;
 use App\Filament\App\Resources\Verifications\Pages\ListVerifications;
+use App\Filament\App\Widgets\ComplianceStats;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Verification;
@@ -51,6 +54,15 @@ it('renders the audit logs list and a record view with the evidence', function (
 
 it('renders the taxpayer-file download log', function () {
     Livewire::test(ListTaxpayerFiles::class)->assertOk();
+});
+
+it('renders the dashboard, its stats widget, and the audit-logs hub', function () {
+    Livewire::test(Dashboard::class)->assertOk();
+    Livewire::test(ComplianceStats::class)->assertOk();
+    Livewire::test(AuditLogs::class)
+        ->assertOk()
+        ->assertSee(__('app.audit.hub_files_title'))
+        ->assertSee(__('app.audit.hub_evidence_title'));
 });
 
 it('runs a verification inline and reveals the discrepancies on the same screen', function () {

@@ -21,14 +21,25 @@ class VerificationResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'niu';
 
+    /** Reached from the Audit Logs hub, not the top-level sidebar. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function getNavigationLabel(): string
     {
-        return (string) __('app.nav.verifications');
+        return (string) __('app.nav.third_parties_evidence');
     }
 
     public static function getModelLabel(): string
     {
-        return (string) __('app.nav.verifications');
+        return (string) __('app.nav.third_parties_evidence');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return (string) __('app.nav.third_parties_evidence');
     }
 
     public static function infolist(Schema $schema): Schema

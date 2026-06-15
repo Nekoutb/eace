@@ -2,12 +2,29 @@
 
 return [
     'nav' => [
+        'dashboard' => 'Tableau de bord',
         'verifications' => 'Vérifications',
         'compliance_engine' => 'Moteur de conformité',
-        'certificates' => 'Attestations (ACF)',
-        'audit_logs' => 'Journaux d’audit',
-        'taxpayer_files' => 'Fichier des contribuables',
+        'certificates' => 'Attestations de Conformité',
+        'audit_logs' => 'Audit & preuves',
+        'audit_journal' => 'Journaux d’audit',
+        'third_parties_evidence' => 'Tiers & preuves',
+        'taxpayer_files' => 'Fichiers contribuables téléchargés',
         'settings' => 'Paramètres',
+    ],
+
+    'dash' => [
+        'invoices_processed' => 'Factures traitées',
+        'invoices_processed_desc' => 'étape enregistrement',
+        'compliant' => 'Factures conformes',
+        'non_compliant' => 'Factures non conformes',
+        'payment_processed' => 'Traitées pour paiement',
+        'payment_processed_desc' => 'étape règlement',
+        'payment_passed' => 'Validées pour paiement',
+        'payment_failed' => 'Rejetées au paiement',
+        'files_downloaded' => 'Fichiers contribuables téléchargés',
+        'files_desc' => 'Dernier : :period — :count contribuables, :date',
+        'no_files' => 'Aucun fichier des contribuables téléchargé',
     ],
 
     'audit' => [
@@ -34,6 +51,19 @@ return [
         'archive' => 'Archiver (libérer l’espace)',
         'archived' => 'Archivé',
         'archive_confirm' => 'Ceci supprime les PDF scannés pour libérer de l’espace, en conservant un manifeste inviolable (faits + empreintes SHA-256). Exportez les preuves d’abord si vous voulez garder les fichiers — action irréversible.',
+        'hub_files_title' => 'Fichiers des NIU téléchargés',
+        'hub_files_desc' => 'Chaque téléchargement du fichier des contribuables de la DGI (l’Excel de tous les contribuables), horodaté.',
+        'hub_files_reveal' => 'Afficher les fichiers téléchargés (:count)',
+        'hub_open_files' => 'Ouvrir le journal de téléchargement',
+        'hub_evidence_title' => 'Tiers & preuves des vérifications',
+        'hub_evidence_desc' => 'Pour chaque tiers vérifié, les preuves recueillies lors des contrôles :',
+        'hub_ev_1' => 'Extrait Fiscalis montrant le contribuable actif',
+        'hub_ev_2' => 'Copie de l’attestation de conformité fiscale (ACF) valide',
+        'hub_ev_3' => 'Lien vers le fichier où le NIU a été recherché et confirmé présent',
+        'hub_ev_4' => 'Capture de l’attestation de conformité fiscale authentifiée',
+        'hub_open_evidence' => 'Ouvrir Tiers & preuves',
+        'hub_journal_desc' => 'Le journal d’audit détaillé, facture par facture : chaque contrôle, son résultat et la preuve immuable associée.',
+        'hub_open_journal' => 'Ouvrir les journaux d’audit',
     ],
 
     'verdict' => [

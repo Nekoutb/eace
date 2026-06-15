@@ -2,12 +2,29 @@
 
 return [
     'nav' => [
+        'dashboard' => 'Dashboard',
         'verifications' => 'Verifications',
         'compliance_engine' => 'Compliance Engine',
-        'certificates' => 'Tax certificates (ACF)',
+        'certificates' => 'Compliance Certificates',
         'audit_logs' => 'Audit Logs',
-        'taxpayer_files' => 'Taxpayer file',
+        'audit_journal' => 'Audit journal',
+        'third_parties_evidence' => 'Third parties & evidence',
+        'taxpayer_files' => 'Downloaded taxpayer files',
         'settings' => 'Settings',
+    ],
+
+    'dash' => [
+        'invoices_processed' => 'Invoices processed',
+        'invoices_processed_desc' => 'recording stage',
+        'compliant' => 'Compliant invoices',
+        'non_compliant' => 'Non-compliant invoices',
+        'payment_processed' => 'Processed for payment',
+        'payment_processed_desc' => 'settlement stage',
+        'payment_passed' => 'Passed for payment',
+        'payment_failed' => 'Failed for payment',
+        'files_downloaded' => 'Taxpayer files downloaded',
+        'files_desc' => 'Latest: :period — :count taxpayers, :date',
+        'no_files' => 'No taxpayer file downloaded yet',
     ],
 
     'audit' => [
@@ -34,6 +51,19 @@ return [
         'archive' => 'Archive (free space)',
         'archived' => 'Archived',
         'archive_confirm' => 'This deletes the scanned PDFs to free space, keeping a tamper-proof manifest (facts + SHA-256 hashes). Export the evidence first if you want to keep the files — this cannot be undone.',
+        'hub_files_title' => 'Downloaded taxpayer-ID files',
+        'hub_files_desc' => 'Every download of the DGI taxpayer file (the Excel of all taxpayers), kept with a date/time stamp.',
+        'hub_files_reveal' => 'Reveal the downloaded files (:count)',
+        'hub_open_files' => 'Open the download log',
+        'hub_evidence_title' => 'Third parties & verification evidence',
+        'hub_evidence_desc' => 'For each verified third party, the evidence gathered during the checks:',
+        'hub_ev_1' => 'Fiscalis snapshot showing the taxpayer active',
+        'hub_ev_2' => 'Copy of the valid tax clearance certificate (ACF)',
+        'hub_ev_3' => 'Link to the file the NIU was searched in and confirmed present',
+        'hub_ev_4' => 'Snapshot of the authenticated tax clearance certificate',
+        'hub_open_evidence' => 'Open third parties & evidence',
+        'hub_journal_desc' => 'The detailed, per-invoice audit journal: every check, its result, and the immutable evidence behind it.',
+        'hub_open_journal' => 'Open the audit journal',
     ],
 
     'verdict' => [

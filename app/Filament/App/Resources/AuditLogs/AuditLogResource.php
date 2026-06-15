@@ -28,14 +28,20 @@ class AuditLogResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    /** Reached from the Audit Logs hub, not the top-level sidebar. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function getNavigationLabel(): string
     {
-        return (string) __('app.nav.audit_logs');
+        return (string) __('app.nav.audit_journal');
     }
 
     public static function getModelLabel(): string
     {
-        return (string) __('app.nav.audit_logs');
+        return (string) __('app.nav.audit_journal');
     }
 
     public static function infolist(Schema $schema): Schema

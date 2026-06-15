@@ -24,6 +24,12 @@ class TaxpayerFileResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    /** Reached from the Audit Logs hub, not the top-level sidebar. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function getNavigationLabel(): string
     {
         return (string) __('app.nav.taxpayer_files');
