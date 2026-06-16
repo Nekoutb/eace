@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Auth\UserRole;
 use App\Models\AcfCertificate;
 use App\Models\ThirdParty;
 use App\Models\User;
@@ -26,7 +27,14 @@ class TenantDatabaseSeeder extends Seeder
     {
         User::query()->updateOrCreate(
             ['email' => 'admin'],
-            ['name' => 'Agent Conformité', 'password' => Hash::make('admin')],
+            ['name' => 'Agent Conformité', 'password' => Hash::make('admin'), 'role' => UserRole::Admin],
+        );
+
+        // A second staff member at the lower privilege level, so the Users
+        // management screen and role distinction are visible in the demo.
+        User::query()->updateOrCreate(
+            ['email' => 'operateur'],
+            ['name' => 'Opérateur Saisie', 'password' => Hash::make('operateur'), 'role' => UserRole::Operator],
         );
 
         // A clean, authentic, in-force ACF for the active supplier — its invoice will be ACCEPTED.

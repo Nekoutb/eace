@@ -16,4 +16,11 @@ return [
      * first via the Audit Log). Manual export + archive always work in the UI.
      */
     'retention_months' => env('NIU_RETENTION_MONTHS') !== null ? (int) env('NIU_RETENTION_MONTHS') : null,
+
+    /*
+     * The base domain new client subdomains are created under. A client with
+     * subdomain "acme" is reached at acme.<base>. "localhost" in dev (works
+     * natively, no hosts edit); set to your production apex (e.g. niushield.cm).
+     */
+    'tenant_base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
 ];

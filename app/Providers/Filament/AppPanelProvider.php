@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\App\Pages\Dashboard;
 use App\Filament\App\Widgets\ComplianceStats;
 use App\Filament\Auth\Login;
+use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\Authenticate;
@@ -64,6 +65,7 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                ForcePasswordChange::class,
             ]);
     }
 }

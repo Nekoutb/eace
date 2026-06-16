@@ -11,6 +11,63 @@ return [
         'third_parties_evidence' => 'Third parties & evidence',
         'taxpayer_files' => 'Downloaded taxpayer files',
         'settings' => 'Settings',
+        'clients' => 'Clients',
+        'users' => 'Users',
+    ],
+
+    // Central-admin client (tenant) provisioning + per-tenant user management.
+    'client' => [
+        'singular' => 'Client',
+        'provision' => 'Provision a client',
+        'provision_desc' => 'Creates an isolated database, a subdomain, and a first administrator with a one-time password.',
+        'provision_failed' => 'Could not provision the client',
+        'provision_error' => 'An unexpected error stopped provisioning. Nothing was left half-created — please try again.',
+        'provisioned' => 'Client provisioned — copy the credentials now',
+        'org_name' => 'Organisation name',
+        'subdomain' => 'Subdomain',
+        'subdomain_help' => 'Lowercase letters, digits and hyphens. This becomes the client’s web address.',
+        'admin_name' => 'Administrator name',
+        'admin_email' => 'Administrator email',
+        'identifier' => 'Identifier',
+        'created' => 'Created',
+        'open' => 'Open',
+        'rename' => 'Rename',
+        'delete' => 'Delete client',
+        'delete_warning' => 'This permanently deletes the client and drops its entire database — every user, verification and certificate. This cannot be undone.',
+        'cred_email' => 'Sign-in email',
+        'cred_password' => 'Temporary password',
+        'cred_once' => 'Shown only once — it is not stored and cannot be recovered. The administrator must change it on first sign-in.',
+    ],
+
+    'user' => [
+        'add' => 'Add a user',
+        'add_desc' => 'Creates a staff member with a one-time password they must change on first sign-in.',
+        'name' => 'Name',
+        'email' => 'Email',
+        'role' => 'Role',
+        'created' => 'Added',
+        'last_login' => 'Last sign-in',
+        'never' => 'Never',
+        'created_title' => 'User added — copy the credentials now',
+        'reset_password' => 'Reset password',
+        'reset_desc' => 'Issues a new one-time password the user must change on next sign-in.',
+        'reset_title' => 'Password reset — copy the credentials now',
+        'delete' => 'Remove user',
+        'delete_warning' => 'This permanently removes the user from this client.',
+        'cannot_delete_self' => 'You cannot remove your own account.',
+        'cannot_delete_last_admin' => 'You cannot remove the last administrator.',
+        'cannot_demote_last_admin' => 'There must be at least one administrator.',
+        'temp_password' => 'Temporary password',
+        'must_change' => 'Must change password',
+    ],
+
+    'password_change' => [
+        'title' => 'Set a new password',
+        'intro' => 'Your account uses a temporary password. Choose a new one to continue.',
+        'new' => 'New password',
+        'confirm' => 'Confirm password',
+        'submit' => 'Save and continue',
+        'done' => 'Password updated.',
     ],
 
     'dash' => [
@@ -144,6 +201,12 @@ return [
         'present' => 'On the national file',
         'absent' => 'Not on the national file',
         'unverified' => 'Unverified',
+    ],
+
+    // Tenant staff roles (Phase 3 onboarding).
+    'role' => [
+        'admin' => 'Administrator',
+        'operator' => 'Operator',
     ],
 
     'severity' => [

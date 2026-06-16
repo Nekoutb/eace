@@ -6,8 +6,10 @@ use App\Domain\Approval\FourCheckEvaluator;
 use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
+use App\Http\Middleware\EnforcePasswordRotation;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Models\TaxpayerFileExtraction;
+use App\Models\User;
 use App\Services\Acf\AcfAuthenticityConnector;
 use App\Services\Acf\FakeAcfAuthenticityConnector;
 use App\Services\Acf\Harmony2AcfConnector;
@@ -19,6 +21,8 @@ use App\Services\Invoice\ClaudeInvoiceReader;
 use App\Services\Invoice\FakeInvoiceReader;
 use App\Services\Registry\FakeRegistryResolver;
 use App\Services\Registry\TaxpayerFileResolver;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -116,6 +120,15 @@ class AppServiceProvider extends ServiceProvider
         // (tenant) panel's actions — including login — run against the tenant
         // database, while the central admin panel keeps working on localhost.
         Livewire::setUpdateRoute(fn ($handle) => Route::post('/livewire/update', $handle)
-            ->middleware(['web', InitializeTenancyForLivewire::class]));
+            ->middleware(['web', InitializeTenancyForLivewire::class, EnforcePasswordRotation::class]));
+
+        // Stamp a tenant user's last sign-in. Guarded on the column being present
+        // so central admin users (whose table has no last_login_at) are skipped.
+        Event::listen(Login::class, function (Login $event): void {
+            $user = $event->user;
+            if ($user instanceof User && array_key_exists('last_login_at', $user->getAttributes())) {
+                $user->forceFill(['last_login_at' => now()])->saveQuietly();
+            }
+        });
     }
 }

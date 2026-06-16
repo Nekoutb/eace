@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Auth\UserRole;
 use App\Filament\App\Pages\Settings;
 use App\Models\OrganizationProfile;
 use App\Models\Tenant;
@@ -13,10 +14,12 @@ beforeEach(function () {
     $this->tenant = Tenant::create(['id' => 'profile']);
     tenancy()->initialize($this->tenant);
     Filament::setCurrentPanel('app');
+    // Settings is admin-only, so the buyer-identity editor acts as an admin.
     $this->actingAs(User::query()->create([
         'name' => 'Owner',
         'email' => 'owner',
         'password' => bcrypt('secret'),
+        'role' => UserRole::Admin,
     ]));
 });
 

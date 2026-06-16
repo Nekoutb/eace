@@ -20,6 +20,17 @@ class Settings extends Page
 
     protected static ?int $navigationSort = 10;
 
+    /** The buyer identity governs invoice conformity for everyone — admins only. */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() === true;
+    }
+
     public ?string $entityName = null;
 
     public ?string $entityNiu = null;

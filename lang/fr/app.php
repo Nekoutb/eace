@@ -11,6 +11,63 @@ return [
         'third_parties_evidence' => 'Tiers & preuves',
         'taxpayer_files' => 'Fichiers contribuables téléchargés',
         'settings' => 'Paramètres',
+        'clients' => 'Clients',
+        'users' => 'Utilisateurs',
+    ],
+
+    // Provisionnement des clients (locataires) côté admin central + gestion des utilisateurs par locataire.
+    'client' => [
+        'singular' => 'Client',
+        'provision' => 'Provisionner un client',
+        'provision_desc' => 'Crée une base de données isolée, un sous-domaine et un premier administrateur avec un mot de passe à usage unique.',
+        'provision_failed' => 'Impossible de provisionner le client',
+        'provision_error' => 'Une erreur inattendue a interrompu le provisionnement. Rien n’a été laissé à moitié créé — veuillez réessayer.',
+        'provisioned' => 'Client provisionné — copiez les identifiants maintenant',
+        'org_name' => 'Nom de l’organisation',
+        'subdomain' => 'Sous-domaine',
+        'subdomain_help' => 'Lettres minuscules, chiffres et tirets. Ceci devient l’adresse web du client.',
+        'admin_name' => 'Nom de l’administrateur',
+        'admin_email' => 'E-mail de l’administrateur',
+        'identifier' => 'Identifiant',
+        'created' => 'Créé le',
+        'open' => 'Ouvrir',
+        'rename' => 'Renommer',
+        'delete' => 'Supprimer le client',
+        'delete_warning' => 'Ceci supprime définitivement le client et détruit toute sa base de données — chaque utilisateur, vérification et attestation. Irréversible.',
+        'cred_email' => 'E-mail de connexion',
+        'cred_password' => 'Mot de passe temporaire',
+        'cred_once' => 'Affiché une seule fois — non stocké et irrécupérable. L’administrateur devra le changer à la première connexion.',
+    ],
+
+    'user' => [
+        'add' => 'Ajouter un utilisateur',
+        'add_desc' => 'Crée un membre du personnel avec un mot de passe à usage unique à changer à la première connexion.',
+        'name' => 'Nom',
+        'email' => 'E-mail',
+        'role' => 'Rôle',
+        'created' => 'Ajouté le',
+        'last_login' => 'Dernière connexion',
+        'never' => 'Jamais',
+        'created_title' => 'Utilisateur ajouté — copiez les identifiants maintenant',
+        'reset_password' => 'Réinitialiser le mot de passe',
+        'reset_desc' => 'Émet un nouveau mot de passe à usage unique à changer à la prochaine connexion.',
+        'reset_title' => 'Mot de passe réinitialisé — copiez les identifiants maintenant',
+        'delete' => 'Retirer l’utilisateur',
+        'delete_warning' => 'Ceci retire définitivement l’utilisateur de ce client.',
+        'cannot_delete_self' => 'Vous ne pouvez pas retirer votre propre compte.',
+        'cannot_delete_last_admin' => 'Vous ne pouvez pas retirer le dernier administrateur.',
+        'cannot_demote_last_admin' => 'Il doit rester au moins un administrateur.',
+        'temp_password' => 'Mot de passe temporaire',
+        'must_change' => 'Doit changer le mot de passe',
+    ],
+
+    'password_change' => [
+        'title' => 'Définir un nouveau mot de passe',
+        'intro' => 'Votre compte utilise un mot de passe temporaire. Choisissez-en un nouveau pour continuer.',
+        'new' => 'Nouveau mot de passe',
+        'confirm' => 'Confirmer le mot de passe',
+        'submit' => 'Enregistrer et continuer',
+        'done' => 'Mot de passe mis à jour.',
     ],
 
     'dash' => [
@@ -144,6 +201,12 @@ return [
         'present' => 'Présent au fichier national',
         'absent' => 'Absent du fichier national',
         'unverified' => 'Non vérifié',
+    ],
+
+    // Rôles du personnel du locataire (intégration — Phase 3).
+    'role' => [
+        'admin' => 'Administrateur',
+        'operator' => 'Opérateur',
     ],
 
     'severity' => [
