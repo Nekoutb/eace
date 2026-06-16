@@ -42,8 +42,15 @@ final class AcfReader
             return $m[1];
         }
 
-        // Fallback: the reference is repeated verbatim in the authenticity URL.
-        return preg_match('/[?&]reference=(\d{6,})/iu', $text, $m) === 1 ? $m[1] : null;
+        // The reference is repeated verbatim in the authenticity URL.
+        if (preg_match('/[?&]reference=(\d{6,})/iu', $text, $m) === 1) {
+            return $m[1];
+        }
+
+        // Last resort: the ACF reference has a distinctive shape — a 620-prefixed
+        // 12-digit number — so it can still be recovered if the labels and URL are
+        // mangled by OCR. No other field on the certificate matches this pattern.
+        return preg_match('/\b(620\d{9})\b/u', $text, $m) === 1 ? $m[1] : null;
     }
 
     private function niu(string $text): ?NiuNumber

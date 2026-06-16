@@ -31,9 +31,16 @@ final class AcfAuthenticationService
             $disk->put($path, (string) $result->screenshotPng);
         }
 
+        // Preserve the QR deep-link captured at ingestion; only adopt the
+        // connector's URL when it is a real verification deep-link (carries the
+        // reference), so a failed/fake check never wipes the cert's known URL.
+        $authUrl = str_contains($result->url, 'reference=')
+            ? $result->url
+            : ($acf->authenticity_url ?: $result->url);
+
         $acf->forceFill([
             'authenticity_status' => $result->status,
-            'authenticity_url' => $result->url,
+            'authenticity_url' => $authUrl,
             'authenticity_snapshot_path' => $path,
             'authenticity_note' => $result->resultText,
             'last_verified_at' => CarbonImmutable::now(),

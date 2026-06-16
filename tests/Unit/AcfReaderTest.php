@@ -57,3 +57,19 @@ it('returns nulls and not-usable for unrelated text', function () {
         ->and($extract->niu)->toBeNull()
         ->and($extract->isUsable())->toBeFalse();
 });
+
+it('recovers the 620-prefixed reference even when the label and URL are mangled', function () {
+    // No "ACF Reference" label, no authentification URL — only the bare number
+    // amid other certificate figures (NIU, phone, P.O. box, dates).
+    $text = 'M109400000449K  237696921832  13615  10/04/2026  620264856998  ADC SA';
+    $extract = (new AcfReader)->fromText($text);
+
+    expect($extract->reference)->toBe('620264856998');
+});
+
+it('does not mistake the phone or NIU digits for the reference', function () {
+    $text = 'Téléphone : 237696921832  de NIU: M109400000449K';
+    $extract = (new AcfReader)->fromText($text);
+
+    expect($extract->reference)->toBeNull();
+});

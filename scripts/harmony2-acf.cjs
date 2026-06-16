@@ -1,16 +1,18 @@
-// Harmony2 ACF authenticity driver.
+// Harmony2 ACF authenticity driver (deep-link).
 //
-// Drives the DGI "Authentification des documents" SPA
-// (https://fanr.harmony2.cm/authentification) for one ACF reference and writes
-// a full-page screenshot of the verdict. Emits a single JSON line on stdout:
+// The DGI "Authentification des documents" portal accepts a direct deep-link
+// carrying the certificate reference — exactly what the ACF's QR code encodes:
+//   https://fanr.harmony2.cm/authentification?doc=ACF&reference=<REFERENCE>
+// where <REFERENCE> is the 620-prefixed reference printed top-left on the ACF
+// (beneath the tax centre). Navigating straight to it makes the SPA fetch and
+// render the verdict — no need to drive the "Saisir la référence" form.
+//
+// Emits one JSON line on stdout:
 //   { "status": "authentic|not_authentic|unverified", "text": "...", "screenshot": "<path>" }
 //
-// Invoked by App\Services\Acf\Harmony2AcfConnector via Symfony Process. Kept as
-// a Node script (not Browsershot) because the portal is a MUI/React form that
-// must be clicked through — Browsershot only renders a static URL.
+// Invoked by App\Services\Acf\Harmony2AcfConnector via Symfony Process.
 //
-// Usage: node scripts/harmony2-acf.cjs --reference=<ref> --out=<png> \
-//          --chrome=<chrome.exe> [--url=<base>] [--type=acf]
+// Usage: node scripts/harmony2-acf.cjs --url=<full deep-link> --out=<png> --chrome=<chrome.exe>
 
 const puppeteer = require('puppeteer');
 
@@ -19,11 +21,9 @@ function arg(name, fallback = null) {
   return hit ? hit.slice(name.length + 3) : fallback;
 }
 
-const REFERENCE = arg('reference');
+const URL = arg('url');
 const OUT = arg('out');
 const CHROME = arg('chrome');
-const URL = arg('url', 'https://fanr.harmony2.cm/authentification');
-const DOC_TYPE = arg('type', 'acf');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function classify(text) {
@@ -32,7 +32,7 @@ function classify(text) {
   if (/n['’]est pas authentifi|n['’]est pas reconnu|pas authentifi|non authentifi|non reconnu|introuvable|invalide/.test(t)) {
     return 'not_authentic';
   }
-  if (/est authentifi|document authentifi|reconnu par le syst|est reconnu|valide/.test(t)) {
+  if (/est authentifi|document authentifi|reconnu par le syst|est reconnu/.test(t)) {
     return 'authentic';
   }
   return 'unverified';
@@ -44,7 +44,7 @@ function fail(message) {
 }
 
 (async () => {
-  if (!REFERENCE || !OUT || !CHROME) return fail('missing --reference/--out/--chrome');
+  if (!URL || !OUT || !CHROME) return fail('missing --url/--out/--chrome');
 
   let browser;
   try {
@@ -54,41 +54,42 @@ function fail(message) {
       headless: 'new',
     });
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 1400 });
-    await page.goto(URL, { waitUntil: 'networkidle2', timeout: 90000 });
+    await page.setViewport({ width: 1280, height: 1500 });
+    // Timeouts kept comfortably below the PHP-side Process timeout so a slow
+    // portal yields a clean "unverified" rather than being SIGKILLed mid-run.
+    await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    // Reveal the reference form.
-    await page.locator('button::-p-text(Saisir la référence)').click();
-    await sleep(1500);
+    // Wait for the SPA to fetch and render a verdict (either polarity), then
+    // give the embedded PDF preview a moment to paint before the screenshot.
+    await page.waitForFunction(
+      () => /authentifi|reconnu|introuvable|invalide/i.test(document.body.innerText || ''),
+      { timeout: 20000 },
+    ).catch(() => {});
+    await sleep(3500);
 
-    // Open the document-type select and pick the requested type by data-value.
-    await page.locator('[role=combobox]').click();
-    await sleep(1000);
-    const opts = await page.$$('li[role=option], [role=option]');
-    let chose = false;
-    for (const h of opts) {
-      const val = await h.evaluate(e => e.getAttribute('data-value') || '');
-      if (val === DOC_TYPE) { await h.click(); chose = true; break; }
+    const info = await page.evaluate(() => ({
+      text: document.body.innerText.replace(/\n{2,}/g, '\n').trim().slice(0, 2000),
+      url: location.href,
+    }));
+
+    // Corroboration: only trust the keyword verdict if we are still on the
+    // result view for THIS reference (its digits remain in the URL or body).
+    // A redirect to a generic/login/maintenance page loses the reference, so it
+    // is classified "unverified" instead of misreading a stray "authentifié".
+    const ref = (URL.match(/reference=(\d+)/) || [])[1] || '';
+    const onResultView = ref === '' || info.url.includes(ref) || info.text.includes(ref);
+    const status = onResultView ? classify(info.text) : 'unverified';
+
+    // Capture the screenshot independently — a render glitch must not discard an
+    // already-computed verdict (the verdict is the contract; the shot is evidence).
+    let shot = OUT;
+    try {
+      await page.screenshot({ path: OUT, fullPage: true });
+    } catch (_) {
+      shot = null;
     }
-    if (!chose) {
-      // fall back to matching ACF by label
-      for (const h of opts) {
-        const t = (await h.evaluate(e => e.innerText || '')).toLowerCase();
-        if (/conformit[ée] fiscale|\bacf\b/.test(t)) { await h.click(); chose = true; break; }
-      }
-    }
-    await sleep(700);
 
-    // Enter the reference and submit.
-    await page.locator('input[name=reference]').fill(REFERENCE);
-    await sleep(400);
-    await page.locator('button::-p-text(Valider)').click();
-    await sleep(7000); // allow the API round-trip + result render
-
-    const text = await page.evaluate(() => document.body.innerText.replace(/\n{2,}/g, '\n').trim().slice(0, 2000));
-    await page.screenshot({ path: OUT, fullPage: true });
-
-    process.stdout.write(JSON.stringify({ status: classify(text), text, screenshot: OUT }) + '\n');
+    process.stdout.write(JSON.stringify({ status, text: info.text, screenshot: shot }) + '\n');
     await browser.close();
     process.exit(0);
   } catch (e) {
