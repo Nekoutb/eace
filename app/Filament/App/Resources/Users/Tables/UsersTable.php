@@ -7,6 +7,7 @@ use App\Filament\App\Resources\Users\UserResource;
 use App\Models\User;
 use App\Support\TempPassword;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -54,17 +55,22 @@ class UsersTable
                     ->dateTime('d/m/Y')
                     ->sortable(),
             ])
+            ->emptyStateHeading(__('app.user.empty_heading'))
+            ->emptyStateDescription(__('app.user.empty_desc'))
+            ->emptyStateIcon('heroicon-o-users')
             ->recordActions([
-                self::editAction(),
-                self::resetPasswordAction(),
-                self::deleteAction(),
+                ActionGroup::make([
+                    self::editAction(),
+                    self::resetPasswordAction(),
+                    self::deleteAction(),
+                ])->label(__('app.user.actions')),
             ]);
     }
 
     private static function editAction(): Action
     {
         return Action::make('edit')
-            ->label(__('app.client.rename'))
+            ->label(__('app.user.edit'))
             ->icon('heroicon-o-pencil-square')
             ->color('gray')
             ->fillForm(fn (User $record): array => ['name' => $record->name, 'role' => $record->role?->value])

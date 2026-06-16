@@ -32,6 +32,9 @@ return [
         'created' => 'Created',
         'open' => 'Open',
         'rename' => 'Rename',
+        'actions' => 'Actions',
+        'empty_heading' => 'No clients yet',
+        'empty_desc' => 'Provision your first client — it gets its own database, subdomain and admin.',
         'delete' => 'Delete client',
         'delete_warning' => 'This permanently deletes the client and drops its entire database — every user, verification and certificate. This cannot be undone.',
         'cred_email' => 'Sign-in email',
@@ -42,6 +45,10 @@ return [
     'user' => [
         'add' => 'Add a user',
         'add_desc' => 'Creates a staff member with a one-time password they must change on first sign-in.',
+        'edit' => 'Edit',
+        'actions' => 'Actions',
+        'empty_heading' => 'No staff yet',
+        'empty_desc' => 'Add your first team member — they’ll sign in with a one-time password.',
         'name' => 'Name',
         'email' => 'Email',
         'role' => 'Role',
@@ -82,6 +89,8 @@ return [
         'files_downloaded' => 'Taxpayer files downloaded',
         'files_desc' => 'Latest: :period — :count taxpayers, :date',
         'no_files' => 'No taxpayer file downloaded yet',
+        'of_processed' => ':pct% of processed',
+        'of_payments' => ':pct% of payments',
     ],
 
     'audit' => [

@@ -42,9 +42,11 @@ class ComplianceStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('primary'),
             Stat::make(__('app.dash.compliant'), number_format($compliant))
+                ->description(__('app.dash.of_processed', ['pct' => $this->pct($compliant, $recordingTotal)]))
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('success'),
             Stat::make(__('app.dash.non_compliant'), number_format($nonCompliant))
+                ->description(__('app.dash.of_processed', ['pct' => $this->pct($nonCompliant, $recordingTotal)]))
                 ->descriptionIcon('heroicon-m-no-symbol')
                 ->color('danger'),
             Stat::make(__('app.dash.payment_processed'), number_format($settlementTotal))
@@ -52,9 +54,11 @@ class ComplianceStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-queue-list')
                 ->color('primary'),
             Stat::make(__('app.dash.payment_passed'), number_format($passed))
+                ->description(__('app.dash.of_payments', ['pct' => $this->pct($passed, $settlementTotal)]))
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
             Stat::make(__('app.dash.payment_failed'), number_format($failed))
+                ->description(__('app.dash.of_payments', ['pct' => $this->pct($failed, $settlementTotal)]))
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color('danger'),
             Stat::make(__('app.dash.files_downloaded'), number_format($filesCount))
@@ -62,6 +66,12 @@ class ComplianceStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-down-tray')
                 ->color('info'),
         ];
+    }
+
+    /** Whole-percent share of a part in a total, guarding division by zero. */
+    protected function pct(int $part, int $total): int
+    {
+        return $total > 0 ? (int) round($part / $total * 100) : 0;
     }
 
     protected function count(VerificationStage $stage, ?ApprovalDecision $approval): int

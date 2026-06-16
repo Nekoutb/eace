@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         );
 
         if (! Tenant::query()->whereKey('demo')->exists()) {
-            $tenant = Tenant::create(['id' => 'demo']);
+            $tenant = Tenant::create(['id' => 'demo', 'name' => 'Société Démo']);
             $tenant->domains()->create(['domain' => 'demo.localhost']);
         }
     }

@@ -32,6 +32,9 @@ return [
         'created' => 'Créé le',
         'open' => 'Ouvrir',
         'rename' => 'Renommer',
+        'actions' => 'Actions',
+        'empty_heading' => 'Aucun client',
+        'empty_desc' => 'Provisionnez votre premier client — il obtient sa propre base de données, son sous-domaine et son administrateur.',
         'delete' => 'Supprimer le client',
         'delete_warning' => 'Ceci supprime définitivement le client et détruit toute sa base de données — chaque utilisateur, vérification et attestation. Irréversible.',
         'cred_email' => 'E-mail de connexion',
@@ -42,6 +45,10 @@ return [
     'user' => [
         'add' => 'Ajouter un utilisateur',
         'add_desc' => 'Crée un membre du personnel avec un mot de passe à usage unique à changer à la première connexion.',
+        'edit' => 'Modifier',
+        'actions' => 'Actions',
+        'empty_heading' => 'Aucun membre du personnel',
+        'empty_desc' => 'Ajoutez votre premier collaborateur — il se connectera avec un mot de passe à usage unique.',
         'name' => 'Nom',
         'email' => 'E-mail',
         'role' => 'Rôle',
@@ -82,6 +89,8 @@ return [
         'files_downloaded' => 'Fichiers contribuables téléchargés',
         'files_desc' => 'Dernier : :period — :count contribuables, :date',
         'no_files' => 'Aucun fichier des contribuables téléchargé',
+        'of_processed' => ':pct% des traitées',
+        'of_payments' => ':pct% des paiements',
     ],
 
     'audit' => [

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Clients\Tables;
 
 use App\Models\Tenant;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\FontFamily;
@@ -37,12 +38,17 @@ class ClientsTable
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
+            ->emptyStateHeading(__('app.client.empty_heading'))
+            ->emptyStateDescription(__('app.client.empty_desc'))
+            ->emptyStateIcon('heroicon-o-building-office-2')
             ->recordActions([
-                self::openAction(),
-                self::renameAction(),
-                DeleteAction::make()
-                    ->modalHeading(__('app.client.delete'))
-                    ->modalDescription(__('app.client.delete_warning')),
+                ActionGroup::make([
+                    self::openAction(),
+                    self::renameAction(),
+                    DeleteAction::make()
+                        ->modalHeading(__('app.client.delete'))
+                        ->modalDescription(__('app.client.delete_warning')),
+                ])->label(__('app.client.actions')),
             ]);
     }
 
