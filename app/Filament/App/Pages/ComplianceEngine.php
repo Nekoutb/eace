@@ -9,9 +9,12 @@ use App\Domain\Approval\VerificationStage;
 use App\Domain\Invoice\InvoiceData;
 use App\Domain\Invoice\InvoiceReader;
 use App\Filament\App\Resources\Verifications\VerificationResource;
+use App\Models\AcfCertificate;
 use App\Models\OrganizationProfile;
 use App\Models\Verification;
+use App\Services\Acf\AcfAuthenticationService;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Invoice\InvoiceNoticeService;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
@@ -19,6 +22,7 @@ use App\Services\Verification\VerifyRequest;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
@@ -67,6 +71,17 @@ class ComplianceEngine extends Page
     /** @var array<string, mixed>|null human-readable summary of what the scan extracted */
     public ?array $extracted = null;
 
+    // Live evidence captured automatically as the documents are read (no manual
+    // action): the Harmony2 authenticity verdict lives on the certificate; the
+    // DGI Fiscalis snapshot is stashed here and attached to the verification on run.
+    public ?string $acfAuthLabel = null;
+
+    public ?string $fiscalisSnapshotPath = null;
+
+    public ?string $fiscalisPresence = null;
+
+    public ?string $fiscalisCheckedAt = null;
+
     // Settlement input.
     public ?string $nius = null;
 
@@ -108,7 +123,7 @@ class ComplianceEngine extends Page
     public function setStage(string $stage): void
     {
         $this->stage = $stage === 'settlement' ? 'settlement' : 'recording';
-        $this->reset(['result', 'batch', 'discrepancies']);
+        $this->reset(['result', 'batch', 'discrepancies', 'acfAuthLabel', 'fiscalisSnapshotPath', 'fiscalisPresence', 'fiscalisCheckedAt']);
     }
 
     /**
@@ -144,6 +159,31 @@ class ComplianceEngine extends Page
         }
 
         Notification::make()->title(__('app.ui.notif_acf_read'))->success()->send();
+
+        // Authenticate the document live against Harmony2 right away — no manual
+        // action. The screenshot + verdict are stored on the certificate, which
+        // the verification then links to.
+        $this->authenticateDocument($certificate);
+    }
+
+    /**
+     * Drive the DGI Harmony2 portal for this certificate's reference and store
+     * the verdict + screenshot on it. Graceful: a portal outage records
+     * "unverified" and never blocks the recording.
+     */
+    private function authenticateDocument(AcfCertificate $certificate): void
+    {
+        if (! $this->liveSnapshots()) {
+            return;
+        }
+
+        $result = app(AcfAuthenticationService::class)->authenticate($certificate);
+        $this->acfAuthLabel = $result->status->label();
+
+        Notification::make()
+            ->title(__('app.ui.notif_doc_authenticated', ['status' => $result->status->label()]))
+            ->status($result->status->color() === 'success' ? 'success' : ($result->status->color() === 'danger' ? 'danger' : 'warning'))
+            ->send();
     }
 
     /**
@@ -188,6 +228,57 @@ class ComplianceEngine extends Page
         }
 
         Notification::make()->title(__('app.ui.notif_invoice_scanned'))->success()->send();
+
+        // Capture the supplier's live DGI national-file snapshot right away — no
+        // manual action. It is attached to the verification when run() persists it.
+        $this->captureFiscalisSnapshot($this->filled($this->rawInput) ? trim((string) $this->rawInput) : null);
+    }
+
+    /**
+     * Consult the DGI national taxpayer file for this NIU and stash the presence
+     * verdict + screenshot, to be attached to the verification on run(). Graceful.
+     */
+    private function captureFiscalisSnapshot(?string $niu): void
+    {
+        $this->reset(['fiscalisSnapshotPath', 'fiscalisPresence', 'fiscalisCheckedAt']);
+
+        if (! $this->liveSnapshots() || $niu === null) {
+            return;
+        }
+
+        $result = app(FiscalisConnector::class)->check($niu);
+        $this->fiscalisPresence = $result->presence->value;
+        $this->fiscalisCheckedAt = now()->toDateTimeString();
+
+        if ($result->hasScreenshot()) {
+            $path = 'fiscalis-snapshots/niu-'.preg_replace('/[^A-Za-z0-9]/', '', $niu).'-'.now()->format('Ymd-His').'.png';
+            Storage::disk('local')->put($path, (string) $result->screenshotPng);
+            $this->fiscalisSnapshotPath = $path;
+        }
+
+        Notification::make()
+            ->title(__('app.ui.notif_fiscalis_captured', ['status' => $result->presence->label()]))
+            ->status($result->presence->color() === 'success' ? 'success' : ($result->presence->color() === 'danger' ? 'danger' : 'warning'))
+            ->send();
+    }
+
+    private function liveSnapshots(): bool
+    {
+        return (bool) config('services.browsershot.enabled');
+    }
+
+    /** Persist the stashed Fiscalis snapshot onto the freshly created verification. */
+    private function attachFiscalisSnapshot(Verification $verification): void
+    {
+        if ($this->fiscalisPresence === null && $this->fiscalisSnapshotPath === null) {
+            return;
+        }
+
+        $verification->forceFill([
+            'fiscalis_presence' => $this->fiscalisPresence,
+            'fiscalis_snapshot_path' => $this->fiscalisSnapshotPath,
+            'fiscalis_checked_at' => $this->fiscalisCheckedAt,
+        ])->save();
     }
 
     /** Run the checks for the current phase and reveal the results inline. */
@@ -235,6 +326,9 @@ class ComplianceEngine extends Page
             invoiceFilePath: $this->invoiceStoredPath,
             checkedBy: auth()->id(),
         ));
+
+        // Attach the live Fiscalis snapshot captured when the invoice was scanned.
+        $this->attachFiscalisSnapshot($verification);
 
         $this->result = $this->present($verification);
         $this->discrepancies = $this->discrepanciesFor($verification);

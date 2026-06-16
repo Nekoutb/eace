@@ -414,6 +414,8 @@ return [
         'scan_extract' => 'Read from the scanned invoice',
         'notif_acf_read' => 'ACF read — NIU filled in',
         'notif_invoice_scanned' => 'Invoice scanned — fields filled in',
+        'notif_doc_authenticated' => 'Document authentication (Harmony2): :status',
+        'notif_fiscalis_captured' => 'DGI national-file check: :status',
         'notif_settings_saved' => 'Settings saved',
         'settings_intro' => 'Your organisation as the buyer. Each scanned supplier invoice is checked against this name and NIU (the client mentions required by CGI art. 150).',
         'entity_name' => 'Your entity name (business name)',

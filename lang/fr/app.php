@@ -416,6 +416,8 @@ return [
         'scan_extract' => 'Lu sur la facture scannée',
         'notif_acf_read' => 'ACF lue — NIU renseigné',
         'notif_invoice_scanned' => 'Facture scannée — champs renseignés',
+        'notif_doc_authenticated' => 'Authentification du document (Harmony2) : :status',
+        'notif_fiscalis_captured' => 'Contrôle fichier national DGI : :status',
         'notif_settings_saved' => 'Paramètres enregistrés',
         'settings_intro' => 'Votre organisation en tant qu’acheteur. Chaque facture fournisseur scannée est vérifiée par rapport à ce nom et ce NIU (les mentions « client » exigées par l’art. 150 du CGI).',
         'entity_name' => 'Nom de votre entité (raison sociale)',
