@@ -8,6 +8,12 @@ use App\Domain\Risk\RegistryResolver;
 use App\Domain\Risk\RiskEngine;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Models\TaxpayerFileExtraction;
+use App\Services\Acf\AcfAuthenticityConnector;
+use App\Services\Acf\FakeAcfAuthenticityConnector;
+use App\Services\Acf\Harmony2AcfConnector;
+use App\Services\Fiscalis\DgiFiscalisConnector;
+use App\Services\Fiscalis\FakeFiscalisConnector;
+use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Invoice\AzureInvoiceReader;
 use App\Services\Invoice\ClaudeInvoiceReader;
 use App\Services\Invoice\FakeInvoiceReader;
@@ -60,6 +66,44 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new FakeInvoiceReader;
+        });
+
+        // ACF authenticity (Harmony2): the live headless-browser connector when
+        // Browsershot is enabled and Chromium is pinned, else a no-network fake
+        // that always reports "unverified" (never fabricates an authentic verdict).
+        $this->app->bind(AcfAuthenticityConnector::class, function () {
+            $url = (string) config('services.harmony2.acf_url', 'https://fanr.harmony2.cm/authentification');
+            $chrome = config('services.browsershot.chrome_path');
+
+            if (config('services.browsershot.enabled') && filled($chrome)) {
+                return new Harmony2AcfConnector(
+                    url: $url,
+                    chromePath: (string) $chrome,
+                    nodeBinary: config('services.browsershot.node_path'),
+                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 60,
+                );
+            }
+
+            return new FakeAcfAuthenticityConnector($url);
+        });
+
+        // Fiscalis presence (DGI national file): the live headless-browser
+        // connector when Browsershot is enabled, else a no-network fake that
+        // always reports "unverified".
+        $this->app->bind(FiscalisConnector::class, function () {
+            $url = (string) config('services.dgi.consultation_url');
+            $chrome = config('services.browsershot.chrome_path');
+
+            if (config('services.browsershot.enabled') && filled($chrome)) {
+                return new DgiFiscalisConnector(
+                    url: $url,
+                    chromePath: (string) $chrome,
+                    nodeBinary: config('services.browsershot.node_path'),
+                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 60,
+                );
+            }
+
+            return new FakeFiscalisConnector($url);
         });
     }
 

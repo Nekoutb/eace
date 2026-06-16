@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Fiscalis\FiscalisPresence;
 use App\Domain\Niu\Verdict;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,9 @@ use Illuminate\Support\Carbon;
  * @property ?string $invoice_file_path
  * @property array<string, mixed>|null $manifest
  * @property ?Carbon $archived_at
+ * @property ?FiscalisPresence $fiscalis_presence
+ * @property ?string $fiscalis_snapshot_path
+ * @property ?Carbon $fiscalis_checked_at
  */
 class Verification extends Model
 {
@@ -49,6 +53,8 @@ class Verification extends Model
             'exposure_xaf' => 'integer',
             'manifest' => 'array',
             'archived_at' => 'datetime',
+            'fiscalis_presence' => FiscalisPresence::class,
+            'fiscalis_checked_at' => 'datetime',
         ];
     }
 

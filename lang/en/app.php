@@ -139,6 +139,13 @@ return [
         'radie' => 'Struck off',
     ],
 
+    // Live DGI national-file consultation outcome (vs. the inferred status above).
+    'fiscalis_presence' => [
+        'present' => 'On the national file',
+        'absent' => 'Not on the national file',
+        'unverified' => 'Unverified',
+    ],
+
     'severity' => [
         'info' => 'Information',
         'warning' => 'Warning',
@@ -258,6 +265,15 @@ return [
         'status' => 'Status',
         'validity' => 'Validity',
         'authenticity_harmony' => 'Authenticity (Harmony2)',
+        'authenticity' => 'Authenticity',
+        'authenticate' => 'Authenticate (Harmony2)',
+        'authenticate_confirm' => 'This runs a live check against the DGI Harmony2 portal and captures a screenshot of the verdict. It may take up to a minute.',
+        'authenticate_unverified' => 'The DGI portal could not be reached or driven — recorded as unverified, no verdict was fabricated.',
+        'ev_verified_at' => 'Checked on',
+        'ev_view_snapshot' => 'Open the verdict snapshot',
+        'capture_fiscalis' => 'Capture DGI status',
+        'capture_fiscalis_confirm' => 'This runs a live consultation of the DGI national taxpayer file for this NIU and captures a screenshot of the result. It may take up to a minute.',
+        'capture_unverified' => 'The DGI portal could not be reached or driven — recorded as unverified, no verdict was fabricated.',
         'issued_at' => 'Issued on',
         'expires_at' => 'Expires on',
         'validity_duration' => 'Validity period',

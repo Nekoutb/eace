@@ -6,6 +6,10 @@
 @php($statusValue = $payload['fiscalis_status'] ?? null)
 @php($acfUrl = $acf !== null ? \App\Filament\App\Resources\AcfCertificates\AcfCertificateResource::getUrl('view', ['record' => $acf]) : null)
 @php($filesUrl = \App\Filament\App\Resources\TaxpayerFiles\TaxpayerFileResource::getUrl())
+@php($acfAuth = $acf?->authenticity_status)
+@php($acfSnap = ($acf && $acf->authenticity_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($acf->authenticity_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($acf->authenticity_snapshot_path)) : null)
+@php($fiscPresence = $record->fiscalis_presence)
+@php($fiscSnap = ($record->fiscalis_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->fiscalis_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($record->fiscalis_snapshot_path)) : null)
 
 <div class="ev">
     <style>
@@ -151,14 +155,29 @@
                 <tr>
                     <td class="ev-strong">{{ __('app.audit.hub_ev_1') }}</td>
                     <td>
-                        @if ($snapshot && is_string($statusValue))
-                            <span class="ev-badge ev-badge--{{ $onFile ? 'success' : 'gray' }}">{{ __('app.fiscalis_status.'.$statusValue) }}</span>
+                        @if ($fiscPresence)
+                            <span class="ev-badge ev-badge--{{ $fiscPresence->color() }}">{{ $fiscPresence->label() }}</span>
+                            @if ($record->fiscalis_checked_at)
+                                <span class="ev-muted" style="display:block;margin-top:.3rem">{{ __('app.ui.ev_verified_at') }} {{ $record->fiscalis_checked_at->format('d/m/Y H:i') }}</span>
+                            @endif
                         @else
-                            <span class="ev-tag">{{ __('app.ui.placeholder_dash') }}</span>
+                            @if ($snapshot && is_string($statusValue))
+                                <span class="ev-badge ev-badge--{{ $onFile ? 'success' : 'gray' }}">{{ __('app.fiscalis_status.'.$statusValue) }}</span>
+                            @else
+                                <span class="ev-tag">{{ __('app.ui.placeholder_dash') }}</span>
+                            @endif
+                            <span class="ev-pending">@svg('heroicon-m-clock', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.audit.pending_live') }}</span>
                         @endif
-                        <span class="ev-pending">@svg('heroicon-m-clock', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.audit.pending_live') }}</span>
                     </td>
-                    <td class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</td>
+                    <td>
+                        @if ($fiscSnap)
+                            <a href="{{ $fiscSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
+                                <img src="{{ $fiscSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
+                            </a>
+                        @else
+                            <span class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</span>
+                        @endif
+                    </td>
                 </tr>
                 {{-- 2. Copy of the valid ACF --}}
                 <tr>
@@ -181,8 +200,25 @@
                 {{-- 4. Authenticated ACF snapshot (Harmony2) --}}
                 <tr>
                     <td class="ev-strong">{{ __('app.audit.hub_ev_4') }}</td>
-                    <td><span class="ev-pending">@svg('heroicon-m-clock', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.audit.pending_harmony') }}</span></td>
-                    <td class="ev-muted">—</td>
+                    <td>
+                        @if ($acfAuth)
+                            <span class="ev-badge ev-badge--{{ $acfAuth->color() }}">{{ $acfAuth->label() }}</span>
+                            @if ($acf?->last_verified_at)
+                                <span class="ev-muted" style="display:block;margin-top:.3rem">{{ __('app.ui.ev_verified_at') }} {{ $acf->last_verified_at->format('d/m/Y H:i') }}</span>
+                            @endif
+                        @else
+                            <span class="ev-pending">@svg('heroicon-m-clock', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.audit.pending_harmony') }}</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if ($acfSnap)
+                            <a href="{{ $acfSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
+                                <img src="{{ $acfSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
+                            </a>
+                        @else
+                            <span class="ev-muted">—</span>
+                        @endif
+                    </td>
                 </tr>
             </tbody>
         </table>

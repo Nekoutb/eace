@@ -48,4 +48,25 @@ return [
         'key' => env('AZURE_DI_KEY'),
     ],
 
+    // Headless Chromium used to capture live evidence snapshots (Harmony2 ACF
+    // authenticity, DGI consultation status). On Windows, Puppeteer's auto-
+    // resolver fails when the user path contains a space, so we pin the binary
+    // explicitly. Leave chrome_path empty to fall back to auto-detection.
+    // The live connectors are only engaged when 'enabled' is true.
+    'browsershot' => [
+        'enabled' => (bool) env('BROWSERSHOT_ENABLED', false),
+        'chrome_path' => env('BROWSERSHOT_CHROME_PATH'),
+        'node_path' => env('BROWSERSHOT_NODE_PATH'),
+        'timeout' => (int) env('BROWSERSHOT_TIMEOUT', 90),
+    ],
+
+    // Live evidence portals. URLs are templated with the relevant reference.
+    'harmony2' => [
+        'acf_url' => env('HARMONY2_ACF_URL', 'https://fanr.harmony2.cm/authentification'),
+    ],
+
+    'dgi' => [
+        'consultation_url' => env('DGI_CONSULTATION_URL', 'https://teledeclaration-dgi.cm/modules/immatriculation/Consultation/listecontribuable.aspx'),
+    ],
+
 ];

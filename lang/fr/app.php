@@ -139,6 +139,13 @@ return [
         'radie' => 'Radié',
     ],
 
+    // Résultat de la consultation en direct du fichier national (vs. statut inféré ci-dessus).
+    'fiscalis_presence' => [
+        'present' => 'Présent au fichier national',
+        'absent' => 'Absent du fichier national',
+        'unverified' => 'Non vérifié',
+    ],
+
     'severity' => [
         'info' => 'Information',
         'warning' => 'Avertissement',
@@ -259,6 +266,15 @@ return [
         'status' => 'Statut',
         'validity' => 'Validité',
         'authenticity_harmony' => 'Authenticité (Harmony2)',
+        'authenticity' => 'Authenticité',
+        'authenticate' => 'Authentifier (Harmony2)',
+        'authenticate_confirm' => 'Lance une vérification en direct sur le portail Harmony2 de la DGI et capture une copie d’écran du verdict. Cela peut prendre jusqu’à une minute.',
+        'authenticate_unverified' => 'Le portail de la DGI n’a pu être atteint ou piloté — enregistré comme non vérifié, aucun verdict n’a été inventé.',
+        'ev_verified_at' => 'Vérifié le',
+        'ev_view_snapshot' => 'Ouvrir la copie d’écran du verdict',
+        'capture_fiscalis' => 'Capturer le statut DGI',
+        'capture_fiscalis_confirm' => 'Lance une consultation en direct du fichier national des contribuables de la DGI pour ce NIU et capture une copie d’écran du résultat. Cela peut prendre jusqu’à une minute.',
+        'capture_unverified' => 'Le portail de la DGI n’a pu être atteint ou piloté — enregistré comme non vérifié, aucun verdict n’a été inventé.',
         'issued_at' => 'Signée le',
         'expires_at' => 'Expire le',
         'validity_duration' => 'Durée de validité',

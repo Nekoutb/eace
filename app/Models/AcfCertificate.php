@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $has_moratorium
  * @property AcfStatus $status
  * @property ?AcfAuthenticityStatus $authenticity_status
+ * @property ?string $authenticity_url
+ * @property ?string $authenticity_snapshot_path
+ * @property ?string $authenticity_note
  * @property ?CarbonImmutable $last_verified_at
  */
 class AcfCertificate extends Model

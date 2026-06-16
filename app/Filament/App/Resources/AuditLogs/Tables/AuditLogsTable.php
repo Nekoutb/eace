@@ -3,10 +3,13 @@
 namespace App\Filament\App\Resources\AuditLogs\Tables;
 
 use App\Domain\Approval\ApprovalDecision;
+use App\Domain\Fiscalis\FiscalisPresence;
 use App\Models\Verification;
 use App\Services\Evidence\EvidenceArchiveService;
+use App\Services\Fiscalis\FiscalisStatusService;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -60,6 +63,28 @@ class AuditLogsTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                Action::make('captureFiscalis')
+                    ->label(__('app.ui.capture_fiscalis'))
+                    ->icon('heroicon-o-camera')
+                    ->color('success')
+                    ->visible(fn (Verification $record): bool => filled($record->niu))
+                    ->requiresConfirmation()
+                    ->modalHeading(__('app.ui.capture_fiscalis'))
+                    ->modalDescription(__('app.ui.capture_fiscalis_confirm'))
+                    ->action(function (Verification $record): void {
+                        $result = app(FiscalisStatusService::class)->capture($record);
+
+                        $notification = Notification::make()->title($result->presence->label());
+
+                        match ($result->presence) {
+                            FiscalisPresence::Present => $notification->success(),
+                            FiscalisPresence::Absent => $notification->danger(),
+                            FiscalisPresence::Unverified => $notification->warning()
+                                ->body(__('app.ui.capture_unverified')),
+                        };
+
+                        $notification->send();
+                    }),
                 Action::make('export')
                     ->label(__('app.audit.export'))
                     ->icon(Heroicon::OutlinedArrowDownTray)
