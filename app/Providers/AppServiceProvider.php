@@ -84,7 +84,7 @@ class AppServiceProvider extends ServiceProvider
                     url: $url,
                     chromePath: (string) $chrome,
                     nodeBinary: config('services.browsershot.node_path'),
-                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 60,
+                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 150,
                 );
             }
 
@@ -103,7 +103,7 @@ class AppServiceProvider extends ServiceProvider
                     url: $url,
                     chromePath: (string) $chrome,
                     nodeBinary: config('services.browsershot.node_path'),
-                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 60,
+                    timeoutSeconds: (int) config('services.browsershot.timeout', 90) + 150,
                 );
             }
 

@@ -344,6 +344,7 @@ return [
         'authenticate_unverified' => 'Le portail de la DGI n’a pu être atteint ou piloté — enregistré comme non vérifié, aucun verdict n’a été inventé.',
         'ev_verified_at' => 'Vérifié le',
         'ev_view_snapshot' => 'Ouvrir la copie d’écran du verdict',
+        'download_snapshot' => 'Télécharger la capture',
         'section_auth_evidence' => 'Preuve d’authentification (Harmony2)',
         'section_auth_evidence_desc' => 'Verdict en direct capturé sur le portail Harmony2 de la DGI via le lien QR de l’attestation.',
         'no_snapshot_yet' => 'Pas encore authentifiée — lancez « Authentifier (Harmony2) ».',

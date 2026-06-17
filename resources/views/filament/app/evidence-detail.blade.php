@@ -174,6 +174,7 @@
                             <a href="{{ $fiscSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
                                 <img src="{{ $fiscSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             </a>
+                            <a href="{{ $fiscSnap }}" download="fiscalis-{{ $record->niu ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</span>
                         @endif
@@ -215,6 +216,7 @@
                             <a href="{{ $acfSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
                                 <img src="{{ $acfSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             </a>
+                            <a href="{{ $acfSnap }}" download="acf-authentication-{{ $acf?->reference ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-muted">—</span>
                         @endif

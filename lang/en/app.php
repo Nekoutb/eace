@@ -343,6 +343,7 @@ return [
         'authenticate_unverified' => 'The DGI portal could not be reached or driven — recorded as unverified, no verdict was fabricated.',
         'ev_verified_at' => 'Checked on',
         'ev_view_snapshot' => 'Open the verdict snapshot',
+        'download_snapshot' => 'Download snapshot',
         'section_auth_evidence' => 'Authentication evidence (Harmony2)',
         'section_auth_evidence_desc' => 'Live verdict captured from the DGI Harmony2 portal via the certificate’s QR deep-link.',
         'no_snapshot_yet' => 'Not yet authenticated — run “Authenticate (Harmony2)”.',

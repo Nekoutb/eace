@@ -24,6 +24,7 @@ function arg(name, fallback = null) {
 const URL = arg('url');
 const OUT = arg('out');
 const CHROME = arg('chrome');
+const ATTEMPTS = 2;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function classify(text) {
@@ -43,34 +44,31 @@ function fail(message) {
   process.exit(0); // graceful — the PHP side treats unverified as "could not confirm"
 }
 
-(async () => {
-  if (!URL || !OUT || !CHROME) return fail('missing --url/--out/--chrome');
-
-  let browser;
+// One full drive. Returns { status, text, screenshot } or null on a transient
+// miss (no verdict rendered) so the caller can retry.
+async function attempt(browser) {
+  const page = await browser.newPage();
   try {
-    browser = await puppeteer.launch({
-      executablePath: CHROME,
-      args: ['--no-sandbox', '--disable-dev-shm-usage'],
-      headless: 'new',
-    });
-    const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 1500 });
-    // Timeouts kept comfortably below the PHP-side Process timeout so a slow
-    // portal yields a clean "unverified" rather than being SIGKILLed mid-run.
     await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
 
     // Wait for the SPA to fetch and render a verdict (either polarity), then
     // give the embedded PDF preview a moment to paint before the screenshot.
-    await page.waitForFunction(
+    const rendered = await page.waitForFunction(
       () => /authentifi|reconnu|introuvable|invalide/i.test(document.body.innerText || ''),
       { timeout: 20000 },
-    ).catch(() => {});
+    ).then(() => true).catch(() => false);
     await sleep(3500);
 
     const info = await page.evaluate(() => ({
       text: document.body.innerText.replace(/\n{2,}/g, '\n').trim().slice(0, 2000),
       url: location.href,
     }));
+
+    // No verdict rendered → the SPA hasn't answered yet; signal a retry.
+    if (!rendered && !/authentifi|reconnu|introuvable|invalide/i.test(info.text)) {
+      return null;
+    }
 
     // Corroboration: only trust the keyword verdict if we are still on the
     // result view for THIS reference (its digits remain in the URL or body).
@@ -89,9 +87,35 @@ function fail(message) {
       shot = null;
     }
 
-    process.stdout.write(JSON.stringify({ status, text: info.text, screenshot: shot }) + '\n');
+    return { status, text: info.text, screenshot: shot };
+  } finally {
+    try { await page.close(); } catch (_) {}
+  }
+}
+
+(async () => {
+  if (!URL || !OUT || !CHROME) return fail('missing --url/--out/--chrome');
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      executablePath: CHROME,
+      args: ['--no-sandbox', '--disable-dev-shm-usage'],
+      headless: 'new',
+    });
+
+    for (let i = 0; i < ATTEMPTS; i++) {
+      const result = await attempt(browser).catch(() => null);
+      if (result !== null) {
+        await browser.close();
+        process.stdout.write(JSON.stringify(result) + '\n');
+        process.exit(0);
+      }
+      await sleep(1500);
+    }
+
     await browser.close();
-    process.exit(0);
+    return fail('no verdict after ' + ATTEMPTS + ' attempts');
   } catch (e) {
     if (browser) { try { await browser.close(); } catch (_) {} }
     return fail('driver error: ' + (e && e.message ? e.message : String(e)));
