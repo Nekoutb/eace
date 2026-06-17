@@ -49,37 +49,56 @@ function fail(message) {
 async function attempt(browser) {
   const page = await browser.newPage();
   try {
-    await page.setViewport({ width: 1280, height: 1500 });
+    // deviceScaleFactor 3 → the stored snapshot stays sharp when zoomed.
+    await page.setViewport({ width: 1100, height: 1500, deviceScaleFactor: 3 });
     await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    // Wait for the SPA to fetch and render a verdict (either polarity), then
-    // give the embedded PDF preview a moment to paint before the screenshot.
+    // Wait for the actual VERDICT — "reconnu" appears in both polarities
+    // ("reconnu par le système" / "n'est pas reconnu") but NOT in the page title,
+    // so this can't fire early on "Authentification des documents".
     const rendered = await page.waitForFunction(
-      () => /authentifi|reconnu|introuvable|invalide/i.test(document.body.innerText || ''),
+      () => /reconnu|introuvable|invalide/i.test(document.body.innerText || ''),
       { timeout: 20000 },
     ).then(() => true).catch(() => false);
-    await sleep(3500);
+    await sleep(2500);
 
     const info = await page.evaluate(() => ({
       text: document.body.innerText.replace(/\n{2,}/g, '\n').trim().slice(0, 2000),
       url: location.href,
     }));
 
-    // No verdict rendered → the SPA hasn't answered yet; signal a retry.
-    if (!rendered && !/authentifi|reconnu|introuvable|invalide/i.test(info.text)) {
+    // No verdict yet → the SPA hasn't answered; signal a retry.
+    if (!rendered && !/reconnu|introuvable|invalide/i.test(info.text)) {
       return null;
     }
 
     // Corroboration: only trust the keyword verdict if we are still on the
     // result view for THIS reference (its digits remain in the URL or body).
-    // A redirect to a generic/login/maintenance page loses the reference, so it
-    // is classified "unverified" instead of misreading a stray "authentifié".
     const ref = (URL.match(/reference=(\d+)/) || [])[1] || '';
     const onResultView = ref === '' || info.url.includes(ref) || info.text.includes(ref);
     const status = onResultView ? classify(info.text) : 'unverified';
 
-    // Capture the screenshot independently — a render glitch must not discard an
-    // already-computed verdict (the verdict is the contract; the shot is evidence).
+    // An authentic verdict embeds the certificate PDF — wait for it to paint so
+    // the proof shows the document. A not-authentic page has none, so skip.
+    if (status === 'authentic') {
+      await page.waitForFunction(
+        () => [...document.querySelectorAll('canvas,iframe,embed,object')].some(e => e.offsetParent !== null && e.getBoundingClientRect().height > 200),
+        { timeout: 18000 },
+      ).catch(() => {});
+      await sleep(5000);
+    }
+
+    // Bake the verification URL into the page so the screenshot proves which
+    // link was checked (headless captures don't include the address bar).
+    await page.evaluate(u => {
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:relative;z-index:99999;background:#1f2937;color:#fff;font:14px monospace;padding:10px 16px;word-break:break-all';
+      bar.textContent = u;
+      document.body.insertBefore(bar, document.body.firstChild);
+    }, URL).catch(() => {});
+    await sleep(600);
+
+    // Capture independently — a render glitch must not discard an already-computed verdict.
     let shot = OUT;
     try {
       await page.screenshot({ path: OUT, fullPage: true });

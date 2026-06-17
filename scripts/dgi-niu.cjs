@@ -1,19 +1,18 @@
-// DGI National Taxpayer File per-NIU consultation driver.
+// DGI "Vérifier un NIU" driver (fiscalis.dgi.cm).
 //
-// Drives the "Fichier National des Contribuables" portal
-// (.../Consultation/listecontribuable.aspx, TabPanelCard) for one NIU and
-// screenshots the result. The portal returns "<n> contribuable(s)" plus a row
-// (NIU, activity, regime, centre…) when the taxpayer is on the national file —
-// i.e. registered/active. Emits one JSON line on stdout:
-//   { "status": "present|absent|unverified", "count": <n>, "text": "...", "screenshot": "<path>" }
+// Drives the official taxpayer-verification portal:
+//   http://fiscalis.dgi.cm/modules/Common/Account/Login.aspx  ->  "Vérifier un NIU"
+// fills the NIU, submits the magnifier search, and screenshots the result, which
+// returns the full taxpayer card (Nom/Raison sociale, Sigle, CNI/RC, Activité,
+// Régime fiscal, Centre des impôts) plus the authoritative **Etat** (Actif / …).
+// Emits one JSON line on stdout:
+//   { "status": "present|absent|unverified", "count": <0|1>, "text": "...", "screenshot": "<path>" }
+//   present = Etat Actif; absent = found-but-not-Actif or not found; unverified = portal unreachable.
 //
-// Invoked by App\Services\Fiscalis\DgiFiscalisConnector. Kept as a Node script
-// because the portal is an ASP.NET UpdatePanel form that must be filled +
-// submitted (real postback), which Browsershot's static render cannot do.
-//
-// Resilient: this government portal is slow/flaky, so each attempt waits for the
-// real "<n> contribuable" result (not a fixed delay) and the whole drive is
-// retried a few times before giving up with "unverified".
+// Notes:
+// - The site serves only over HTTP; headless Chrome auto-upgrades to HTTPS (which
+//   404s), so the browser is launched with the HTTPS-upgrade features disabled.
+// - Captured at deviceScaleFactor 3 so the stored snapshot stays sharp when zoomed.
 
 const puppeteer = require('puppeteer');
 
@@ -25,7 +24,8 @@ function arg(name, fallback = null) {
 const NIU = arg('niu');
 const OUT = arg('out');
 const CHROME = arg('chrome');
-const URL = arg('url', 'https://teledeclaration-dgi.cm/modules/immatriculation/Consultation/listecontribuable.aspx');
+const URL = arg('url', 'http://fiscalis.dgi.cm/modules/Common/Account/Login.aspx');
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const ATTEMPTS = 2;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -34,38 +34,40 @@ function emit(obj) {
   process.exit(0);
 }
 
-// One full drive. Returns a result object, or null on a transient miss so the
-// caller can retry.
+// One full drive: returns { settled, status, etat, raison, text, screenshot }, or
+// null on a hard error (so the caller retries). settled = a definitive answer
+// (taxpayer found, or an explicit "no match"); an unsettled result is retried.
 async function attempt(browser) {
   const page = await browser.newPage();
   try {
-    await page.setViewport({ width: 1366, height: 1500 });
+    await page.setUserAgent(UA);
+    await page.setViewport({ width: 1200, height: 1000, deviceScaleFactor: 3 });
     await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
+    await sleep(1200);
 
-    await page.click('#TabContainer3_TabPanelCard_txtNIU', { clickCount: 3 });
-    await page.type('#TabContainer3_TabPanelCard_txtNIU', NIU, { delay: 25 });
+    await page.evaluate(() => document.getElementById('__tab_TabContainer1_TabPanelVerifyNIU')?.click());
+    await sleep(1600);
+
+    await page.click('#TabContainer1_TabPanelVerifyNIU_txtNIU2', { clickCount: 3 });
+    await page.type('#TabContainer1_TabPanelVerifyNIU_txtNIU2', NIU, { delay: 25 });
     await sleep(300);
-    await page.click('#TabContainer3_TabPanelCard_btnAfficher2');
+    await page.click('#TabContainer1_TabPanelVerifyNIU_ibFindContribuable');
 
-    // Wait for the UpdatePanel postback to render the "<n> contribuable" counter.
-    await page.waitForFunction(
-      () => /\d+\s+contribuable/i.test(document.body.innerText || ''),
-      { timeout: 25000 },
-    ).catch(() => {});
-    await sleep(1500); // let the grid rows paint
+    // Wait for the partial postback to populate the taxpayer's name.
+    await page.waitForFunction(() => {
+      const m = (document.body.innerText || '').match(/Nom\/Raison sociale\s+([^\n\t]+)/i);
+      return !!(m && m[1].trim().length > 0);
+    }, { timeout: 22000 }).catch(() => {});
+    await sleep(1500);
 
-    const info = await page.evaluate(niu => {
-      const body = document.body.innerText || '';
-      const m = body.match(/(\d+)\s+contribuable/i);
-      const count = m ? parseInt(m[1], 10) : null;
-      const inGrid = [...document.querySelectorAll('td')].some(td => (td.textContent || '').trim() === niu);
-      return { count, inGrid, snippet: body.replace(/\n{2,}/g, '\n').slice(0, 600) };
-    }, NIU);
-
-    // No counter found → the postback hasn't settled; signal a retry.
-    if (info.count === null && !info.inGrid) {
-      return null;
-    }
+    const body = await page.evaluate(() => document.body.innerText || '');
+    const raisonM = body.match(/Nom\/Raison sociale[ \t]+([^\n\t]+)/i); // same-line value only
+    const raison = raisonM ? raisonM[1].trim() : null;
+    const etatM = body.match(/\b(Actif|Inactif|Suspendu|Radi[ée])\b/i);
+    const noMatch = /aucune correspondance/i.test(body);
+    const etat = noMatch ? 'Aucune correspondance trouvée' : (etatM ? etatM[1] : null);
+    const active = !noMatch && !!etatM && /actif/i.test(etatM[1]);
+    const found = !noMatch && (!!etatM || !!raison);
 
     let shot = OUT;
     try {
@@ -74,8 +76,14 @@ async function attempt(browser) {
       shot = null;
     }
 
-    const status = (info.count !== null ? info.count > 0 : false) || info.inGrid ? 'present' : 'absent';
-    return { status, count: info.count ?? 0, text: info.snippet, screenshot: shot };
+    return {
+      settled: found || noMatch,
+      status: active ? 'present' : 'absent',
+      etat,
+      raison,
+      text: (raison ? raison + ' — ' : '') + 'Etat: ' + (etat || 'inconnu'),
+      screenshot: shot,
+    };
   } finally {
     try { await page.close(); } catch (_) {}
   }
@@ -88,21 +96,33 @@ async function attempt(browser) {
   try {
     browser = await puppeteer.launch({
       executablePath: CHROME,
-      args: ['--no-sandbox', '--disable-dev-shm-usage'],
       headless: 'new',
+      args: [
+        '--no-sandbox', '--disable-dev-shm-usage', '--ignore-certificate-errors',
+        '--disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable,HttpsFirstModeV2,AutoupgradeMixedContent',
+      ],
     });
 
+    let last = null;
     for (let i = 0; i < ATTEMPTS; i++) {
-      const result = await attempt(browser).catch(() => null);
-      if (result !== null) {
-        await browser.close();
-        return emit(result);
+      const r = await attempt(browser).catch(() => null);
+      if (r !== null) {
+        last = r;
+        // A definitive answer (found, or an explicit "no match") — no need to retry.
+        if (r.settled) {
+          await browser.close();
+          return emit({ status: r.status, count: r.status === 'present' ? 1 : 0, text: r.text, screenshot: r.screenshot });
+        }
       }
-      await sleep(1500); // brief backoff before retrying
+      await sleep(1500);
     }
 
     await browser.close();
-    return emit({ status: 'unverified', count: 0, text: 'no result after '+ATTEMPTS+' attempts', screenshot: null });
+    if (last !== null) {
+      // Never settled, but the portal did render — keep the (empty) shot as evidence.
+      return emit({ status: last.status, count: 0, text: last.text, screenshot: last.screenshot });
+    }
+    return emit({ status: 'unverified', count: 0, text: 'portal unreachable after ' + ATTEMPTS + ' attempts', screenshot: null });
   } catch (e) {
     if (browser) { try { await browser.close(); } catch (_) {} }
     return emit({ status: 'unverified', count: 0, text: 'driver error: ' + (e && e.message ? e.message : String(e)), screenshot: null });

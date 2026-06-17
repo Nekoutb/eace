@@ -205,10 +205,10 @@ return [
         'radie' => 'Radié',
     ],
 
-    // Résultat de la consultation en direct du fichier national (vs. statut inféré ci-dessus).
+    // Résultat de « Vérifier un NIU » en direct (l’Etat officiel de fiscalis.dgi.cm).
     'fiscalis_presence' => [
-        'present' => 'Présent au fichier national',
-        'absent' => 'Absent du fichier national',
+        'present' => 'Actif (DGI)',
+        'absent' => 'Inactif / introuvable',
         'unverified' => 'Non vérifié',
     ],
 

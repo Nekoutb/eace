@@ -66,7 +66,9 @@ return [
     ],
 
     'dgi' => [
-        'consultation_url' => env('DGI_CONSULTATION_URL', 'https://teledeclaration-dgi.cm/modules/immatriculation/Consultation/listecontribuable.aspx'),
+        // The official "Vérifier un NIU" portal (returns the taxpayer card + Etat).
+        // HTTP only — the driver disables Chrome's HTTPS upgrade for it.
+        'consultation_url' => env('DGI_CONSULTATION_URL', 'http://fiscalis.dgi.cm/modules/Common/Account/Login.aspx'),
     ],
 
 ];

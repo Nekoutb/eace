@@ -205,10 +205,10 @@ return [
         'radie' => 'Struck off',
     ],
 
-    // Live DGI national-file consultation outcome (vs. the inferred status above).
+    // Live DGI "Vérifier un NIU" outcome (the authoritative Etat from fiscalis.dgi.cm).
     'fiscalis_presence' => [
-        'present' => 'On the national file',
-        'absent' => 'Not on the national file',
+        'present' => 'Active (DGI)',
+        'absent' => 'Not active / not found',
         'unverified' => 'Unverified',
     ],
 
