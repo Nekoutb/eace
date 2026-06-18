@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Fiscalis;
 
 use App\Domain\Fiscalis\FiscalisPresence;
+use App\Support\ChildProcessEnv;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -36,6 +37,10 @@ final class DgiFiscalisConnector implements FiscalisConnector
         @mkdir(dirname($out), 0775, true);
 
         try {
+            // The driver runs longer than a web request's default 30s limit; give
+            // the whole capture room so PHP doesn't kill it mid-run.
+            @set_time_limit($this->timeoutSeconds + 60);
+
             $process = new Process([
                 $this->nodeBinary ?? 'node',
                 $script,
@@ -43,13 +48,13 @@ final class DgiFiscalisConnector implements FiscalisConnector
                 '--out='.$out,
                 '--chrome='.$this->chromePath,
                 '--url='.$this->url,
-            ], base_path(), null, null, $this->timeoutSeconds);
+            ], base_path(), ChildProcessEnv::forNode(), null, $this->timeoutSeconds);
 
             $process->run();
 
             $json = $this->lastJsonLine($process->getOutput());
             if ($json === null) {
-                return FiscalisResult::unverified($this->url, 'no driver output');
+                return FiscalisResult::unverified($this->url, 'no driver output'.$this->diagnostics($process));
             }
 
             $presence = match ($json['status'] ?? 'unverified') {
@@ -93,5 +98,20 @@ final class DgiFiscalisConnector implements FiscalisConnector
         }
 
         return null;
+    }
+
+    /** A short, diagnosable tail of the failed process for the audit note. */
+    private function diagnostics(Process $process): string
+    {
+        $parts = [];
+        if (! $process->isSuccessful()) {
+            $parts[] = 'exit='.($process->getExitCode() ?? 'null');
+        }
+        $stderr = trim($process->getErrorOutput());
+        if ($stderr !== '') {
+            $parts[] = 'stderr='.Str::limit($stderr, 300);
+        }
+
+        return $parts === [] ? '' : ' ('.implode('; ', $parts).')';
     }
 }

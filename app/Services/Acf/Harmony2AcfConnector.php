@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Acf;
 
 use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Support\ChildProcessEnv;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
@@ -46,9 +47,13 @@ final class Harmony2AcfConnector implements AcfAuthenticityConnector
             '--url='.$deepLink,
             '--out='.$out,
             '--chrome='.$this->chromePath,
-        ], base_path(), null, null, $this->timeoutSeconds);
+        ], base_path(), ChildProcessEnv::forNode(), null, $this->timeoutSeconds);
 
         try {
+            // The driver runs longer than a web request's default 30s limit; give
+            // the whole capture room so PHP doesn't kill it mid-run.
+            @set_time_limit($this->timeoutSeconds + 60);
+
             $process->run();
 
             $json = $this->lastJsonLine($process->getOutput());
