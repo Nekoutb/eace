@@ -5,7 +5,9 @@ namespace App\Filament\App\Widgets;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
 use App\Models\TaxpayerFileExtraction;
+use App\Models\Tenant;
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceStorageService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -65,7 +67,28 @@ class ComplianceStats extends BaseWidget
                 ->description($filesDescription)
                 ->descriptionIcon('heroicon-m-arrow-down-tray')
                 ->color('info'),
+            $this->storageStat(),
         ];
+    }
+
+    /** Evidence storage used by this workspace vs. its allocated quota. */
+    protected function storageStat(): Stat
+    {
+        $tenant = tenant();
+        $allocatedMb = $tenant instanceof Tenant ? $tenant->allocatedSpaceMb() : (int) config('niu.default_allocated_space_mb', 1024);
+
+        $storage = app(EvidenceStorageService::class);
+        $usedMb = $storage->usedMb();
+        $pct = $storage->percentUsed($allocatedMb);
+        $color = $pct >= 90 ? 'danger' : ($pct >= 70 ? 'warning' : 'success');
+
+        return Stat::make(
+            __('app.dash.storage_used'),
+            number_format($usedMb, $usedMb < 10 ? 1 : 0).' / '.number_format($allocatedMb).' MB',
+        )
+            ->description(__('app.dash.storage_pct', ['pct' => $pct]))
+            ->descriptionIcon('heroicon-m-circle-stack')
+            ->color($color);
     }
 
     /** Whole-percent share of a part in a total, guarding division by zero. */

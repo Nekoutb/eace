@@ -11,8 +11,15 @@
 @php($fiscPresence = $record->fiscalis_presence)
 @php($fiscSnap = ($record->fiscalis_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->fiscalis_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($record->fiscalis_snapshot_path)) : null)
 
-<div class="ev">
+<div class="ev" x-data="{ zoom: null }">
     <style>
+        [x-cloak]{display:none!important}
+        .ev-zoom{cursor:zoom-in}
+        .ev-lightbox{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+            background:rgba(15,23,42,.86);padding:2rem;cursor:zoom-out;overflow:auto}
+        .ev-lightbox__img{max-width:96vw;max-height:92vh;width:auto;height:auto;border-radius:8px;
+            box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff}
+        .ev-lightbox__hint{position:fixed;top:1rem;right:1.25rem;color:#fff;font-size:.8rem;opacity:.85}
         .ev{--g100:#dcfce7;--g200:#bbf7d0;--g500:#22c55e;--g600:#16a34a;--g700:#15803d;--g800:#166534;
             --ink:#0f231a;--ink-soft:#46685a;--line:rgba(21,128,61,.16);color:var(--ink);
             font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
@@ -171,9 +178,7 @@
                     </td>
                     <td>
                         @if ($fiscSnap)
-                            <a href="{{ $fiscSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
-                                <img src="{{ $fiscSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
-                            </a>
+                            <img src="{{ $fiscSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             <a href="{{ $fiscSnap }}" download="fiscalis-{{ $record->niu ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</span>
@@ -213,9 +218,7 @@
                     </td>
                     <td>
                         @if ($acfSnap)
-                            <a href="{{ $acfSnap }}" target="_blank" rel="noopener" class="ev-link" title="{{ __('app.ui.ev_view_snapshot') }}">
-                                <img src="{{ $acfSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
-                            </a>
+                            <img src="{{ $acfSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             <a href="{{ $acfSnap }}" download="acf-authentication-{{ $acf?->reference ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-muted">—</span>
@@ -250,4 +253,10 @@
             </table>
         </div>
     @endif
+
+    {{-- Click-to-zoom lightbox: a snapshot opens here full-size; click anywhere or Esc to close. --}}
+    <div class="ev-lightbox" x-cloak x-show="zoom" x-transition.opacity @click="zoom = null" @keydown.escape.window="zoom = null">
+        <span class="ev-lightbox__hint">{{ __('app.ui.ev_zoom_close') }}</span>
+        <img class="ev-lightbox__img" :src="zoom" alt="{{ __('app.ui.ev_view_snapshot') }}" />
+    </div>
 </div>

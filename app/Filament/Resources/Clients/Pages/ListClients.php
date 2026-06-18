@@ -46,6 +46,14 @@ class ListClients extends ListRecords
                         ->required()
                         ->email()
                         ->maxLength(255),
+                    TextInput::make('allocated_space_mb')
+                        ->label(__('app.client.allocated_space'))
+                        ->helperText(__('app.client.allocated_space_help'))
+                        ->numeric()
+                        ->required()
+                        ->minValue(1)
+                        ->suffix('MB')
+                        ->default((int) config('niu.default_allocated_space_mb', 1024)),
                 ])
                 ->action(function (array $data): void {
                     try {
@@ -54,6 +62,7 @@ class ListClients extends ListRecords
                             subdomain: $data['subdomain'],
                             adminName: $data['admin_name'],
                             adminEmail: $data['admin_email'],
+                            allocatedSpaceMb: (int) $data['allocated_space_mb'],
                         );
                     } catch (ClientProvisioningException $e) {
                         Notification::make()

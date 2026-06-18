@@ -23,4 +23,18 @@ return [
      * natively, no hosts edit); set to your production apex (e.g. niushield.cm).
      */
     'tenant_base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
+
+    /*
+     * Per-workspace evidence storage quota, in megabytes. The administrator sets
+     * it when provisioning a client; this is the default the form starts at.
+     * Self-service trial signups get the smaller trial quota.
+     */
+    'default_allocated_space_mb' => (int) env('NIU_DEFAULT_SPACE_MB', 1024),
+    'trial_allocated_space_mb' => (int) env('NIU_TRIAL_SPACE_MB', 250),
+
+    /*
+     * Whether prospective customers may self-provision a trial workspace from the
+     * public sign-up page. Off in production unless you want open trials.
+     */
+    'self_service_signup' => (bool) env('NIU_SELF_SERVICE_SIGNUP', true),
 ];

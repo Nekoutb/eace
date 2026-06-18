@@ -19,7 +19,7 @@ afterEach(function () {
     Tenant::all()->each->delete();
     // File-based tenant DBs can outlive a rolled-back RefreshDatabase transaction;
     // sweep the ones these tests use so a leftover file never bricks a re-run.
-    foreach (['acme', 'beta', 'acme-corp', 'orphan'] as $id) {
+    foreach (['acme', 'beta', 'acme-corp', 'orphan', 'gamma', 'trialco'] as $id) {
         $file = database_path('tenant'.$id.'.sqlite');
         if (is_file($file)) {
             @unlink($file);
@@ -99,4 +99,60 @@ it('cleanup() removes the tenant row, its domain and the orphan database file', 
     expect(Tenant::find('orphan'))->toBeNull()
         ->and(Domain::query()->where('domain', 'orphan.localhost')->exists())->toBeFalse()
         ->and(is_file(database_path('tenantorphan.sqlite')))->toBeFalse();
+});
+
+it('records the allocated storage quota on the workspace', function () {
+    $client = app(ClientProvisioningService::class)->provision(
+        name: 'Acme', subdomain: 'acme', adminName: 'A', adminEmail: 'a@acme.test',
+        allocatedSpaceMb: 750,
+    );
+
+    expect((int) $client->tenant->allocated_space_mb)->toBe(750)
+        ->and($client->tenant->allocatedSpaceMb())->toBe(750)
+        ->and($client->tenant->fresh()->allocatedSpaceMb())->toBe(750);
+});
+
+it('self-service provisions an Operator with their own password and no temporary one', function () {
+    $client = app(ClientProvisioningService::class)->provision(
+        name: 'Beta Trials', subdomain: 'beta', adminName: 'Bea', adminEmail: 'bea@beta.test',
+        allocatedSpaceMb: 250, password: 'mychosenpass1', role: UserRole::Operator,
+    );
+
+    expect($client->temporaryPassword)->toBeNull();
+
+    $client->tenant->run(function () {
+        $user = User::query()->sole();
+        expect($user->role)->toBe(UserRole::Operator)
+            ->and($user->must_change_password)->toBeFalse()
+            ->and(Hash::check('mychosenpass1', $user->password))->toBeTrue();
+    });
+});
+
+it('lets a customer self-provision a trial workspace from the public sign-up', function () {
+    $response = $this->post('/register', [
+        'org_name' => 'Gamma Ltd',
+        'subdomain' => 'gamma',
+        'name' => 'Gina',
+        'email' => 'gina@gamma.test',
+        'password' => 'trialpass123',
+        'password_confirmation' => 'trialpass123',
+    ]);
+
+    $response->assertRedirect();
+    expect(Tenant::find('gamma'))->not->toBeNull();
+
+    Tenant::find('gamma')->run(function () {
+        $user = User::query()->sole();
+        expect($user->email)->toBe('gina@gamma.test')
+            ->and($user->role)->toBe(UserRole::Operator);
+    });
+});
+
+it('rejects a self-service sign-up with a mismatched password confirmation', function () {
+    $this->post('/register', [
+        'org_name' => 'Trial Co', 'subdomain' => 'trialco', 'name' => 'T',
+        'email' => 't@trial.test', 'password' => 'abcdefgh1', 'password_confirmation' => 'different1',
+    ])->assertSessionHasErrors('password');
+
+    expect(Tenant::find('trialco'))->toBeNull();
 });

@@ -140,6 +140,7 @@ final class ClaudeInvoiceReader implements InvoiceReader
                     'supplier_niu' => ['type' => 'string', 'description' => 'Supplier NIU (14 chars)'],
                     'client_niu' => ['type' => 'string', 'description' => 'Client/buyer NIU (14 chars)'],
                     'date' => ['type' => 'string', 'description' => 'Invoice date, YYYY-MM-DD'],
+                    'invoice_number' => ['type' => 'string', 'description' => 'Invoice number / reference printed on the invoice'],
                     'supplier_name' => ['type' => 'string', 'description' => 'Supplier business name'],
                     'supplier_address' => ['type' => 'string', 'description' => 'Supplier full address'],
                     'supplier_rccm' => ['type' => 'string', 'description' => 'Supplier RCCM number'],

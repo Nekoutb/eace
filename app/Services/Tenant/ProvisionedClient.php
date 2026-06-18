@@ -18,6 +18,8 @@ final class ProvisionedClient
         public readonly Tenant $tenant,
         public readonly string $domain,
         public readonly string $adminEmail,
-        public readonly string $temporaryPassword,
+        // Set only for admin-provisioned clients (the one-time password shown
+        // once); null for self-service signups where the user chose their own.
+        public readonly ?string $temporaryPassword = null,
     ) {}
 }

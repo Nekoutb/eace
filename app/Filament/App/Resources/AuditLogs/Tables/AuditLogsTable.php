@@ -14,6 +14,7 @@ use Filament\Support\Enums\FontFamily;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AuditLogsTable
@@ -32,10 +33,17 @@ class AuditLogsTable
                     ->fontFamily(FontFamily::Mono)
                     ->placeholder(__('app.ui.placeholder_invalid'))
                     ->searchable(),
+                TextColumn::make('invoice_ref')
+                    ->label(__('app.audit.invoice_ref'))
+                    ->fontFamily(FontFamily::Mono)
+                    ->state(fn (Verification $record): ?string => self::invoiceField($record, 'invoice_number'))
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->orWhere('invoice_data->invoice_number', 'like', "%{$search}%")),
                 TextColumn::make('vendor')
                     ->label(__('app.audit.vendor'))
-                    ->state(fn (Verification $record): ?string => self::payloadString($record, 'taxpayer_name'))
-                    ->placeholder(__('app.ui.placeholder_dash')),
+                    ->state(fn (Verification $record): ?string => self::vendorName($record))
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->orWhere('invoice_data->supplier_name', 'like', "%{$search}%")),
                 TextColumn::make('active')
                     ->label(__('app.audit.active'))
                     ->badge()
@@ -107,6 +115,20 @@ class AuditLogsTable
         $value = $record->snapshot()?->payload[$key] ?? null;
 
         return is_scalar($value) ? (string) $value : null;
+    }
+
+    /** A field read off the scanned invoice (invoice_data JSON). */
+    private static function invoiceField(Verification $record, string $key): ?string
+    {
+        $value = is_array($record->invoice_data) ? ($record->invoice_data[$key] ?? null) : null;
+
+        return is_string($value) && trim($value) !== '' ? $value : null;
+    }
+
+    /** The vendor: the supplier named on the invoice, else the DGI-registered name. */
+    private static function vendorName(Verification $record): ?string
+    {
+        return self::invoiceField($record, 'supplier_name') ?? self::payloadString($record, 'taxpayer_name');
     }
 
     private static function isActive(Verification $record): bool

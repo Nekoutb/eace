@@ -33,6 +33,11 @@ class ClientsTable
                     ->badge()
                     ->color('gray')
                     ->searchable(),
+                TextColumn::make('allocated_space_mb')
+                    ->label(__('app.client.quota'))
+                    ->badge()
+                    ->color('gray')
+                    ->getStateUsing(fn (Tenant $record): string => number_format($record->allocatedSpaceMb()).' MB'),
                 TextColumn::make('created_at')
                     ->label(__('app.client.created'))
                     ->dateTime('d/m/Y H:i')

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SignUpController;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -7,6 +8,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+/*
+ * Public self-service sign-up — a prospective customer provisions their own
+ * isolated trial workspace (tenant + subdomain). Central web routes, so this is
+ * not tenant-scoped; gated by config('niu.self_service_signup').
+ */
+Route::get('/register', [SignUpController::class, 'show'])->name('signup');
+Route::post('/register', [SignUpController::class, 'register']);
 
 /*
  * Language switch. Tenancy-aware so the locale lands in the same (tenant or

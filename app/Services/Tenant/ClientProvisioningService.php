@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Tenant;
 
 use App\Domain\Auth\UserRole;
+use App\Models\OrganizationProfile;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TempPassword;
@@ -27,8 +28,23 @@ use Throwable;
  */
 final class ClientProvisioningService
 {
-    public function provision(string $name, string $subdomain, string $adminName, string $adminEmail): ProvisionedClient
-    {
+    /**
+     * Provision a workspace.
+     *
+     * Admin-provisioned (the default): a one-time temporary password is generated
+     * and the first user is an Admin who must change it on first sign-in.
+     * Self-service: pass $password (the user's own) + $role — no temp password and
+     * no forced change. $allocatedSpaceMb is the storage quota for the workspace.
+     */
+    public function provision(
+        string $name,
+        string $subdomain,
+        string $adminName,
+        string $adminEmail,
+        int $allocatedSpaceMb = 1024,
+        ?string $password = null,
+        UserRole $role = UserRole::Admin,
+    ): ProvisionedClient {
         $id = $this->normaliseSubdomain($subdomain);
         $domain = $id.'.'.$this->baseDomain();
 
@@ -36,28 +52,38 @@ final class ClientProvisioningService
             throw ClientProvisioningException::subdomainTaken($id);
         }
 
-        $temporaryPassword = TempPassword::generate();
+        // Admin flow generates a one-time password; self-service uses the user's own.
+        $usesTemporary = $password === null;
+        $effectivePassword = $password ?? TempPassword::generate();
 
         try {
             // Synchronous: the tenant DB exists and is migrated once this returns.
-            $tenant = Tenant::create(['id' => $id, 'name' => trim($name)]);
+            $tenant = Tenant::create([
+                'id' => $id,
+                'name' => trim($name),
+                'allocated_space_mb' => max(0, $allocatedSpaceMb),
+            ]);
             $tenant->domains()->create(['domain' => $domain]);
 
-            $tenant->run(function () use ($adminName, $adminEmail, $temporaryPassword): void {
+            $tenant->run(function () use ($adminName, $adminEmail, $effectivePassword, $role, $usesTemporary, $name): void {
                 User::query()->create([
                     'name' => trim($adminName),
                     'email' => trim($adminEmail),
-                    'password' => Hash::make($temporaryPassword),
-                    'role' => UserRole::Admin,
-                    'must_change_password' => true,
+                    'password' => Hash::make($effectivePassword),
+                    'role' => $role,
+                    'must_change_password' => $usesTemporary,
                 ]);
+
+                // Seed the buyer identity with the organisation name so the
+                // workspace is usable immediately (the NIU/RCCM are filled later).
+                OrganizationProfile::current()->update(['entity_name' => trim($name)]);
             });
 
             return new ProvisionedClient(
                 tenant: $tenant,
                 domain: $domain,
                 adminEmail: trim($adminEmail),
-                temporaryPassword: $temporaryPassword,
+                temporaryPassword: $usesTemporary ? $effectivePassword : null,
             );
         } catch (Throwable $e) {
             $this->cleanup($id);

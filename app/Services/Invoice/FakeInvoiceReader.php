@@ -25,6 +25,7 @@ final class FakeInvoiceReader implements InvoiceReader
             supplierNiu: NiuNumber::fromString('M058712345678X'),
             clientNiu: NiuNumber::fromString('M020100021296Z'),
             date: CarbonImmutable::now()->subDays(3),
+            invoiceNumber: 'FAC-2026-0042',
             supplierName: 'SARL EXEMPLE',
             supplierAddress: 'BP 1234, Douala',
             supplierRccm: 'RC/DLA/2020/B/123',

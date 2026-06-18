@@ -92,6 +92,7 @@ final class AzureInvoiceReader implements InvoiceReader
             supplierNiu: $this->niu($this->string($fields, 'VendorTaxId') ?? $this->niuFromContent($content, 'supplier')),
             clientNiu: $this->niu($this->string($fields, 'CustomerTaxId')),
             date: $this->date($this->string($fields, 'InvoiceDate')),
+            invoiceNumber: $this->string($fields, 'InvoiceId'),
             supplierName: $this->string($fields, 'VendorName'),
             supplierAddress: $this->string($fields, 'VendorAddress'),
             supplierRccm: $this->rccm($content),
