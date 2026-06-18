@@ -15,6 +15,7 @@ use App\Models\Verification;
 use App\Services\Acf\AcfAuthenticationService;
 use App\Services\Acf\AcfIngestionService;
 use App\Services\Fiscalis\FiscalisConnector;
+use App\Services\Fiscalis\FiscalisStatusService;
 use App\Services\Invoice\InvoiceNoticeService;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
@@ -330,6 +331,12 @@ class ComplianceEngine extends Page
         // Attach the live Fiscalis snapshot captured when the invoice was scanned.
         $this->attachFiscalisSnapshot($verification);
 
+        // If no invoice provided one (e.g. an ACF-only recording), capture the
+        // supplier's live Fiscalis status now so the record is complete.
+        if ($this->liveSnapshots() && $verification->fiscalis_snapshot_path === null && filled($verification->niu)) {
+            app(FiscalisStatusService::class)->capture($verification);
+        }
+
         $this->result = $this->present($verification);
         $this->discrepancies = $this->discrepanciesFor($verification);
 
@@ -404,6 +411,14 @@ class ComplianceEngine extends Page
     private function present(Verification $verification): array
     {
         $checks = $verification->checks ?? [];
+        $certificate = $verification->acfCertificate;
+
+        $fiscalisUrl = $verification->fiscalis_snapshot_path !== null
+            ? route('evidence.snapshot', ['kind' => 'fiscalis', 'id' => $verification->getKey()], absolute: false)
+            : null;
+        $acfUrl = ($verification->acf_certificate_id !== null && $certificate?->authenticity_snapshot_path !== null)
+            ? route('evidence.snapshot', ['kind' => 'acf', 'id' => $verification->acf_certificate_id], absolute: false)
+            : null;
 
         return [
             'niu' => $verification->niu,
@@ -426,6 +441,10 @@ class ComplianceEngine extends Page
             'triggered_rules' => $verification->triggered_rules ?? [],
             'vendor_email' => $this->draftVendorEmail($verification),
             'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
+            'fiscalis_snapshot_url' => $fiscalisUrl,
+            'fiscalis_label' => $verification->fiscalis_presence?->label(),
+            'acf_snapshot_url' => $acfUrl,
+            'acf_auth_label' => $certificate?->authenticity_status?->label(),
         ];
     }
 
