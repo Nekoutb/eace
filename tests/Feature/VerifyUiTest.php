@@ -69,7 +69,10 @@ it('runs a verification inline and reveals the discrepancies on the same screen'
     $page = Livewire::test(ComplianceEngine::class)
         ->set('rawInput', 'M222222222222A')
         ->call('run')
-        ->assertSet('result.verdict.label', Verdict::Radie->label())
+        // The displayed verdict is Non-compliant because a check failed — even
+        // though the stored NIU-risk grade is still Radie (asserted below).
+        ->assertSet('result.verdict.label', __('app.verdict.non_conforme'))
+        ->assertSet('result.conclusion.payable', false)
         ->assertSee(__('app.ui.results'))
         ->assertSee(__('app.ui.section_remediation'));
 

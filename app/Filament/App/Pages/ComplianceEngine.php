@@ -412,13 +412,21 @@ class ComplianceEngine extends Page
     {
         $checks = $verification->checks ?? [];
 
+        // The headline verdict is COMPLIANT only when every check passed — it
+        // tracks the strict approval, never the looser NIU-risk grade alone.
+        $accepted = $verification->approval === ApprovalDecision::Accepted;
+
         return [
             'niu' => $verification->niu,
             'raw_input' => $verification->raw_input,
             'verdict' => [
-                'label' => $verification->verdict->label(),
-                'color' => $verification->verdict->color(),
-                'icon' => $verification->verdict->icon(),
+                'label' => $accepted ? (string) __('app.verdict.conforme') : (string) __('app.verdict.non_conforme'),
+                'color' => $accepted ? 'success' : 'danger',
+                'icon' => $accepted ? 'heroicon-o-check-badge' : 'heroicon-o-x-circle',
+            ],
+            'conclusion' => [
+                'payable' => $accepted,
+                'label' => $accepted ? (string) __('app.ui.conclusion_payable') : (string) __('app.ui.conclusion_not_payable'),
             ],
             'approval' => $verification->approval !== null ? [
                 'label' => $verification->approval->label(),

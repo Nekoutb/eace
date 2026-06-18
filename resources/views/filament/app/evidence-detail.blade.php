@@ -74,7 +74,12 @@
         @endif
         <div class="ev-kv">
             <span class="ev-k">{{ __('app.ui.verdict') }}</span>
-            <span class="ev-badge ev-badge--{{ $record->verdict->color() }}">@svg($record->verdict->icon(), 'ev-ico', ['aria-hidden' => 'true']){{ $record->verdict->label() }}</span>
+            @if ($record->approval)
+                @php($compliant = $record->approval === \App\Domain\Approval\ApprovalDecision::Accepted)
+                <span class="ev-badge ev-badge--{{ $compliant ? 'success' : 'danger' }}">@svg($compliant ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'ev-ico', ['aria-hidden' => 'true']){{ $compliant ? __('app.verdict.conforme') : __('app.verdict.non_conforme') }}</span>
+            @else
+                <span class="ev-badge ev-badge--{{ $record->verdict->color() }}">@svg($record->verdict->icon(), 'ev-ico', ['aria-hidden' => 'true']){{ $record->verdict->label() }}</span>
+            @endif
         </div>
         <div class="ev-kv">
             <span class="ev-k">{{ __('app.ui.stage') }}</span>

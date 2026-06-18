@@ -52,6 +52,8 @@ it('records an accepted verification inline through the recording phase', functi
         ->set('rawInput', 'M058712345678X')
         ->call('run')
         ->assertSet('result.approval.accepted', true)
+        ->assertSet('result.verdict.label', __('app.verdict.conforme'))
+        ->assertSet('result.conclusion.payable', true)
         ->assertSee(__('app.ui.results'))
         ->assertSee(__('app.ui.section_remediation'));
 

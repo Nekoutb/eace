@@ -369,15 +369,13 @@
                 </div>
 
                 <div class="niu-headline">
-                    @if ($result['approval'])
-                        <div class="niu-verdict {{ $result['approval']['accepted'] ? 'niu-verdict--ok' : 'niu-verdict--no' }}">
-                            @svg($result['approval']['icon'], 'niu-ico niu-ico--lg', ['aria-hidden' => 'true'])
-                            <span>
-                                <span class="niu-verdict__k">{{ __('app.ui.approval_invoice') }}</span>
-                                <span class="niu-verdict__v">{{ $result['approval']['label'] }}</span>
-                            </span>
-                        </div>
-                    @endif
+                    <div class="niu-verdict {{ $result['conclusion']['payable'] ? 'niu-verdict--ok' : 'niu-verdict--no' }}">
+                        @svg($result['conclusion']['payable'] ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle', 'niu-ico niu-ico--lg', ['aria-hidden' => 'true'])
+                        <span>
+                            <span class="niu-verdict__k">{{ __('app.ui.conclusion') }}</span>
+                            <span class="niu-verdict__v">{{ $result['conclusion']['label'] }}</span>
+                        </span>
+                    </div>
                     <div class="niu-metrics">
                         <div class="niu-metric">
                             <span class="niu-metric__k">{{ __('app.ui.verdict') }}</span>

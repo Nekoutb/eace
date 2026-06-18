@@ -29,6 +29,8 @@ class AcfCertificatesTable
                     ->label(__('app.ui.niu'))
                     ->fontFamily(FontFamily::Mono)
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->copyable()
+                    ->copyMessage(__('app.ui.copied_niu'))
                     ->searchable(),
                 TextColumn::make('taxpayer_name')
                     ->label(__('app.ui.taxpayer'))

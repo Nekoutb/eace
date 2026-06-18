@@ -67,8 +67,29 @@ class ComplianceStats extends BaseWidget
                 ->description($filesDescription)
                 ->descriptionIcon('heroicon-m-arrow-down-tray')
                 ->color('info'),
+            $this->savingsStat(),
             $this->storageStat(),
         ];
+    }
+
+    /**
+     * Potential fines/penalties avoided by NOT paying the invoices the checks
+     * rejected (incorrect ACF, non-compliant NIU) — the FCFA exposure that was
+     * caught before settlement.
+     */
+    protected function savingsStat(): Stat
+    {
+        $savings = (int) Verification::query()
+            ->where('approval', ApprovalDecision::Rejected->value)
+            ->sum('exposure_xaf');
+
+        return Stat::make(
+            __('app.dash.potential_savings'),
+            number_format($savings, 0, ',', ' ').' FCFA',
+        )
+            ->description(__('app.dash.potential_savings_desc'))
+            ->descriptionIcon('heroicon-m-shield-check')
+            ->color('success');
     }
 
     /** Evidence storage used by this workspace vs. its allocated quota. */
