@@ -411,14 +411,6 @@ class ComplianceEngine extends Page
     private function present(Verification $verification): array
     {
         $checks = $verification->checks ?? [];
-        $certificate = $verification->acfCertificate;
-
-        $fiscalisUrl = $verification->fiscalis_snapshot_path !== null
-            ? route('evidence.snapshot', ['kind' => 'fiscalis', 'id' => $verification->getKey()], absolute: false)
-            : null;
-        $acfUrl = ($verification->acf_certificate_id !== null && $certificate?->authenticity_snapshot_path !== null)
-            ? route('evidence.snapshot', ['kind' => 'acf', 'id' => $verification->acf_certificate_id], absolute: false)
-            : null;
 
         return [
             'niu' => $verification->niu,
@@ -441,10 +433,6 @@ class ComplianceEngine extends Page
             'triggered_rules' => $verification->triggered_rules ?? [],
             'vendor_email' => $this->draftVendorEmail($verification),
             'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
-            'fiscalis_snapshot_url' => $fiscalisUrl,
-            'fiscalis_label' => $verification->fiscalis_presence?->label(),
-            'acf_snapshot_url' => $acfUrl,
-            'acf_auth_label' => $certificate?->authenticity_status?->label(),
         ];
     }
 

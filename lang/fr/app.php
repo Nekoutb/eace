@@ -405,7 +405,6 @@ return [
         'no_results_title' => 'Aucun contrôle lancé',
         'no_results_body' => 'Choisissez une étape, remplissez le formulaire et lancez les contrôles. Les résultats et les anomalies s’affichent ici.',
         'section_conformity_matrix' => 'Conformité de la facture — tous les contrôles (art. 150)',
-        'section_evidence_snapshots' => 'Captures de preuve (en direct)',
         'section_remediation' => 'Synthèse & remédiation',
         'section_vendor_email' => 'Brouillon d’e-mail au fournisseur',
         'vendor_email_help' => 'Relisez et envoyez-le depuis votre propre messagerie — l’application ne l’envoie jamais à votre place.',

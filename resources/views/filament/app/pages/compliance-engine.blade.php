@@ -102,14 +102,6 @@
             .niu-extract__k{display:block;font-size:.66rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em}
             .niu-extract__v{font-size:.82rem;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
             @media (max-width:640px){.niu-extract__grid{grid-template-columns:1fr 1fr}}
-            /* Live evidence snapshot thumbnails in the result */
-            .niu-shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:.6rem}
-            .niu-shot{margin:0;border:1px solid var(--line);border-radius:12px;padding:.6rem;background:rgba(255,255,255,.6)}
-            .niu-shot__img{display:block;max-height:360px;overflow:hidden;border-radius:8px;border:1px solid var(--line);background:#fff}
-            .niu-shot__img img{width:100%;height:auto;display:block}
-            .niu-shot figcaption{display:flex;align-items:center;gap:.45rem;justify-content:space-between;flex-wrap:wrap;font-size:.78rem;font-weight:600;color:var(--ink);margin:.55rem 0 .4rem}
-            .niu-link--sm{font-size:.78rem}
-            @media (max-width:640px){.niu-shots{grid-template-columns:1fr}}
 
             /* Switch */
             .niu-switch{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
@@ -423,26 +415,6 @@
                         </tbody>
                     </table>
                 </div>
-
-                @if ($result['fiscalis_snapshot_url'] || $result['acf_snapshot_url'])
-                    <h3 class="niu-subh">@svg('heroicon-o-camera', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_evidence_snapshots') }}</h3>
-                    <div class="niu-shots">
-                        @if ($result['fiscalis_snapshot_url'])
-                            <figure class="niu-shot">
-                                <a href="{{ $result['fiscalis_snapshot_url'] }}" target="_blank" rel="noopener" class="niu-shot__img"><img src="{{ $result['fiscalis_snapshot_url'] }}" loading="lazy" alt="{{ __('app.audit.hub_ev_1') }}"></a>
-                                <figcaption>{{ __('app.audit.hub_ev_1') }}<span class="niu-tag">{{ $result['fiscalis_label'] }}</span></figcaption>
-                                <a href="{{ $result['fiscalis_snapshot_url'] }}?download=1" class="niu-link niu-link--sm">@svg('heroicon-o-arrow-down-tray', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
-                            </figure>
-                        @endif
-                        @if ($result['acf_snapshot_url'])
-                            <figure class="niu-shot">
-                                <a href="{{ $result['acf_snapshot_url'] }}" target="_blank" rel="noopener" class="niu-shot__img"><img src="{{ $result['acf_snapshot_url'] }}" loading="lazy" alt="{{ __('app.audit.hub_ev_4') }}"></a>
-                                <figcaption>{{ __('app.audit.hub_ev_4') }}<span class="niu-tag">{{ $result['acf_auth_label'] }}</span></figcaption>
-                                <a href="{{ $result['acf_snapshot_url'] }}?download=1" class="niu-link niu-link--sm">@svg('heroicon-o-arrow-down-tray', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
-                            </figure>
-                        @endif
-                    </div>
-                @endif
 
                 @if (! empty($result['invoice_checks']))
                     <h3 class="niu-subh">@svg('heroicon-o-receipt-percent', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_conformity_matrix') }}</h3>

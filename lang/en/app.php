@@ -403,7 +403,6 @@ return [
         'no_results_title' => 'No checks run yet',
         'no_results_body' => 'Choose a phase, fill in the form and run the checks. The results and any discrepancies appear here.',
         'section_conformity_matrix' => 'Invoice conformity — all checks (art. 150)',
-        'section_evidence_snapshots' => 'Live evidence snapshots',
         'section_remediation' => 'Summary & remediation',
         'section_vendor_email' => 'Draft email to the vendor',
         'vendor_email_help' => 'Review and send this from your own mailbox — the app never sends it for you.',
