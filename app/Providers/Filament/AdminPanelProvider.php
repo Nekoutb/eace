@@ -31,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
-            ->brandName('NIU Shield — Administration')
+            ->brandName('Elite Advisors Compliance Engine — Administration')
             ->colors(BrandColors::palette())
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,

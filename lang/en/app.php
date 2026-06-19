@@ -48,7 +48,7 @@ return [
 
     'signup' => [
         'title' => 'Create your workspace',
-        'subtitle' => 'Start a free trial — your own private workspace to test NIU Shield.',
+        'subtitle' => 'Start a free trial — your own private workspace to test the Elite Advisors Compliance Engine.',
         'org_name' => 'Organisation name',
         'subdomain' => 'Workspace address',
         'subdomain_help' => 'Lowercase letters, digits and hyphens. This is where you’ll sign in.',
@@ -495,18 +495,18 @@ return [
 
     'chat' => [
         'title' => 'Ask a question',
-        'intro' => 'Send a question about your account or how to use NIU Shield. It reaches the NIU Shield team, who reply here.',
+        'intro' => 'Send a question about your account or how to use the Elite Advisors Compliance Engine. It reaches the Elite Advisors team, who reply here.',
         'placeholder' => 'Type your question…',
         'send' => 'Send',
         'notif_sent' => 'Question sent — we will reply here.',
         'your_questions' => 'Your recent questions',
         'status_new' => 'Awaiting reply',
         'status_answered' => 'Answered',
-        'reply_label' => 'Reply from NIU Shield',
+        'reply_label' => 'Reply from Elite Advisors',
     ],
 
     'guide' => [
-        'intro' => 'What NIU Shield does for you, step by step, and what you get back at each stage.',
+        'intro' => 'What the Elite Advisors Compliance Engine does for you, step by step, and what you get back at each stage.',
         'expect_label' => 'What you get: ',
         's1_title' => 'Your role and what you can do',
         's1_body' => 'Administrators manage users and settings and can run every check. “Invoice recording” staff record incoming invoices; “Invoice settlement” staff clear invoices for payment. You only see the screens your role needs.',
@@ -524,7 +524,7 @@ return [
         's6_title' => 'Set up your identity (administrators)',
         's6_body' => 'In Settings, enter your own business name, NIU, RCCM and address — used to check that each invoice names you correctly. Add accepted name variations so a different spelling of your company is not flagged.',
         's7_title' => 'Get help',
-        's7_body' => 'Use the question box on the home page to reach the NIU Shield team. Your questions and our replies stay on your dashboard.',
+        's7_body' => 'Use the question box on the home page to reach the Elite Advisors team. Your questions and our replies stay on your dashboard.',
     ],
 
     'support' => [

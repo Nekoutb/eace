@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ __('app.signup.title') }} — NIU Shield</title>
+    <title>{{ __('app.signup.title') }} — Elite Advisors Compliance Engine</title>
     <style>
         :root{--g100:#dcfce7;--g200:#bbf7d0;--g500:#22c55e;--g600:#16a34a;--g700:#15803d;--g800:#166534;
             --ink:#0f231a;--ink-soft:#46685a;--line:rgba(21,128,61,.18)}
@@ -38,7 +38,7 @@
 </head>
 <body>
     <main class="card">
-        <h1 class="brand">NIU Shield</h1>
+        <h1 class="brand">Elite Advisors Compliance Engine</h1>
         <p class="sub">{{ __('app.signup.subtitle') }}</p>
 
         <form method="POST" action="{{ url('/register') }}">

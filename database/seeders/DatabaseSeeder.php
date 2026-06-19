@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
     {
         User::query()->updateOrCreate(
             ['email' => 'admin'],
-            ['name' => 'Administrateur NIU Shield', 'password' => Hash::make('admin')],
+            ['name' => 'Administrateur Elite Advisors', 'password' => Hash::make('admin')],
         );
 
         if (! Tenant::query()->whereKey('demo')->exists()) {

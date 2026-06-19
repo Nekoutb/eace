@@ -48,7 +48,7 @@ return [
 
     'signup' => [
         'title' => 'Créez votre espace',
-        'subtitle' => 'Démarrez un essai gratuit — votre propre espace privé pour tester NIU Shield.',
+        'subtitle' => 'Démarrez un essai gratuit — votre propre espace privé pour tester Elite Advisors Compliance Engine.',
         'org_name' => 'Nom de l’organisation',
         'subdomain' => 'Adresse de l’espace',
         'subdomain_help' => 'Lettres minuscules, chiffres et tirets. C’est là que vous vous connecterez.',
@@ -499,18 +499,18 @@ return [
 
     'chat' => [
         'title' => 'Poser une question',
-        'intro' => 'Envoyez une question sur votre compte ou l’utilisation de NIU Shield. Elle parvient à l’équipe NIU Shield, qui répond ici.',
+        'intro' => 'Envoyez une question sur votre compte ou l’utilisation d’Elite Advisors Compliance Engine. Elle parvient à l’équipe Elite Advisors, qui répond ici.',
         'placeholder' => 'Saisissez votre question…',
         'send' => 'Envoyer',
         'notif_sent' => 'Question envoyée — nous répondrons ici.',
         'your_questions' => 'Vos questions récentes',
         'status_new' => 'En attente de réponse',
         'status_answered' => 'Répondu',
-        'reply_label' => 'Réponse de NIU Shield',
+        'reply_label' => 'Réponse d’Elite Advisors',
     ],
 
     'guide' => [
-        'intro' => 'Ce que NIU Shield fait pour vous, étape par étape, et ce que vous obtenez à chaque étape.',
+        'intro' => 'Ce que Elite Advisors Compliance Engine fait pour vous, étape par étape, et ce que vous obtenez à chaque étape.',
         'expect_label' => 'Ce que vous obtenez : ',
         's1_title' => 'Votre rôle et ce que vous pouvez faire',
         's1_body' => 'Les administrateurs gèrent les utilisateurs et les paramètres et peuvent lancer tous les contrôles. Le personnel « Enregistrement des factures » enregistre les factures reçues ; le personnel « Règlement des factures » valide les factures à payer. Vous ne voyez que les écrans dont votre rôle a besoin.',
@@ -528,7 +528,7 @@ return [
         's6_title' => 'Configurer votre identité (administrateurs)',
         's6_body' => 'Dans Paramètres, saisissez votre raison sociale, votre NIU, votre RCCM et votre adresse — utilisés pour vérifier que chaque facture vous identifie correctement. Ajoutez des variantes acceptées du nom pour qu’une autre orthographe de votre société ne soit pas signalée.',
         's7_title' => 'Obtenir de l’aide',
-        's7_body' => 'Utilisez la zone de question sur la page d’accueil pour joindre l’équipe NIU Shield. Vos questions et nos réponses restent sur votre tableau de bord.',
+        's7_body' => 'Utilisez la zone de question sur la page d’accueil pour joindre l’équipe Elite Advisors. Vos questions et nos réponses restent sur votre tableau de bord.',
     ],
 
     'support' => [

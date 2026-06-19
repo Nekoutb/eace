@@ -32,7 +32,7 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login(Login::class)
-            ->brandName('NIU Shield')
+            ->brandName('Elite Advisors Compliance Engine')
             ->colors(BrandColors::palette())
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
