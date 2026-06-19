@@ -20,6 +20,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -33,7 +34,7 @@ class AppPanelProvider extends PanelProvider
             ->path('app')
             ->login(Login::class)
             ->brandName('Elite Advisors Compliance Engine')
-            ->brandLogo(fn (): string => view('filament.brand-logo')->render())
+            ->brandLogo(fn () => new HtmlString(view('filament.brand-logo')->render()))
             ->brandLogoHeight('2.05rem')
             ->colors(BrandColors::palette())
             ->renderHook(
