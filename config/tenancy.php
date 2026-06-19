@@ -37,7 +37,15 @@ return [
      */
     'bootstrappers' => [
         DatabaseTenancyBootstrapper::class,
-        CacheTenancyBootstrapper::class,
+        // CacheTenancyBootstrapper is intentionally DISABLED. It tags every
+        // tenant-context cache write to isolate tenants, but our cache store is
+        // `file`, which cannot tag (neither can `database` — only Redis/Memcached
+        // do). That made Filament's MFA TOTP code-reuse guard (cache()->put) throw
+        // "This cache store does not support tagging" and 500 on authenticator
+        // login. This is a single-workspace deployment, so per-tenant cache
+        // isolation is moot. Re-enable with a taggable store (Redis) if multiple
+        // tenants are ever added.
+        // \Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         FilesystemTenancyBootstrapper::class,
         QueueTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
