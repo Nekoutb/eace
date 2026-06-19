@@ -24,6 +24,7 @@ function arg(name, fallback = null) {
 const URL = arg('url');
 const OUT = arg('out');
 const CHROME = arg('chrome');
+const STAMP = arg('stamp'); // evidence band (brand + capture timestamp + URL)
 const ATTEMPTS = 2;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -88,14 +89,16 @@ async function attempt(browser) {
       await sleep(5000);
     }
 
-    // Bake the verification URL into the page so the screenshot proves which
-    // link was checked (headless captures don't include the address bar).
-    await page.evaluate(u => {
+    // Bake an evidence band into the page so the screenshot itself proves WHEN it
+    // was captured and which link was checked (headless captures show neither an
+    // address bar nor a clock). The text is supplied by PHP: brand + capture
+    // timestamp + the verification URL.
+    await page.evaluate(stamp => {
       const bar = document.createElement('div');
-      bar.style.cssText = 'position:relative;z-index:99999;background:#1f2937;color:#fff;font:14px monospace;padding:10px 16px;word-break:break-all';
-      bar.textContent = u;
+      bar.style.cssText = 'position:relative;z-index:99999;background:#0f231a;color:#fff;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:10px 16px;word-break:break-all;border-bottom:3px solid #22c55e';
+      bar.textContent = stamp;
       document.body.insertBefore(bar, document.body.firstChild);
-    }, URL).catch(() => {});
+    }, STAMP || URL).catch(e => { try { process.stderr.write('stamp-band-failed: ' + (e && e.message ? e.message : String(e)) + '\n'); } catch (_) {} });
     await sleep(600);
 
     // Capture independently — a render glitch must not discard an already-computed verdict.
@@ -106,7 +109,7 @@ async function attempt(browser) {
       shot = null;
     }
 
-    return { status, text: info.text, screenshot: shot };
+    return { status, text: info.text, screenshot: shot, captured_at_ms: Date.now() };
   } finally {
     try { await page.close(); } catch (_) {}
   }

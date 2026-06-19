@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Acf;
 
 use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Support\CaptureStamp;
 use App\Support\ChildProcessEnv;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
@@ -47,6 +48,7 @@ final class Harmony2AcfConnector implements AcfAuthenticityConnector
             '--url='.$deepLink,
             '--out='.$out,
             '--chrome='.$this->chromePath,
+            '--stamp='.CaptureStamp::for($deepLink),
         ], base_path(), ChildProcessEnv::forNode(), null, $this->timeoutSeconds);
 
         try {

@@ -13,12 +13,16 @@ use App\Models\User;
 use App\Services\Acf\AcfAuthenticityConnector;
 use App\Services\Acf\FakeAcfAuthenticityConnector;
 use App\Services\Acf\Harmony2AcfConnector;
+use App\Services\Evidence\FakeTimestampAuthority;
+use App\Services\Evidence\Rfc3161TimestampAuthority;
+use App\Services\Evidence\TimestampAuthority;
 use App\Services\Fiscalis\DgiFiscalisConnector;
 use App\Services\Fiscalis\FakeFiscalisConnector;
 use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Invoice\AzureInvoiceReader;
 use App\Services\Invoice\ClaudeInvoiceReader;
 use App\Services\Invoice\FakeInvoiceReader;
+use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\FakeRegistryResolver;
 use App\Services\Registry\TaxpayerFileResolver;
 use Illuminate\Auth\Events\Login;
@@ -108,6 +112,32 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new FakeFiscalisConnector($url);
+        });
+
+        // Full live taxpayer-list export: drives the DGI portal's "Exporter"
+        // headlessly to download the ENTIRE register (~579k rows).
+        $this->app->bind(DgiExportDownloader::class, fn () => new DgiExportDownloader(
+            url: (string) config('services.dgi.export_url', 'https://teledeclaration-dgi.cm/modules/immatriculation/Consultation/listecontribuable.aspx'),
+            chromePath: (string) config('services.browsershot.chrome_path'),
+            nodeBinary: config('services.browsershot.node_path'),
+            timeoutSeconds: (int) config('services.dgi.export_timeout', 420),
+        ));
+
+        // Trusted timestamping of evidence captures: the real RFC-3161 authority
+        // when enabled (production), else a no-network fake so dev/tests never
+        // reach a timestamp authority. The EvidenceTimestampService itself also
+        // short-circuits to "disabled" when the feature is off.
+        $this->app->bind(TimestampAuthority::class, function () {
+            if (config('niu.timestamp.enabled')) {
+                return new Rfc3161TimestampAuthority(
+                    tsaUrl: (string) config('niu.timestamp.tsa_url'),
+                    opensslBin: (string) config('niu.timestamp.openssl_bin', 'openssl'),
+                    hashAlgo: (string) config('niu.timestamp.hash_algo', 'sha256'),
+                    httpTimeout: (int) config('niu.timestamp.http_timeout', 12),
+                );
+            }
+
+            return new FakeTimestampAuthority;
         });
     }
 

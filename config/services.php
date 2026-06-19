@@ -69,6 +69,13 @@ return [
         // The official "Vérifier un NIU" portal (returns the taxpayer card + Etat).
         // HTTP only — the driver disables Chrome's HTTPS upgrade for it.
         'consultation_url' => env('DGI_CONSULTATION_URL', 'http://fiscalis.dgi.cm/modules/Common/Account/Login.aspx'),
+        // The registration-consultation page whose "Exporter" button dumps the
+        // ENTIRE taxpayer register (~579k rows) — the source for the offline
+        // NIU-existence register, driven headlessly (scripts/dgi-export.cjs).
+        'export_url' => env('DGI_EXPORT_URL', 'https://teledeclaration-dgi.cm/modules/immatriculation/Consultation/listecontribuable.aspx'),
+        // The whole export (generate rows server-side + download ~52 MB) can take
+        // minutes; give the driver generous headroom.
+        'export_timeout' => (int) env('DGI_EXPORT_TIMEOUT', 420),
     ],
 
 ];

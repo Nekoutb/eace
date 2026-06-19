@@ -294,19 +294,19 @@
                     @error('acfUpload') <p class="niu-err niu-field--full">{{ $message }}</p> @enderror
 
                     <label class="niu-drop niu-field--full">
-                        <input type="file" wire:model="invoiceUpload" accept="application/pdf,image/jpeg,image/png" class="niu-file">
+                        <input type="file" wire:model="invoiceUploads" accept="application/pdf,image/jpeg,image/png" multiple class="niu-file">
                         <span class="niu-drop__icon">@svg('heroicon-o-document-magnifying-glass', 'niu-ico', ['aria-hidden' => 'true'])</span>
                         <span>
-                            <span class="niu-drop__title">{{ __('app.ui.invoice_file') }}</span>
-                            <span class="niu-drop__hint" wire:loading.remove wire:target="invoiceUpload">{{ $invoiceUpload ? $invoiceUpload->getClientOriginalName() : __('app.ui.invoice_file_help') }}</span>
-                            <span class="niu-drop__hint" wire:loading wire:target="invoiceUpload">{{ __('app.ui.uploading') }}</span>
+                            <span class="niu-drop__title">{{ __('app.ui.invoice_files') }}</span>
+                            <span class="niu-drop__hint" wire:loading.remove wire:target="invoiceUploads">{{ count($invoices) ? __('app.ui.invoices_loaded', ['count' => count($invoices)]) : __('app.ui.invoice_files_help') }}</span>
+                            <span class="niu-drop__hint" wire:loading wire:target="invoiceUploads">{{ __('app.ui.uploading') }}</span>
                         </span>
                     </label>
-                    @error('invoiceUpload') <p class="niu-err niu-field--full">{{ $message }}</p> @enderror
+                    @error('invoiceUploads.*') <p class="niu-err niu-field--full">{{ $message }}</p> @enderror
 
-                    @if ($extracted)
+                    @foreach ($invoices as $inv)
                         <div class="niu-extract niu-field--full">
-                            <div class="niu-extract__h">@svg('heroicon-o-sparkles', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.scan_extract') }}</div>
+                            <div class="niu-extract__h">@svg('heroicon-o-sparkles', 'niu-ico', ['aria-hidden' => 'true']){{ filled($inv['name'] ?? null) ? $inv['name'] : __('app.ui.scan_extract') }}</div>
                             <div class="niu-extract__grid">
                                 @foreach ([
                                     'supplier_niu' => __('app.conformity.supplier_niu'),
@@ -323,12 +323,12 @@
                                 ] as $key => $label)
                                     <div class="niu-extract__cell">
                                         <span class="niu-extract__k">{{ $label }}</span>
-                                        <span class="niu-extract__v niu-mono">{{ filled($extracted[$key] ?? null) ? $extracted[$key] : '—' }}</span>
+                                        <span class="niu-extract__v niu-mono">{{ filled($inv['extracted'][$key] ?? null) ? $inv['extracted'][$key] : '—' }}</span>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
-                    @endif
+                    @endforeach
 
                     <div class="niu-field niu-field--full">
                         <label class="niu-label" for="niu-raw">{{ __('app.ui.niu_if_no_acf') }}</label>
@@ -462,6 +462,57 @@
             </section>
         @endif
 
+        {{-- Recording batch — several invoices recorded against one ACF --}}
+        @if ($recordingBatch)
+            <section class="glass niu-result">
+                <div class="niu-result__head">
+                    <span class="niu-result__title">@svg('heroicon-o-clipboard-document-check', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.results') }}<span class="niu-chip">{{ __('app.stage.recording') }}</span></span>
+                    @if (filled($acfReference))
+                        <span class="niu-tag niu-mono">@svg('heroicon-o-shield-check', 'niu-ico', ['aria-hidden' => 'true']){{ $acfReference }}</span>
+                    @endif
+                </div>
+
+                <div class="niu-sum">
+                    <div class="niu-sum__c"><span class="niu-sum__k">{{ __('app.ui.invoices') }}</span><span class="niu-sum__v">{{ $recordingBatch['summary']['total'] }}</span></div>
+                    <div class="niu-sum__c niu-sum__c--ok"><span class="niu-sum__k">{{ __('app.ui.accepted') }}</span><span class="niu-sum__v">{{ $recordingBatch['summary']['accepted'] }}</span></div>
+                    <div class="niu-sum__c niu-sum__c--no"><span class="niu-sum__k">{{ __('app.ui.rejected') }}</span><span class="niu-sum__v">{{ $recordingBatch['summary']['rejected'] }}</span></div>
+                    <div class="niu-sum__c"><span class="niu-sum__k">{{ __('app.ui.exposure_estimated') }}</span><span class="niu-sum__v">{{ number_format($recordingBatch['summary']['exposure_xaf'], 0, ',', ' ') }} <small style="font-size:.6rem">FCFA</small></span></div>
+                </div>
+
+                <div class="niu-tablewrap">
+                    <table class="niu-table">
+                        <thead><tr>
+                            <th>{{ __('app.ui.invoice_col') }}</th>
+                            <th>{{ __('app.ui.niu') }}</th>
+                            @foreach ($this->checkColumns() as $col)
+                                <th class="niu-ta-c">{{ $col['label'] }}</th>
+                            @endforeach
+                            <th class="niu-ta-c">{{ __('app.ui.conformity_col') }}</th>
+                            <th>{{ __('app.ui.verdict') }}</th>
+                            <th>{{ __('app.ui.decision_col') }}</th>
+                        </tr></thead>
+                        <tbody>
+                        @foreach ($recordingBatch['rows'] as $row)
+                            <tr>
+                                <td class="niu-td-strong">{{ $row['invoice_label'] ?? '—' }}</td>
+                                <td class="niu-mono niu-td-strong">{{ $row['niu'] ?? $row['raw_input'] }}</td>
+                                @foreach ($this->checkColumns() as $col)
+                                    @php($cell = $row['checks_by_key'][$col['key']] ?? null)
+                                    @php($p = $pill($cell['passed'] ?? null))
+                                    <td class="niu-ta-c"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
+                                @endforeach
+                                @php($cp = $pill($row['conformity_passed'] ?? null))
+                                <td class="niu-ta-c"><span class="{{ $cp['cls'] }} niu-pill--icon" title="{{ __('app.ui.conformity_col') }}: {{ $cp['label'] }}">@svg($cp['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $cp['label'] }}</span></span></td>
+                                <td><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
+                                <td><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
+
         {{-- Settlement batch result --}}
         @if ($batch)
             <section class="glass niu-result">
@@ -506,7 +557,7 @@
         @endif
 
         {{-- Comments — discrepancies & non-compliance --}}
-        @if ($result || $batch)
+        @if ($result || $recordingBatch || $batch)
             <section class="glass niu-disc">
                 <h3 class="niu-subh" style="margin-top:0">@svg('heroicon-o-chat-bubble-bottom-center-text', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_remediation') }}</h3>
                 @if (count($discrepancies))
@@ -517,6 +568,7 @@
                                 <div>
                                     <div class="niu-disc__t">
                                         @isset($d['niu'])<span class="niu-disc__niu niu-mono">{{ $d['niu'] }}</span>@endisset
+                                        @isset($d['invoice'])<span class="niu-disc__niu">@svg('heroicon-m-document-text', 'niu-ico', ['aria-hidden' => 'true']){{ $d['invoice'] }}</span>@endisset
                                         <strong>{{ $d['label'] }}</strong>
                                         @if (! empty($d['article']))<span class="niu-tag">{{ $d['article'] }}</span>@endif
                                     </div>
@@ -535,7 +587,7 @@
         @endif
 
         {{-- Empty state --}}
-        @if (! $result && ! $batch)
+        @if (! $result && ! $recordingBatch && ! $batch)
             <section class="niu-empty">
                 @svg('heroicon-o-shield-check', 'niu-ico niu-ico--xl', ['aria-hidden' => 'true'])
                 <h3>{{ __('app.ui.no_results_title') }}</h3>

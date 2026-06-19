@@ -60,4 +60,29 @@ return [
          */
         'min_row_ratio' => (float) env('NIU_TAXPAYER_MIN_ROW_RATIO', 0.5),
     ],
+
+    /*
+     * Trusted timestamping of evidence captures (the DGI / Harmony2 screenshots).
+     * Every capture carries a VISIBLE date/time band; when this is enabled each
+     * capture's SHA-256 is also sealed by an independent RFC-3161 Timestamp
+     * Authority, so the moment of capture is provable by a third party rather than
+     * only asserted by our server clock. Disabled by default (dev/test never reach
+     * the network); turn on in production with a TSA URL.
+     */
+    'timestamp' => [
+        'enabled' => (bool) env('NIU_TIMESTAMP_ENABLED', false),
+        // A free, public RFC-3161 authority by default; swap for a paid TSA (with
+        // an SLA) by setting NIU_TSA_URL.
+        'tsa_url' => env('NIU_TSA_URL', 'https://freetsa.org/tsr'),
+        // Optional PEM bundle (TSA cert + its CA chain) used to VERIFY a token
+        // offline — only needed by the verify tooling, not to obtain a token.
+        'tsa_ca' => env('NIU_TSA_CA'),
+        'hash_algo' => env('NIU_TSA_HASH', 'sha256'),
+        'openssl_bin' => env('NIU_OPENSSL_BIN', 'openssl'),
+        'http_timeout' => (int) env('NIU_TSA_TIMEOUT', 12),
+        // Timezone for the human-readable capture band stamped onto each image.
+        'timezone' => env('NIU_CAPTURE_TZ', 'Africa/Douala'),
+        // How many times the retry job re-attempts a failed/pending seal.
+        'max_attempts' => (int) env('NIU_TSA_MAX_ATTEMPTS', 5),
+    ],
 ];

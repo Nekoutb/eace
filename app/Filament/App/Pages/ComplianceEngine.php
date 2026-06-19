@@ -14,6 +14,7 @@ use App\Models\OrganizationProfile;
 use App\Models\Verification;
 use App\Services\Acf\AcfAuthenticationService;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Evidence\EvidenceTimestampService;
 use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Fiscalis\FiscalisStatusService;
 use App\Services\Invoice\InvoiceNoticeService;
@@ -52,8 +53,15 @@ class ComplianceEngine extends Page
     /** @var TemporaryUploadedFile|null */
     public $acfUpload = null;
 
-    /** @var TemporaryUploadedFile|null */
-    public $invoiceUpload = null;
+    /**
+     * One or more invoices recorded against the single loaded ACF — in practice a
+     * tax-clearance certificate covers several of a vendor's invoices. Each invoice
+     * is OCR'd and verified independently (its own conditions de forme et de fond),
+     * while the ACF authenticity is checked once, when the certificate is uploaded.
+     *
+     * @var array<int, TemporaryUploadedFile>
+     */
+    public $invoiceUploads = [];
 
     public ?string $rawInput = null;
 
@@ -64,13 +72,14 @@ class ComplianceEngine extends Page
     // Captured as the uploads are read (auto-populate).
     public ?string $acfReference = null;
 
-    public ?string $invoiceStoredPath = null;
-
-    /** @var array<string, mixed>|null the scanned invoice, cached so run() needs no second OCR */
-    public ?array $invoiceArray = null;
-
-    /** @var array<string, mixed>|null human-readable summary of what the scan extracted */
-    public ?array $extracted = null;
+    /**
+     * The scanned invoices, cached so run() needs no second OCR. Each entry:
+     * ['name' => original filename, 'path' => stored path, 'data' => InvoiceData
+     * array, 'extracted' => human-readable summary].
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $invoices = [];
 
     // Live evidence captured automatically as the documents are read (no manual
     // action): the Harmony2 authenticity verdict lives on the certificate; the
@@ -87,8 +96,11 @@ class ComplianceEngine extends Page
     public ?string $nius = null;
 
     // Results (plain serialisable arrays — rendered inline).
-    /** @var array<string, mixed>|null */
+    /** @var array<string, mixed>|null a single invoice's full recording result */
     public ?array $result = null;
+
+    /** @var array<string, mixed>|null the per-invoice table when several invoices share one ACF */
+    public ?array $recordingBatch = null;
 
     /** @var array<string, mixed>|null */
     public ?array $batch = null;
@@ -149,7 +161,7 @@ class ComplianceEngine extends Page
         }
 
         $this->stage = $target;
-        $this->reset(['result', 'batch', 'discrepancies', 'acfAuthLabel', 'fiscalisSnapshotPath', 'fiscalisPresence', 'fiscalisCheckedAt']);
+        $this->reset(['result', 'recordingBatch', 'batch', 'discrepancies', 'acfAuthLabel', 'fiscalisSnapshotPath', 'fiscalisPresence', 'fiscalisCheckedAt']);
     }
 
     /**
@@ -213,50 +225,84 @@ class ComplianceEngine extends Page
     }
 
     /**
-     * The invoice was selected — OCR it now and auto-populate the control fields
-     * (supplier NIU, amount, name). The full extraction is cached for run().
+     * One or more invoices were selected — OCR each now and auto-populate the
+     * control fields from the first. The full extractions are cached for run(),
+     * so several invoices can be recorded against the one loaded ACF in a single
+     * pass. Unreadable files are reported and skipped, not fatal to the batch.
      */
-    public function updatedInvoiceUpload(): void
+    public function updatedInvoiceUploads(): void
     {
-        if (! $this->invoiceUpload instanceof TemporaryUploadedFile) {
+        if ($this->invoiceUploads === []) {
             return;
         }
 
-        $this->validate(['invoiceUpload' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240']]);
+        $this->validate(['invoiceUploads.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240']]);
 
-        $path = $this->invoiceUpload->store('invoices', 'local');
-        if (! is_string($path)) {
-            Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->danger()->send();
+        $this->invoices = [];
+        $reader = app(InvoiceReader::class);
 
+        foreach ($this->invoiceUploads as $upload) {
+            $name = $upload->getClientOriginalName();
+
+            $path = $upload->store('invoices', 'local');
+            if (! is_string($path)) {
+                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($name)->danger()->send();
+
+                continue;
+            }
+
+            try {
+                $invoice = $reader->read($path, 'local');
+            } catch (\Throwable $e) {
+                Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($name.' — '.$e->getMessage())->danger()->send();
+
+                continue;
+            }
+
+            $this->invoices[] = [
+                'name' => $name,
+                'path' => $path,
+                'data' => $invoice->toArray(),
+                'extracted' => $this->extractedSummary($invoice),
+            ];
+
+            // Auto-fill the control fields from the first readable invoice.
+            if (count($this->invoices) === 1) {
+                if (blank($this->rawInput) && $invoice->supplierNiu !== null) {
+                    $this->rawInput = $invoice->supplierNiu->value;
+                }
+                if (blank($this->invoiceAmount) && $invoice->ttcAmount !== null) {
+                    $this->invoiceAmount = (string) $invoice->ttcAmount;
+                }
+                if (blank($this->invoiceName) && $this->filled($invoice->supplierName)) {
+                    $this->invoiceName = $invoice->supplierName;
+                }
+            }
+        }
+
+        if ($this->invoices === []) {
             return;
         }
 
-        try {
-            $invoice = app(InvoiceReader::class)->read($path, 'local');
-        } catch (\Throwable $e) {
-            Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($e->getMessage())->danger()->send();
-
-            return;
+        // Make a partial batch visible: if some files could not be read, say so
+        // (the per-file error toasts auto-dismiss and are easy to miss).
+        $attempted = count($this->invoiceUploads);
+        $loaded = count($this->invoices);
+        if ($loaded < $attempted) {
+            Notification::make()
+                ->title(__('app.ui.notif_invoices_partial', ['loaded' => $loaded, 'total' => $attempted]))
+                ->warning()
+                ->persistent()
+                ->send();
         }
 
-        $this->invoiceStoredPath = $path;
-        $this->invoiceArray = $invoice->toArray();
-        $this->extracted = $this->extractedSummary($invoice);
+        Notification::make()
+            ->title(__('app.ui.notif_invoices_scanned', ['count' => $loaded]))
+            ->success()
+            ->send();
 
-        if (blank($this->rawInput) && $invoice->supplierNiu !== null) {
-            $this->rawInput = $invoice->supplierNiu->value;
-        }
-        if (blank($this->invoiceAmount) && $invoice->ttcAmount !== null) {
-            $this->invoiceAmount = (string) $invoice->ttcAmount;
-        }
-        if (blank($this->invoiceName) && $this->filled($invoice->supplierName)) {
-            $this->invoiceName = $invoice->supplierName;
-        }
-
-        Notification::make()->title(__('app.ui.notif_invoice_scanned'))->success()->send();
-
-        // Capture the supplier's live DGI national-file snapshot right away — no
-        // manual action. It is attached to the verification when run() persists it.
+        // Capture the vendor's live DGI national-file snapshot once — every invoice
+        // here is the same vendor's (the one ACF covers), so one snapshot serves all.
         $this->captureFiscalisSnapshot($this->filled($this->rawInput) ? trim((string) $this->rawInput) : null);
     }
 
@@ -277,8 +323,10 @@ class ComplianceEngine extends Page
         $this->fiscalisCheckedAt = now()->toDateTimeString();
 
         if ($result->hasScreenshot()) {
+            $bytes = (string) $result->screenshotPng;
             $path = 'fiscalis-snapshots/niu-'.preg_replace('/[^A-Za-z0-9]/', '', $niu).'-'.now()->format('Ymd-His').'.png';
-            Storage::disk('local')->put($path, (string) $result->screenshotPng);
+            Storage::disk('local')->put($path, $bytes);
+            app(EvidenceTimestampService::class)->seal('local', $path, $bytes);
             $this->fiscalisSnapshotPath = $path;
         }
 
@@ -324,7 +372,7 @@ class ComplianceEngine extends Page
             'nius' => $this->stage === 'settlement' ? ['required', 'string'] : ['nullable', 'string'],
         ]);
 
-        $this->reset(['result', 'batch', 'discrepancies']);
+        $this->reset(['result', 'recordingBatch', 'batch', 'discrepancies']);
 
         $this->stage === 'settlement'
             ? $this->runSettlement()
@@ -345,38 +393,122 @@ class ComplianceEngine extends Page
             return;
         }
 
-        $invoiceData = is_array($this->invoiceArray) && $this->invoiceArray !== []
-            ? InvoiceData::fromArray($this->invoiceArray)
-            : null;
+        // No invoice loaded → an ACF-only recording (a single verification).
+        // One or more invoices → verify each against the one loaded ACF.
+        $invoices = $this->invoices !== []
+            ? $this->invoices
+            : [['name' => null, 'path' => null, 'data' => null]];
 
-        $verification = app(VerificationService::class)->verify(new VerifyRequest(
-            rawInput: $rawInput,
-            stage: VerificationStage::Recording,
-            acfReference: $this->acfReference,
-            invoiceAmountXaf: filled($this->invoiceAmount) ? (int) $this->invoiceAmount : null,
-            invoiceName: filled($this->invoiceName) ? (string) $this->invoiceName : null,
-            invoiceData: $invoiceData,
-            invoiceFilePath: $this->invoiceStoredPath,
-            checkedBy: auth()->id(),
-        ));
+        $verifications = [];
+        foreach ($invoices as $index => $invoice) {
+            $invoiceData = is_array($invoice['data'] ?? null) && $invoice['data'] !== []
+                ? InvoiceData::fromArray($invoice['data'])
+                : null;
 
-        // Attach the live Fiscalis snapshot captured when the invoice was scanned.
-        $this->attachFiscalisSnapshot($verification);
+            $verification = app(VerificationService::class)->verify(new VerifyRequest(
+                rawInput: $rawInput,
+                stage: VerificationStage::Recording,
+                acfReference: $this->acfReference,
+                invoiceAmountXaf: $this->invoiceAmountFor($invoiceData, $index),
+                invoiceName: $this->invoiceNameFor($invoiceData, $index),
+                invoiceData: $invoiceData,
+                invoiceFilePath: $invoice['path'] ?? null,
+                checkedBy: auth()->id(),
+            ));
 
-        // If no invoice provided one (e.g. an ACF-only recording), capture the
-        // supplier's live Fiscalis status now so the record is complete.
-        if ($this->liveSnapshots() && $verification->fiscalis_snapshot_path === null && filled($verification->niu)) {
-            app(FiscalisStatusService::class)->capture($verification);
+            // Attach the vendor's live Fiscalis snapshot captured at scan time; it
+            // is the same vendor across every invoice, so each record carries it.
+            $this->attachFiscalisSnapshot($verification);
+
+            // ACF-only recording with no snapshot yet → capture it now so the
+            // record is complete.
+            if ($this->liveSnapshots() && $verification->fiscalis_snapshot_path === null && filled($verification->niu)) {
+                app(FiscalisStatusService::class)->capture($verification);
+            }
+
+            $verifications[] = ['verification' => $verification, 'label' => $invoice['name'] ?? null];
         }
 
-        $this->result = $this->present($verification);
-        $this->discrepancies = $this->discrepanciesFor($verification);
+        $this->presentRecording($verifications);
+    }
 
-        $notification = Notification::make()->title($verification->approval?->label() ?? $verification->verdict->label());
-        $verification->approval === ApprovalDecision::Accepted
-            ? $notification->success()
-            : $notification->danger();
-        $notification->send();
+    /** The TTC amount fed to the risk rules — per-invoice, or the manual field for a lone recording. */
+    private function invoiceAmountFor(?InvoiceData $invoice, int $index): ?int
+    {
+        if ($invoice?->ttcAmount !== null) {
+            return (int) $invoice->ttcAmount;
+        }
+
+        return $index === 0 && filled($this->invoiceAmount) ? (int) $this->invoiceAmount : null;
+    }
+
+    /** The supplier name fed to the risk rules — per-invoice, or the manual field for a lone recording. */
+    private function invoiceNameFor(?InvoiceData $invoice, int $index): ?string
+    {
+        if ($this->filled($invoice?->supplierName)) {
+            return (string) $invoice?->supplierName;
+        }
+
+        return $index === 0 && filled($this->invoiceName) ? (string) $this->invoiceName : null;
+    }
+
+    /**
+     * Reveal the recording outcome: one invoice shows the full detailed result;
+     * several invoices recorded against the one ACF show a per-invoice table with
+     * the combined discrepancies underneath, each tagged with its invoice.
+     *
+     * @param  array<int, array{verification: Verification, label: ?string}>  $verifications
+     */
+    private function presentRecording(array $verifications): void
+    {
+        $discrepancies = [];
+        foreach ($verifications as $entry) {
+            $label = $entry['label'];
+            foreach ($this->discrepanciesFor($entry['verification']) as $item) {
+                $discrepancies[] = $label !== null ? $item + ['invoice' => $label] : $item;
+            }
+        }
+        $this->discrepancies = $discrepancies;
+
+        if (count($verifications) === 1) {
+            $verification = $verifications[0]['verification'];
+            $this->result = $this->present($verification);
+
+            $notification = Notification::make()->title($verification->approval?->label() ?? $verification->verdict->label());
+            $verification->approval === ApprovalDecision::Accepted
+                ? $notification->success()
+                : $notification->danger();
+            $notification->send();
+
+            return;
+        }
+
+        $accepted = 0;
+        $rejected = 0;
+        $exposure = 0;
+        $rows = [];
+        foreach ($verifications as $entry) {
+            $verification = $entry['verification'];
+            $verification->approval === ApprovalDecision::Accepted ? $accepted++ : $rejected++;
+            $exposure += (int) $verification->exposure_xaf;
+            $rows[] = $this->present($verification) + ['invoice_label' => $entry['label']];
+        }
+
+        $this->recordingBatch = [
+            'summary' => [
+                'total' => count($verifications),
+                'accepted' => $accepted,
+                'rejected' => $rejected,
+                'exposure_xaf' => $exposure,
+            ],
+            'rows' => $rows,
+        ];
+
+        Notification::make()
+            ->title(__('app.ui.notif_batch_done', ['accepted' => $accepted, 'rejected' => $rejected]))
+            ->body(__('app.ui.notif_recording_batch_body', ['total' => count($verifications)]))
+            ->status($rejected > 0 ? 'warning' : 'success')
+            ->send();
     }
 
     private function runSettlement(): void
@@ -475,6 +607,7 @@ class ComplianceEngine extends Page
             'checks' => $checks,
             'checks_by_key' => collect($checks)->keyBy('key')->all(),
             'invoice_checks' => $verification->invoice_checks,
+            'conformity_passed' => $this->conformityPassed($verification),
             'triggered_rules' => $verification->triggered_rules ?? [],
             'vendor_email' => $this->draftVendorEmail($verification),
             'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
@@ -504,6 +637,27 @@ class ComplianceEngine extends Page
             $accepted => __('app.ui.decision_record'),
             default => __('app.ui.decision_no_record'),
         };
+    }
+
+    /**
+     * Whether every art. 150 condition de forme et de fond passed for this
+     * invoice — null when no invoice was scanned (an ACF-only recording).
+     */
+    private function conformityPassed(Verification $verification): ?bool
+    {
+        $findings = $verification->invoice_checks;
+
+        if (! is_array($findings) || $findings === []) {
+            return null;
+        }
+
+        foreach ($findings as $finding) {
+            if (($finding['passed'] ?? true) === false) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

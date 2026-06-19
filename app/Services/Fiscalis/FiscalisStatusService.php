@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Fiscalis;
 
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceTimestampService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,7 +17,10 @@ use Illuminate\Support\Facades\Storage;
  */
 final class FiscalisStatusService
 {
-    public function __construct(private FiscalisConnector $connector) {}
+    public function __construct(
+        private FiscalisConnector $connector,
+        private EvidenceTimestampService $timestamps,
+    ) {}
 
     public function capture(Verification $verification): FiscalisResult
     {
@@ -27,8 +31,10 @@ final class FiscalisStatusService
         $path = $verification->fiscalis_snapshot_path;
 
         if ($result->hasScreenshot()) {
+            $bytes = (string) $result->screenshotPng;
             $path = 'fiscalis-snapshots/niu-'.$verification->getKey().'-'.CarbonImmutable::now()->format('Ymd-His').'.png';
-            $disk->put($path, (string) $result->screenshotPng);
+            $disk->put($path, $bytes);
+            $this->timestamps->seal('local', $path, $bytes);
         }
 
         $verification->forceFill([

@@ -25,6 +25,17 @@ final class TaxpayerFileIngestionService
 {
     private const CHUNK = 1000;
 
+    /** Target column => its header name in the DGI file. */
+    private const FIELDS = [
+        'niu' => 'NIU',
+        'raison_sociale' => 'RAISON_SOCIALE',
+        'sigle' => 'SIGLE',
+        'activite' => 'ACTIVITE_PRINCIPALE',
+        'regime' => 'REGIME',
+        'cri' => 'CRI',
+        'centre' => 'CENTRE_DE_RATTACHEMENT',
+    ];
+
     /**
      * @param  array<string, mixed>  $meta  source_url, file_path, file_hash
      */
@@ -114,8 +125,8 @@ final class TaxpayerFileIngestionService
         $buffer = [];
 
         foreach ($reader->getSheetIterator() as $sheet) {
-            /** @var array<string, int> $columns header name => column index */
-            $columns = [];
+            /** @var array<string, ?int> $idx target column => cell index, resolved once */
+            $idx = [];
             $header = true;
 
             foreach ($sheet->getRowIterator() as $row) {
@@ -123,32 +134,31 @@ final class TaxpayerFileIngestionService
 
                 if ($header) {
                     $header = false;
-                    foreach ($cells as $index => $name) {
-                        $key = $this->headerKey($name);
-                        if ($key !== '') {
-                            $columns[$key] = $index;
-                        }
-                    }
+                    // Resolve each target column's index ONCE from the header row,
+                    // instead of re-normalising header names on every cell of every
+                    // row (hundreds of thousands of rows × seven columns).
+                    $idx = $this->resolveColumns($cells);
 
                     continue;
                 }
 
-                $niu = $this->cell($cells, $columns, 'NIU');
+                $niu = $this->valueAt($cells, $idx['niu'] ?? null);
                 if ($niu === null) {
                     continue;
                 }
 
+                $now = now();
                 $buffer[] = [
                     'niu' => $niu,
-                    'raison_sociale' => $this->cell($cells, $columns, 'RAISON_SOCIALE'),
-                    'sigle' => $this->cell($cells, $columns, 'SIGLE'),
-                    'activite' => $this->cell($cells, $columns, 'ACTIVITE_PRINCIPALE'),
-                    'regime' => $this->cell($cells, $columns, 'REGIME'),
-                    'cri' => $this->cell($cells, $columns, 'CRI'),
-                    'centre' => $this->cell($cells, $columns, 'CENTRE_DE_RATTACHEMENT'),
+                    'raison_sociale' => $this->valueAt($cells, $idx['raison_sociale'] ?? null),
+                    'sigle' => $this->valueAt($cells, $idx['sigle'] ?? null),
+                    'activite' => $this->valueAt($cells, $idx['activite'] ?? null),
+                    'regime' => $this->valueAt($cells, $idx['regime'] ?? null),
+                    'cri' => $this->valueAt($cells, $idx['cri'] ?? null),
+                    'centre' => $this->valueAt($cells, $idx['centre'] ?? null),
                     'taxpayer_file_extraction_id' => $extractionId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
                 $count++;
 
@@ -171,17 +181,37 @@ final class TaxpayerFileIngestionService
     }
 
     /**
-     * Read a cell by HEADER NAME, not fixed index — the monthly archive (8 cols)
-     * and the live "Exporter" list (12 cols, with TELEPHONE/VILLE/…) order their
-     * columns differently.
+     * Map each target column to its cell index from the header row — resolved
+     * once per file. Reading by HEADER NAME (not a fixed index) keeps it robust:
+     * the monthly archive (8 cols) and the live "Exporter" list (12 cols, with
+     * TELEPHONE/VILLE/…) order their columns differently.
      *
-     * @param  array<int, mixed>  $cells
-     * @param  array<string, int>  $columns
+     * @param  array<int, mixed>  $headerCells
+     * @return array<string, ?int>
      */
-    private function cell(array $cells, array $columns, string $header): ?string
+    private function resolveColumns(array $headerCells): array
     {
-        $index = $columns[$this->headerKey($header)] ?? null;
+        $columns = [];
+        foreach ($headerCells as $index => $name) {
+            $key = $this->headerKey($name);
+            if ($key !== '') {
+                $columns[$key] = $index;
+            }
+        }
 
+        $idx = [];
+        foreach (self::FIELDS as $field => $header) {
+            $idx[$field] = $columns[$this->headerKey($header)] ?? null;
+        }
+
+        return $idx;
+    }
+
+    /**
+     * @param  array<int, mixed>  $cells
+     */
+    private function valueAt(array $cells, ?int $index): ?string
+    {
         return $index !== null ? $this->str($cells[$index] ?? null) : null;
     }
 

@@ -24,6 +24,7 @@ function arg(name, fallback = null) {
 const NIU = arg('niu');
 const OUT = arg('out');
 const CHROME = arg('chrome');
+const STAMP = arg('stamp'); // evidence band (brand + capture timestamp + NIU)
 const URL = arg('url', 'http://fiscalis.dgi.cm/modules/Common/Account/Login.aspx');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const ATTEMPTS = 2;
@@ -69,6 +70,17 @@ async function attempt(browser) {
     const active = !noMatch && !!etatM && /actif/i.test(etatM[1]);
     const found = !noMatch && (!!etatM || !!raison);
 
+    // Bake an evidence band into the page so the screenshot itself proves WHEN it
+    // was captured and which NIU was checked (headless captures show neither an
+    // address bar nor a clock). The text is supplied by PHP.
+    await page.evaluate(stamp => {
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:relative;z-index:99999;background:#0f231a;color:#fff;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:10px 16px;word-break:break-all;border-bottom:3px solid #22c55e';
+      bar.textContent = stamp;
+      document.body.insertBefore(bar, document.body.firstChild);
+    }, STAMP || ('NIU ' + NIU)).catch(e => { try { process.stderr.write('stamp-band-failed: ' + (e && e.message ? e.message : String(e)) + '\n'); } catch (_) {} });
+    await sleep(400);
+
     let shot = OUT;
     try {
       await page.screenshot({ path: OUT, fullPage: true });
@@ -83,6 +95,7 @@ async function attempt(browser) {
       raison,
       text: (raison ? raison + ' — ' : '') + 'Etat: ' + (etat || 'inconnu'),
       screenshot: shot,
+      captured_at_ms: Date.now(),
     };
   } finally {
     try { await page.close(); } catch (_) {}

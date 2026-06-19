@@ -27,3 +27,9 @@ Schedule::command('audit:archive-expired')
 Schedule::command('queue:work --stop-when-empty --max-time=280 --tries=1')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Finish any RFC-3161 evidence seals a Timestamp Authority outage left pending
+// (no-op unless trusted timestamping is enabled).
+Schedule::command('evidence:timestamp-pending')
+    ->hourly()
+    ->withoutOverlapping();

@@ -10,6 +10,7 @@ use App\Domain\Acf\AcfValidity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Tenant-owned. A processed ACF under monitoring (CGI art. L 94 bis).
@@ -78,5 +79,16 @@ class AcfCertificate extends Model
     public function thirdParty(): BelongsTo
     {
         return $this->belongsTo(ThirdParty::class);
+    }
+
+    /**
+     * Every invoice verification recorded against this certificate — one ACF
+     * commonly covers several of a vendor's invoices (each its own verification).
+     *
+     * @return HasMany<Verification, $this>
+     */
+    public function verifications(): HasMany
+    {
+        return $this->hasMany(Verification::class);
     }
 }

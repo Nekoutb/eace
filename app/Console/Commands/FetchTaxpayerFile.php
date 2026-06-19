@@ -5,31 +5,29 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\TaxpayerFileExtraction;
+use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\TaxpayerFileIngestionService;
-use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\File;
 
 /**
- * Refreshes the offline NIU-existence source from the DGI consultation portal.
- * Scheduled weekly (~52 extractions a year). Downloads the most recent published
- * "FICHIER <MOIS> AAAA.xlsx", or ingests a local file passed with --file. If the
- * downloaded file is byte-identical to the last extraction it is recorded as
- * "unchanged" rather than re-ingested.
+ * Refreshes the shared NIU-existence register from the DGI consultation portal.
+ *
+ * The CORRECT source is the LIVE export: the "Exporter" button on
+ * listecontribuable.aspx dumps the ENTIRE register (~579k rows) — NOT the monthly
+ * "Archives" tab. That export is a multi-tab ASP.NET ViewState postback, so it is
+ * driven headlessly (DgiExportDownloader → scripts/dgi-export.cjs). A local .xlsx
+ * may be ingested directly with --file. A byte-identical re-download is recorded
+ * as "unchanged" rather than re-ingested.
  */
 class FetchTaxpayerFile extends Command
 {
     protected $signature = 'taxpayer-file:fetch
-        {--file= : ingest a local .xlsx instead of downloading}
-        {--period= : period label for --file, e.g. "MARS 2026"}
-        {--month= : force a specific published month, e.g. "MARS 2026"}';
+        {--file= : ingest a local .xlsx instead of downloading the live export}
+        {--period= : period label for --file, e.g. "Export 13/06/2026"}';
 
-    protected $description = 'Download (or ingest) the DGI monthly taxpayer file and refresh the NIU-existence source.';
-
-    private const BASE = 'https://teledeclaration-dgi.cm/UploadedFiles/AttachedFiles/ArchiveListecontribuable/';
-
-    private const MONTHS = ['JANVIER', 'FEVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOUT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DECEMBRE'];
+    protected $description = 'Download the full live DGI taxpayer export (or ingest a local file) and refresh the NIU-existence register.';
 
     public function handle(TaxpayerFileIngestionService $ingestion): int
     {
@@ -67,36 +65,30 @@ class FetchTaxpayerFile extends Command
             return $this->ingestFrom($ingestion, $path, $period, null);
         }
 
-        [$url, $period] = $this->locateLatest();
+        // Drive the portal's "Exporter" to download the ENTIRE live register.
+        $this->info('Downloading the live DGI taxpayer export …');
+        [$path, $error] = app(DgiExportDownloader::class)->download();
 
-        if ($url === null) {
-            $this->error('No published taxpayer file found in the last 6 months.');
+        $period = 'Export '.now()->format('d/m/Y');
+
+        if ($path === null) {
+            $this->error('Live export failed: '.$error);
             TaxpayerFileExtraction::query()->create([
-                'period_label' => $period !== '' ? $period : 'unknown',
+                'period_label' => $period,
                 'status' => 'failed',
-                'message' => 'No published file located.',
+                'message' => 'Live export failed: '.$error,
                 'extracted_at' => now(),
             ]);
 
             return self::FAILURE;
         }
 
-        $dir = storage_path('app/taxpayer-files');
-        if (! is_dir($dir)) {
-            mkdir($dir, 0775, true);
-        }
-        $dest = $dir.'/'.str_replace(' ', '-', $period).'.xlsx';
+        $result = $this->ingestFrom($ingestion, $path, $period, (string) config('services.dgi.export_url'));
 
-        $this->info("Downloading {$period} …");
-        $response = Http::timeout(600)->sink($dest)->get($url);
+        // Keep only the latest download so the twice-weekly 52 MB exports don't pile up.
+        $this->pruneOldExports($path);
 
-        if (! $response->successful()) {
-            $this->error("Download failed: HTTP {$response->status()}");
-
-            return self::FAILURE;
-        }
-
-        return $this->ingestFrom($ingestion, $dest, $period, $url);
+        return $result;
     }
 
     private function ingestFrom(TaxpayerFileIngestionService $ingestion, string $path, string $period, ?string $url): int
@@ -137,37 +129,15 @@ class FetchTaxpayerFile extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * @return array{0: ?string, 1: string}
-     */
-    private function locateLatest(): array
+    /** Remove every downloaded-export directory except the one just ingested. */
+    private function pruneOldExports(string $keepPath): void
     {
-        if (filled($this->option('month'))) {
-            $period = strtoupper((string) $this->option('month'));
+        $keepDir = dirname($keepPath);
 
-            return [$this->url($period), $period];
-        }
-
-        $cursor = CarbonImmutable::now();
-        $lastTried = '';
-
-        for ($i = 0; $i < 6; $i++) {
-            $period = self::MONTHS[(int) $cursor->format('n') - 1].' '.$cursor->format('Y');
-            $lastTried = $period;
-            $url = $this->url($period);
-
-            if (Http::timeout(30)->head($url)->successful()) {
-                return [$url, $period];
+        foreach (File::glob(storage_path('app/taxpayer-files/live-export-*')) as $dir) {
+            if (is_dir($dir) && $dir !== $keepDir) {
+                File::deleteDirectory($dir);
             }
-
-            $cursor = $cursor->subMonth();
         }
-
-        return [null, $lastTried];
-    }
-
-    private function url(string $period): string
-    {
-        return self::BASE.'FICHIER%20'.str_replace(' ', '%20', $period).'.xlsx';
     }
 }

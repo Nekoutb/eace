@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Fiscalis;
 
 use App\Domain\Fiscalis\FiscalisPresence;
+use App\Support\CaptureStamp;
 use App\Support\ChildProcessEnv;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
@@ -48,6 +49,7 @@ final class DgiFiscalisConnector implements FiscalisConnector
                 '--out='.$out,
                 '--chrome='.$this->chromePath,
                 '--url='.$this->url,
+                '--stamp='.CaptureStamp::for('NIU '.$niu),
             ], base_path(), ChildProcessEnv::forNode(), null, $this->timeoutSeconds);
 
             $process->run();

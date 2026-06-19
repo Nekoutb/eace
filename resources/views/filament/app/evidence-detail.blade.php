@@ -10,6 +10,8 @@
 @php($acfSnap = ($acf && $acf->authenticity_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($acf->authenticity_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($acf->authenticity_snapshot_path)) : null)
 @php($fiscPresence = $record->fiscalis_presence)
 @php($fiscSnap = ($record->fiscalis_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->fiscalis_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($record->fiscalis_snapshot_path)) : null)
+@php($fiscTs = \App\Models\EvidenceTimestamp::forPath($record->fiscalis_snapshot_path))
+@php($acfTs = \App\Models\EvidenceTimestamp::forPath($acf?->authenticity_snapshot_path))
 
 <div class="ev" x-data="{ zoom: null }">
     <style>
@@ -188,6 +190,7 @@
                         @else
                             <span class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</span>
                         @endif
+                        @include('filament.app.partials.ev-timestamp', ['ts' => $fiscTs])
                     </td>
                 </tr>
                 {{-- 2. Copy of the valid ACF --}}
@@ -228,6 +231,7 @@
                         @else
                             <span class="ev-muted">—</span>
                         @endif
+                        @include('filament.app.partials.ev-timestamp', ['ts' => $acfTs])
                     </td>
                 </tr>
             </tbody>
