@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Domain\Auth\UserRole;
+use App\Filament\Auth\AppAuthentication;
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
+use Filament\Facades\Filament;
 
 beforeEach(function () {
     $this->tenant = Tenant::create(['id' => 'mfa']);
@@ -55,8 +57,24 @@ it('stores recovery codes and exposes the holder name', function () {
 
 it('requires multi-factor authentication on both panels', function () {
     foreach (['app', 'admin'] as $panelId) {
-        $panel = Filament\Facades\Filament::getPanel($panelId);
+        $panel = Filament::getPanel($panelId);
         expect($panel->getMultiFactorAuthenticationProviders())->not->toBeEmpty()
             ->and($panel->isMultiFactorAuthenticationRequired())->toBeTrue();
     }
+});
+
+it('renders the enrolment QR as a single valid SVG data URI (not double-wrapped)', function () {
+    test()->actingAs(mfaUser());
+    Filament::setCurrentPanel(Filament::getPanel('app'));
+
+    $uri = app(AppAuthentication::class)->generateQrCodeDataUri('FLW3DAQOXC2OQH43');
+
+    expect($uri)->toStartWith('data:image/svg+xml;base64,');
+
+    // The decoded payload must be the SVG itself, NOT another data: URI (the
+    // double-encoding bug that left the QR code blank in the set-up dialog).
+    $decoded = base64_decode(substr($uri, strlen('data:image/svg+xml;base64,')), true);
+    expect($decoded)->toBeString()
+        ->and($decoded)->not->toStartWith('data:')
+        ->and($decoded)->toContain('<svg');
 });
