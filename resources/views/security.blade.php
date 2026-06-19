@@ -108,7 +108,7 @@
     <section class="panel">
         <h2>🗄️ {{ $fr ? 'Capacité & conservation' : 'Capacity & retention' }}</h2>
         <div class="kpis">
-            <div class="kpi"><b>25 {{ $fr ? 'To+' : 'TB+' }}</b><span>{{ $fr ? 'stockage dédié et sécurisé' : 'dedicated, secured storage' }}</span></div>
+            <div class="kpi"><b>{{ $fr ? 'Évolutif' : 'Scalable' }}</b><span>{{ $fr ? 'stockage dédié et sécurisé' : 'dedicated, secured storage' }}</span></div>
             <div class="kpi"><b>2 {{ $fr ? 'ans' : 'years' }}</b><span>{{ $fr ? 'accès direct (stockage chaud)' : 'direct access (hot storage)' }}</span></div>
             <div class="kpi"><b>11×9</b><span>{{ $fr ? 'durabilité des données' : 'data durability' }}</span></div>
         </div>
