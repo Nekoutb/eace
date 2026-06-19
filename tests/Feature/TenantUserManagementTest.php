@@ -82,6 +82,20 @@ it('redirects a temporary-password user to the change-password page', function (
         ->and($response->headers->get('Location'))->toContain('change-password');
 });
 
+it('lets a temporary-password user reach the 2FA enrolment pages (no redirect loop)', function () {
+    // With both a temp password AND mandatory 2FA not yet set up, the MFA gate
+    // sends the user to set-up first; force-password-change must not bounce them
+    // back, or the two gates loop forever (ERR_TOO_MANY_REDIRECTS).
+    $user = makeUser(UserRole::Recorder, ['must_change_password' => true]);
+
+    $request = Request::create('/app/multi-factor-authentication/set-up');
+    $request->setUserResolver(fn () => $user);
+
+    $response = (new ForcePasswordChange)->handle($request, fn () => response('reached'));
+
+    expect($response->getContent())->toBe('reached');
+});
+
 it('lets a settled user through the password-change gate', function () {
     $user = makeUser(UserRole::Admin, ['must_change_password' => false]);
 

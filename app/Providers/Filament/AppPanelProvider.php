@@ -8,6 +8,7 @@ use App\Filament\Auth\Login;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -37,6 +38,9 @@ class AppPanelProvider extends PanelProvider
             ->brandLogo(fn () => new HtmlString(view('filament.brand-logo')->render()))
             ->brandLogoHeight('2.05rem')
             ->colors(BrandColors::palette())
+            // Mandatory two-factor for every user: an authenticator-app (TOTP)
+            // code on each sign-in, with one-time recovery codes.
+            ->multiFactorAuthentication(AppAuthentication::make()->recoverable(), isRequired: (bool) config('niu.two_factor_required', true))
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => view('filament.locale-switcher')->render(),

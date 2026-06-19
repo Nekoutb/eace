@@ -37,4 +37,12 @@ return [
      * public sign-up page. Off in production unless you want open trials.
      */
     'self_service_signup' => (bool) env('NIU_SELF_SERVICE_SIGNUP', true),
+
+    /*
+     * Whether two-factor authentication (authenticator-app / TOTP) is MANDATORY
+     * for every user — each must enrol before reaching the app. Kept as a switch
+     * (not a constant) so it can be relaxed from the environment in an emergency
+     * without a redeploy.
+     */
+    'two_factor_required' => (bool) env('NIU_TWO_FACTOR_REQUIRED', true),
 ];

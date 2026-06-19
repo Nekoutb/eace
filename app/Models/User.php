@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domain\Auth\UserRole;
 use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,10 +26,12 @@ use Illuminate\Support\Carbon;
  * @property ?UserRole $role
  * @property bool $must_change_password
  * @property ?Carbon $last_login_at
+ * @property ?string $app_authentication_secret
+ * @property ?array<int, string> $app_authentication_recovery_codes
  */
 #[Fillable(['name', 'email', 'password', 'role', 'must_change_password', 'last_login_at'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+#[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -61,7 +65,46 @@ class User extends Authenticatable implements FilamentUser
             'role' => UserRole::class,
             'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
+            // Two-factor (TOTP) — encrypted at rest with the app key.
+            'app_authentication_secret' => 'encrypted',
+            'app_authentication_recovery_codes' => 'encrypted:array',
         ];
+    }
+
+    // --- Two-factor authentication (Filament app/TOTP MFA) ------------------
+
+    public function getAppAuthenticationSecret(): ?string
+    {
+        return $this->app_authentication_secret;
+    }
+
+    public function saveAppAuthenticationSecret(?string $secret): void
+    {
+        $this->app_authentication_secret = $secret;
+        $this->save();
+    }
+
+    /** The label shown beside the brand in the user's authenticator app. */
+    public function getAppAuthenticationHolderName(): string
+    {
+        return (string) ($this->email ?? $this->name);
+    }
+
+    /**
+     * @return ?array<string>
+     */
+    public function getAppAuthenticationRecoveryCodes(): ?array
+    {
+        return $this->app_authentication_recovery_codes;
+    }
+
+    /**
+     * @param  ?array<string>  $codes
+     */
+    public function saveAppAuthenticationRecoveryCodes(?array $codes): void
+    {
+        $this->app_authentication_recovery_codes = $codes;
+        $this->save();
     }
 
     /** Tenant admins manage staff and settings; recorders/settlers only do the work. */
