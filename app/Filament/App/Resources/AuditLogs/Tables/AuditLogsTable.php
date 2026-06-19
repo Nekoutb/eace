@@ -32,18 +32,20 @@ class AuditLogsTable
                     ->label(__('app.ui.niu'))
                     ->fontFamily(FontFamily::Mono)
                     ->placeholder(__('app.ui.placeholder_invalid'))
+                    ->sortable()
                     ->searchable(),
+                TextColumn::make('taxpayer_name')
+                    ->label(__('app.ui.taxpayer'))
+                    ->state(fn (Verification $record): ?string => self::vendorName($record))
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->orWhere('invoice_data->supplier_name', 'like', "%{$search}%")),
                 TextColumn::make('invoice_ref')
                     ->label(__('app.audit.invoice_ref'))
                     ->fontFamily(FontFamily::Mono)
                     ->state(fn (Verification $record): ?string => self::invoiceField($record, 'invoice_number'))
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('invoice_data->invoice_number', $direction))
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->orWhere('invoice_data->invoice_number', 'like', "%{$search}%")),
-                TextColumn::make('vendor')
-                    ->label(__('app.audit.vendor'))
-                    ->state(fn (Verification $record): ?string => self::vendorName($record))
-                    ->placeholder(__('app.ui.placeholder_dash'))
-                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->orWhere('invoice_data->supplier_name', 'like', "%{$search}%")),
                 TextColumn::make('active')
                     ->label(__('app.audit.active'))
                     ->badge()
@@ -59,6 +61,7 @@ class AuditLogsTable
                     ->label(__('app.ui.approval'))
                     ->badge()
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                     ->color(fn (ApprovalDecision $state): string => $state->color())
                     ->icon(fn (ApprovalDecision $state): string => $state->icon()),
@@ -66,6 +69,7 @@ class AuditLogsTable
                     ->label(__('app.audit.archived'))
                     ->dateTime('d/m/Y')
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->badge()
                     ->color('gray'),
             ])

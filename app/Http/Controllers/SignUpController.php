@@ -15,7 +15,8 @@ use Throwable;
 /**
  * Public self-service sign-up. A prospective customer creates their own isolated
  * trial workspace (a fresh tenant + subdomain), choosing their own password and
- * landing as an Operator. Gated by config('niu.self_service_signup').
+ * landing as its Administrator — they own the workspace, so they must be able to
+ * manage its users and settings. Gated by config('niu.self_service_signup').
  */
 class SignUpController
 {
@@ -46,7 +47,7 @@ class SignUpController
                 adminEmail: $data['email'],
                 allocatedSpaceMb: (int) config('niu.trial_allocated_space_mb', 250),
                 password: $data['password'],
-                role: UserRole::Operator,
+                role: UserRole::Admin,
             );
         } catch (ClientProvisioningException $e) {
             return back()->withInput()->withErrors(['subdomain' => $e->getMessage()]);

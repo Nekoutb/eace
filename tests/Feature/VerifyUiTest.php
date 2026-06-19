@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Auth\UserRole;
 use App\Domain\Niu\Verdict;
 use App\Filament\App\Pages\AuditLogs;
 use App\Filament\App\Pages\ComplianceEngine;
@@ -25,6 +26,7 @@ beforeEach(function () {
         'name' => 'Agent Conformité',
         'email' => 'agent@demo.cm',
         'password' => bcrypt('password'),
+        'role' => UserRole::Admin,
     ]);
     $this->actingAs($this->user);
 });
@@ -73,6 +75,8 @@ it('runs a verification inline and reveals the discrepancies on the same screen'
         // though the stored NIU-risk grade is still Radie (asserted below).
         ->assertSet('result.verdict.label', __('app.verdict.non_conforme'))
         ->assertSet('result.conclusion.payable', false)
+        // Recording stage phrases the rejection as "must NOT be recorded".
+        ->assertSet('result.conclusion.label', __('app.ui.conclusion_not_recordable'))
         ->assertSee(__('app.ui.results'))
         ->assertSee(__('app.ui.section_remediation'));
 

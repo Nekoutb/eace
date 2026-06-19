@@ -24,6 +24,7 @@ class AcfCertificatesTable
                     ->label(__('app.ui.reference'))
                     ->fontFamily(FontFamily::Mono)
                     ->copyable()
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('niu')
                     ->label(__('app.ui.niu'))
@@ -31,14 +32,17 @@ class AcfCertificatesTable
                     ->placeholder(__('app.ui.placeholder_dash'))
                     ->copyable()
                     ->copyMessage(__('app.ui.copied_niu'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('taxpayer_name')
                     ->label(__('app.ui.taxpayer'))
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('status')
                     ->label(__('app.ui.validity'))
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn (AcfStatus $state): string => $state->label())
                     ->color(fn (AcfStatus $state): string => $state->color())
                     ->icon(fn (AcfStatus $state): string => $state->icon()),
@@ -46,6 +50,7 @@ class AcfCertificatesTable
                     ->label(__('app.ui.authenticity'))
                     ->badge()
                     ->placeholder(__('app.acf_auth.unverified'))
+                    ->sortable()
                     ->formatStateUsing(fn (AcfAuthenticityStatus $state): string => $state->label())
                     ->color(fn (AcfAuthenticityStatus $state): string => $state->color()),
                 TextColumn::make('issued_at')

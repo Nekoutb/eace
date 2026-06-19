@@ -30,11 +30,15 @@ class TenantDatabaseSeeder extends Seeder
             ['name' => 'Agent Conformité', 'password' => Hash::make('admin'), 'role' => UserRole::Admin],
         );
 
-        // A second staff member at the lower privilege level, so the Users
-        // management screen and role distinction are visible in the demo.
+        // Two single-stage staff members so the Users screen and the recording /
+        // settlement role distinction are both visible in the demo.
         User::query()->updateOrCreate(
-            ['email' => 'operateur'],
-            ['name' => 'Opérateur Saisie', 'password' => Hash::make('operateur'), 'role' => UserRole::Operator],
+            ['email' => 'enregistrement'],
+            ['name' => 'Agent Enregistrement', 'password' => Hash::make('enregistrement'), 'role' => UserRole::Recorder],
+        );
+        User::query()->updateOrCreate(
+            ['email' => 'reglement'],
+            ['name' => 'Agent Règlement', 'password' => Hash::make('reglement'), 'role' => UserRole::Settler],
         );
 
         // A clean, authentic, in-force ACF for the active supplier — its invoice will be ACCEPTED.

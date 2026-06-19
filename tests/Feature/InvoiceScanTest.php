@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Auth\UserRole;
 use App\Filament\App\Pages\ComplianceEngine;
 use App\Models\Tenant;
 use App\Models\User;
@@ -18,6 +19,7 @@ beforeEach(function () {
         'name' => 'Agent',
         'email' => 'agent',
         'password' => bcrypt('secret'),
+        'role' => UserRole::Admin,
     ]));
     Storage::fake('local');
     Storage::fake('livewire-tmp');

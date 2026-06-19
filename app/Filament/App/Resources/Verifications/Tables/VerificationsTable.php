@@ -23,28 +23,33 @@ class VerificationsTable
                     ->fontFamily(FontFamily::Mono)
                     ->placeholder(__('app.ui.placeholder_invalid'))
                     ->copyable()
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('stage')
                     ->label(__('app.ui.stage'))
                     ->badge()
                     ->color('gray')
+                    ->sortable()
                     ->formatStateUsing(fn (VerificationStage $state): string => $state->label()),
                 TextColumn::make('approval')
                     ->label(__('app.ui.approval'))
                     ->badge()
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                     ->color(fn (ApprovalDecision $state): string => $state->color())
                     ->icon(fn (ApprovalDecision $state): string => $state->icon()),
                 TextColumn::make('verdict')
                     ->label(__('app.ui.verdict'))
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn (Verdict $state): string => $state->label())
                     ->color(fn (Verdict $state): string => $state->color())
                     ->icon(fn (Verdict $state): string => $state->icon()),
                 TextColumn::make('thirdParty.name')
                     ->label(__('app.ui.third_party'))
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('exposure_xaf')
                     ->label(__('app.ui.exposure'))

@@ -62,6 +62,13 @@
             </div>
 
             <div class="niu-set__field">
+                <label class="niu-set__label" for="set-name-aliases">{{ __('app.ui.entity_name_aliases') }}</label>
+                <textarea id="set-name-aliases" wire:model="entityNameAliases" rows="3" class="niu-set__input" placeholder="{{ __('app.ui.entity_name_aliases_ph') }}"></textarea>
+                <p class="niu-set__help">{{ __('app.ui.entity_name_aliases_help') }}</p>
+                @error('entityNameAliases') <p class="niu-set__err">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="niu-set__field">
                 <label class="niu-set__label" for="set-niu">{{ __('app.ui.entity_niu') }}</label>
                 <input id="set-niu" type="text" wire:model="entityNiu" class="niu-set__input niu-set__input--mono" placeholder="M001234567890X" autocomplete="off">
                 <p class="niu-set__help">{{ __('app.ui.entity_niu_help') }}</p>

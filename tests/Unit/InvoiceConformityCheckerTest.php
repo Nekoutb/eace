@@ -124,6 +124,38 @@ it('checks the client NIU and name match the organisation profile', function () 
         ->and(collect($wrongName->failed())->pluck('key'))->toContain('client_identity_match');
 });
 
+it('accepts the client identity when it matches an accepted name variation', function () {
+    // The invoice names the buyer "EU FINANCE" — neither contains nor is contained
+    // by the primary name "EXPRESS UNION FINANCE SA", so the plain check fails.
+    $invoice = invoice(['clientIdentity' => 'EU FINANCE']);
+
+    $withoutAlias = $this->checker->check($invoice, null, null, 'EXPRESS UNION FINANCE SA');
+    expect(collect($withoutAlias->failed())->pluck('key'))->toContain('client_identity_match');
+
+    // Registering "EU FINANCE" as an accepted variation makes it pass.
+    $withAlias = $this->checker->check(
+        $invoice, null, null, 'EXPRESS UNION FINANCE SA', null, null,
+        ['EXPRESS UNION FINANCE SA', 'EU FINANCE'],
+    );
+    expect(collect($withAlias->failed())->pluck('key'))->not->toContain('client_identity_match');
+});
+
+it('still enforces the client identity from variations when the primary name is blank', function () {
+    // The buyer left the primary entity name empty but registered a variation.
+    $passes = $this->checker->check(
+        invoice(['clientIdentity' => 'EU FINANCE']), null, null, null, null, null, ['EU FINANCE'],
+    );
+    $hit = collect($passes->findings)->firstWhere('key', 'client_identity_match');
+    expect($hit)->not->toBeNull()
+        ->and($hit->passed)->toBeTrue();
+
+    // And the same control still FAILS for a buyer name that matches no variation.
+    $fails = $this->checker->check(
+        invoice(['clientIdentity' => 'AUTRE CLIENT SARL']), null, null, null, null, null, ['EU FINANCE'],
+    );
+    expect(collect($fails->failed())->pluck('key'))->toContain('client_identity_match');
+});
+
 it('checks the client RCCM and address match the organisation profile', function () {
     // Conform when both match (punctuation/whitespace tolerant).
     expect($this->checker->check(invoice(), null, null, null, 'RC/DLA/2015/B/777', 'BP 5000 Douala')->conform)->toBeTrue();

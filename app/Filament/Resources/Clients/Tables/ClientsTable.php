@@ -10,6 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ClientsTable
 {
@@ -21,7 +22,8 @@ class ClientsTable
                 TextColumn::make('name')
                     ->label(__('app.client.org_name'))
                     ->weight('bold')
-                    ->getStateUsing(fn (Tenant $record): string => (string) ($record->name ?? $record->id)),
+                    ->getStateUsing(fn (Tenant $record): string => (string) ($record->name ?? $record->id))
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('data->name', $direction)),
                 TextColumn::make('domain')
                     ->label(__('app.client.subdomain'))
                     ->fontFamily(FontFamily::Mono)
@@ -32,12 +34,14 @@ class ClientsTable
                     ->fontFamily(FontFamily::Mono)
                     ->badge()
                     ->color('gray')
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('allocated_space_mb')
                     ->label(__('app.client.quota'))
                     ->badge()
                     ->color('gray')
-                    ->getStateUsing(fn (Tenant $record): string => number_format($record->allocatedSpaceMb()).' MB'),
+                    ->getStateUsing(fn (Tenant $record): string => number_format($record->allocatedSpaceMb()).' MB')
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('data->allocated_space_mb', $direction)),
                 TextColumn::make('created_at')
                     ->label(__('app.client.created'))
                     ->dateTime('d/m/Y H:i')

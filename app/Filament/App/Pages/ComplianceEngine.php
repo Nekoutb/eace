@@ -120,10 +120,35 @@ class ComplianceEngine extends Page
         );
     }
 
+    /** Open on the stage this user's role is allowed to work in. */
+    public function mount(): void
+    {
+        $this->stage = auth()->user()?->defaultStage() ?? 'recording';
+    }
+
+    /** Whether the signed-in user may use the recording stage. */
+    public function canRecord(): bool
+    {
+        return auth()->user()?->canRecord() ?? false;
+    }
+
+    /** Whether the signed-in user may use the settlement stage. */
+    public function canSettle(): bool
+    {
+        return auth()->user()?->canSettle() ?? false;
+    }
+
     /** Switch phase and clear any results so the screen never mixes the two. */
     public function setStage(string $stage): void
     {
-        $this->stage = $stage === 'settlement' ? 'settlement' : 'recording';
+        $target = $stage === 'settlement' ? 'settlement' : 'recording';
+
+        // Refuse a stage this user's role does not cover.
+        if (($target === 'settlement' && ! $this->canSettle()) || ($target === 'recording' && ! $this->canRecord())) {
+            return;
+        }
+
+        $this->stage = $target;
         $this->reset(['result', 'batch', 'discrepancies', 'acfAuthLabel', 'fiscalisSnapshotPath', 'fiscalisPresence', 'fiscalisCheckedAt']);
     }
 
@@ -285,6 +310,13 @@ class ComplianceEngine extends Page
     /** Run the checks for the current phase and reveal the results inline. */
     public function run(): void
     {
+        // Guard: never run a stage outside the user's role.
+        if (($this->stage === 'settlement' && ! $this->canSettle()) || ($this->stage !== 'settlement' && ! $this->canRecord())) {
+            Notification::make()->title(__('app.ui.notif_stage_forbidden'))->danger()->send();
+
+            return;
+        }
+
         $this->validate([
             'rawInput' => ['nullable', 'string', 'max:32'],
             'invoiceAmount' => ['nullable', 'numeric', 'min:0'],
@@ -416,6 +448,10 @@ class ComplianceEngine extends Page
         // tracks the strict approval, never the looser NIU-risk grade alone.
         $accepted = $verification->approval === ApprovalDecision::Accepted;
 
+        // The final decision is phrased for the stage: recording answers "may this
+        // invoice be recorded?", settlement answers "may this invoice be paid?".
+        $isSettlement = $verification->stage === VerificationStage::Settlement;
+
         return [
             'niu' => $verification->niu,
             'raw_input' => $verification->raw_input,
@@ -426,7 +462,8 @@ class ComplianceEngine extends Page
             ],
             'conclusion' => [
                 'payable' => $accepted,
-                'label' => $accepted ? (string) __('app.ui.conclusion_payable') : (string) __('app.ui.conclusion_not_payable'),
+                'label' => $this->conclusionLabel($isSettlement, $accepted),
+                'decision' => $this->decisionLabel($isSettlement, $accepted),
             ],
             'approval' => $verification->approval !== null ? [
                 'label' => $verification->approval->label(),
@@ -442,6 +479,31 @@ class ComplianceEngine extends Page
             'vendor_email' => $this->draftVendorEmail($verification),
             'view_url' => VerificationResource::getUrl('view', ['record' => $verification]),
         ];
+    }
+
+    /**
+     * The full final-decision sentence, phrased for the stage: recording decides
+     * whether the invoice may be recorded; settlement whether it may be paid.
+     */
+    private function conclusionLabel(bool $isSettlement, bool $accepted): string
+    {
+        return (string) match (true) {
+            $isSettlement && $accepted => __('app.ui.conclusion_payable'),
+            $isSettlement => __('app.ui.conclusion_not_payable'),
+            $accepted => __('app.ui.conclusion_recordable'),
+            default => __('app.ui.conclusion_not_recordable'),
+        };
+    }
+
+    /** The short decision verb shown per row in the settlement batch table. */
+    private function decisionLabel(bool $isSettlement, bool $accepted): string
+    {
+        return (string) match (true) {
+            $isSettlement && $accepted => __('app.ui.decision_pay'),
+            $isSettlement => __('app.ui.decision_no_pay'),
+            $accepted => __('app.ui.decision_record'),
+            default => __('app.ui.decision_no_record'),
+        };
     }
 
     /**

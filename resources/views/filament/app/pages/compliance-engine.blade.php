@@ -1,6 +1,8 @@
 <x-filament-panels::page>
     @php
         $isRecording = $this->stage !== 'settlement';
+        $canRecord = $this->canRecord();
+        $canSettle = $this->canSettle();
 
         // Pass / fail / not-run presentation for a single test cell.
         $pill = function (?bool $passed): array {
@@ -260,17 +262,20 @@
             </div>
         </header>
 
-        {{-- Live phase toggle (single-select button group) --}}
-        <div class="niu-seg" role="group" aria-label="{{ __('app.ui.mode_label') }}">
-            <button type="button" aria-pressed="{{ $isRecording ? 'true' : 'false' }}"
-                    wire:click="setStage('recording')" @class(['niu-seg__btn', 'is-active' => $isRecording])>
-                @svg('heroicon-o-document-plus', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.stage.recording') }}
-            </button>
-            <button type="button" aria-pressed="{{ ! $isRecording ? 'true' : 'false' }}"
-                    wire:click="setStage('settlement')" @class(['niu-seg__btn', 'is-active' => ! $isRecording])>
-                @svg('heroicon-o-queue-list', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.stage.settlement') }}
-            </button>
-        </div>
+        {{-- Live phase toggle (single-select button group) — only when the user's
+             role covers both stages; single-stage roles open straight on theirs. --}}
+        @if ($canRecord && $canSettle)
+            <div class="niu-seg" role="group" aria-label="{{ __('app.ui.mode_label') }}">
+                <button type="button" aria-pressed="{{ $isRecording ? 'true' : 'false' }}"
+                        wire:click="setStage('recording')" @class(['niu-seg__btn', 'is-active' => $isRecording])>
+                    @svg('heroicon-o-document-plus', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.stage.recording') }}
+                </button>
+                <button type="button" aria-pressed="{{ ! $isRecording ? 'true' : 'false' }}"
+                        wire:click="setStage('settlement')" @class(['niu-seg__btn', 'is-active' => ! $isRecording])>
+                    @svg('heroicon-o-queue-list', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.stage.settlement') }}
+                </button>
+            </div>
+        @endif
         <p class="niu-seg__hint">{{ $isRecording ? __('app.ui.phase_recording_desc') : __('app.ui.phase_settlement_desc') }}</p>
 
         {{-- Inline form --}}
@@ -479,7 +484,7 @@
                                 <th class="niu-ta-c">{{ $col['label'] }}</th>
                             @endforeach
                             <th>{{ __('app.ui.verdict') }}</th>
-                            <th>{{ __('app.ui.approval') }}</th>
+                            <th>{{ __('app.ui.decision_col') }}</th>
                         </tr></thead>
                         <tbody>
                         @foreach ($batch['rows'] as $row)
@@ -491,7 +496,7 @@
                                     <td class="niu-ta-c"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
                                 @endforeach
                                 <td><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
-                                <td>@if ($row['approval'])<span class="niu-badge niu-badge--{{ $row['approval']['color'] }}">@svg($row['approval']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['approval']['label'] }}</span>@endif</td>
+                                <td><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
                             </tr>
                         @endforeach
                         </tbody>

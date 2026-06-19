@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Filament\App\Widgets\ComplianceStats;
+use App\Filament\App\Widgets\SupportChatWidget;
 use BackedEnum;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Support\Icons\Heroicon;
@@ -31,6 +32,7 @@ class Dashboard extends BaseDashboard
     {
         return [
             ComplianceStats::class,
+            SupportChatWidget::class,
         ];
     }
 }

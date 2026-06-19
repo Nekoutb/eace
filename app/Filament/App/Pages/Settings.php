@@ -33,6 +33,9 @@ class Settings extends Page
 
     public ?string $entityName = null;
 
+    /** Accepted name variations, one per line (textarea-bound). */
+    public ?string $entityNameAliases = null;
+
     public ?string $entityNiu = null;
 
     public ?string $entityRccm = null;
@@ -43,6 +46,7 @@ class Settings extends Page
     {
         $profile = OrganizationProfile::current();
         $this->entityName = $profile->entity_name;
+        $this->entityNameAliases = implode("\n", is_array($profile->entity_name_aliases) ? $profile->entity_name_aliases : []);
         $this->entityNiu = $profile->entity_niu;
         $this->entityRccm = $profile->entity_rccm;
         $this->entityAddress = $profile->entity_address;
@@ -62,13 +66,23 @@ class Settings extends Page
     {
         $this->validate([
             'entityName' => ['nullable', 'string', 'max:255'],
+            'entityNameAliases' => ['nullable', 'string', 'max:2000'],
             'entityNiu' => ['nullable', 'string', 'max:32'],
             'entityRccm' => ['nullable', 'string', 'max:64'],
             'entityAddress' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // One accepted variation per line — trimmed, de-duplicated, blanks dropped.
+        $aliases = collect(preg_split('/\r\n|\r|\n/', (string) $this->entityNameAliases) ?: [])
+            ->map(static fn ($line): string => trim((string) $line))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
         $profile = OrganizationProfile::current();
         $profile->entity_name = filled($this->entityName) ? trim((string) $this->entityName) : null;
+        $profile->entity_name_aliases = $aliases !== [] ? $aliases : null;
         $profile->entity_niu = filled($this->entityNiu) ? strtoupper(trim((string) $this->entityNiu)) : null;
         $profile->entity_rccm = filled($this->entityRccm) ? trim((string) $this->entityRccm) : null;
         $profile->entity_address = filled($this->entityAddress) ? trim((string) $this->entityAddress) : null;

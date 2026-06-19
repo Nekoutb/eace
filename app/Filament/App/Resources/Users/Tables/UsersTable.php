@@ -28,20 +28,24 @@ class UsersTable
                 TextColumn::make('name')
                     ->label(__('app.user.name'))
                     ->weight('bold')
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('email')
                     ->label(__('app.user.email'))
                     ->fontFamily(FontFamily::Mono)
                     ->copyable()
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('role')
                     ->label(__('app.user.role'))
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn (UserRole $state): string => $state->label())
                     ->color(fn (UserRole $state): string => $state->color()),
                 IconColumn::make('must_change_password')
                     ->label(__('app.user.must_change'))
                     ->boolean()
+                    ->sortable()
                     ->trueIcon('heroicon-o-exclamation-circle')
                     ->falseIcon('heroicon-o-check-circle')
                     ->trueColor('warning')
@@ -49,7 +53,8 @@ class UsersTable
                 TextColumn::make('last_login_at')
                     ->label(__('app.user.last_login'))
                     ->dateTime('d/m/Y H:i')
-                    ->placeholder(__('app.user.never')),
+                    ->placeholder(__('app.user.never'))
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('app.user.created'))
                     ->dateTime('d/m/Y')

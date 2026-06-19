@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
+use App\Domain\Auth\UserRole;
 use App\Domain\Fiscalis\FiscalisPresence;
 use App\Filament\App\Pages\ComplianceEngine;
 use App\Models\AcfCertificate;
@@ -22,6 +23,7 @@ beforeEach(function () {
         'name' => 'Agent',
         'email' => 'agent',
         'password' => bcrypt('secret'),
+        'role' => UserRole::Admin,
     ]));
 });
 
@@ -54,6 +56,9 @@ it('records an accepted verification inline through the recording phase', functi
         ->assertSet('result.approval.accepted', true)
         ->assertSet('result.verdict.label', __('app.verdict.conforme'))
         ->assertSet('result.conclusion.payable', true)
+        // Recording stage phrases the decision as "may be recorded".
+        ->assertSet('result.conclusion.label', __('app.ui.conclusion_recordable'))
+        ->assertSet('result.conclusion.decision', __('app.ui.decision_record'))
         ->assertSee(__('app.ui.results'))
         ->assertSee(__('app.ui.section_remediation'));
 

@@ -64,10 +64,31 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    /** Tenant admins manage staff and settings; operators only do the work. */
+    /** Tenant admins manage staff and settings; recorders/settlers only do the work. */
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
+    }
+
+    /** May this user record invoices? Admins and recorders can. */
+    public function canRecord(): bool
+    {
+        return $this->role?->canRecord() ?? false;
+    }
+
+    /** May this user settle invoices? Admins and settlers can. */
+    public function canSettle(): bool
+    {
+        return $this->role?->canSettle() ?? false;
+    }
+
+    /**
+     * The Compliance Engine stage this user should land on. A settle-only user
+     * opens on settlement; everyone else (admins, recorders) opens on recording.
+     */
+    public function defaultStage(): string
+    {
+        return ! $this->canRecord() && $this->canSettle() ? 'settlement' : 'recording';
     }
 
     /**

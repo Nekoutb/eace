@@ -18,6 +18,14 @@ final class InvoiceConformityChecker
 
     private const AMOUNT_TOLERANCE = 2; // FCFA, absorbs rounding
 
+    /**
+     * @param  array<int, string>  $acceptedClientNames  every accepted spelling of
+     *                                                   the buyer's own name (the
+     *                                                   primary name plus admin-
+     *                                                   entered variations); when
+     *                                                   empty, $expectedClientName
+     *                                                   alone is used.
+     */
     public function check(
         InvoiceData $invoice,
         ?NiuNumber $expectedSupplierNiu = null,
@@ -25,6 +33,7 @@ final class InvoiceConformityChecker
         ?string $expectedClientName = null,
         ?string $expectedClientRccm = null,
         ?string $expectedClientAddress = null,
+        array $acceptedClientNames = [],
     ): InvoiceConformityResult {
         $findings = [
             // Conditions de forme — every mandatory mention of art. 150 present.
@@ -63,11 +72,16 @@ final class InvoiceConformityChecker
             );
         }
 
-        if ($this->filled($expectedClientName)) {
+        // Check the buyer identity whenever the profile defines a primary name OR
+        // any accepted variation — an aliases-only profile must still be enforced.
+        if ($this->filled($expectedClientName) || $acceptedClientNames !== []) {
+            // Accept the primary buyer name OR any admin-registered variation.
+            $candidates = $acceptedClientNames !== [] ? $acceptedClientNames : [(string) $expectedClientName];
+
             $findings[] = $this->fond(
                 'client_identity_match',
-                $this->nameMatches($invoice->clientIdentity, $expectedClientName),
-                $this->matchDetail($invoice->clientIdentity, $expectedClientName),
+                $this->nameMatchesAny($invoice->clientIdentity, $candidates),
+                $this->matchDetail($invoice->clientIdentity, $this->filled($expectedClientName) ? $expectedClientName : ($candidates[0] ?? null)),
             );
         }
 
@@ -159,6 +173,22 @@ final class InvoiceConformityChecker
         $b = $normalise((string) $expected);
 
         return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a));
+    }
+
+    /**
+     * True if the invoice value matches ANY of the accepted spellings.
+     *
+     * @param  array<int, string>  $expectedValues
+     */
+    private function nameMatchesAny(?string $invoiceValue, array $expectedValues): bool
+    {
+        foreach ($expectedValues as $expected) {
+            if ($this->nameMatches($invoiceValue, $expected)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** "VAT = HT × rate = expected; invoice states actual (variance …)." */

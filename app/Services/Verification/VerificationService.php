@@ -83,6 +83,7 @@ final class VerificationService
                 $profile->entity_name,
                 $profile->entity_rccm,
                 $profile->entity_address,
+                $profile->acceptedNames(),
             );
         }
 

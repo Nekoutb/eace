@@ -40,7 +40,7 @@ class ListUsers extends ListRecords
                         ->label(__('app.user.role'))
                         ->required()
                         ->options(UserRole::options())
-                        ->default(UserRole::Operator->value)
+                        ->default(UserRole::Recorder->value)
                         ->native(false),
                 ])
                 ->action(function (array $data): void {

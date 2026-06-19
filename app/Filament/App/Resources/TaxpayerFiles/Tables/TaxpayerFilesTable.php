@@ -28,10 +28,12 @@ class TaxpayerFilesTable
                 TextColumn::make('period_label')
                     ->label(__('app.audit.period'))
                     ->weight(FontWeight::Medium)
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('status')
                     ->label(__('app.ui.status'))
                     ->badge()
+                    ->sortable()
                     ->formatStateUsing(fn (string $state): string => (string) __('app.audit.status_'.$state))
                     ->color(fn (string $state): string => match ($state) {
                         'completed' => 'success',
@@ -55,11 +57,13 @@ class TaxpayerFilesTable
                     ->limit(16)
                     ->placeholder(__('app.ui.placeholder_dash'))
                     ->copyable()
+                    ->sortable()
                     ->toggleable(),
                 TextColumn::make('source_url')
                     ->label(__('app.audit.source_file'))
                     ->limit(40)
                     ->placeholder(__('app.ui.placeholder_dash'))
+                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ]);
     }

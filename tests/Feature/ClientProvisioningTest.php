@@ -112,17 +112,17 @@ it('records the allocated storage quota on the workspace', function () {
         ->and($client->tenant->fresh()->allocatedSpaceMb())->toBe(750);
 });
 
-it('self-service provisions an Operator with their own password and no temporary one', function () {
+it('provisions with the given role and the chosen password, and no temporary one', function () {
     $client = app(ClientProvisioningService::class)->provision(
         name: 'Beta Trials', subdomain: 'beta', adminName: 'Bea', adminEmail: 'bea@beta.test',
-        allocatedSpaceMb: 250, password: 'mychosenpass1', role: UserRole::Operator,
+        allocatedSpaceMb: 250, password: 'mychosenpass1', role: UserRole::Recorder,
     );
 
     expect($client->temporaryPassword)->toBeNull();
 
     $client->tenant->run(function () {
         $user = User::query()->sole();
-        expect($user->role)->toBe(UserRole::Operator)
+        expect($user->role)->toBe(UserRole::Recorder)
             ->and($user->must_change_password)->toBeFalse()
             ->and(Hash::check('mychosenpass1', $user->password))->toBeTrue();
     });
@@ -144,7 +144,8 @@ it('lets a customer self-provision a trial workspace from the public sign-up', f
     Tenant::find('gamma')->run(function () {
         $user = User::query()->sole();
         expect($user->email)->toBe('gina@gamma.test')
-            ->and($user->role)->toBe(UserRole::Operator);
+            // The self-service owner lands as the workspace Administrator.
+            ->and($user->role)->toBe(UserRole::Admin);
     });
 });
 

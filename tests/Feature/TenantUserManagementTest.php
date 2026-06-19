@@ -47,8 +47,8 @@ it('lets admins reach user management and settings', function () {
         ->and(Settings::canAccess())->toBeTrue();
 });
 
-it('hides user management and settings from operators', function () {
-    test()->actingAs(makeUser(UserRole::Operator));
+it('hides user management and settings from non-admins', function () {
+    test()->actingAs(makeUser(UserRole::Recorder));
 
     expect(UserResource::canAccess())->toBeFalse()
         ->and(UserResource::shouldRegisterNavigation())->toBeFalse()
@@ -63,15 +63,15 @@ it('treats a sole admin as the last admin but not once a second exists', functio
     expect($admin->fresh()->isLastAdmin())->toBeFalse();
 });
 
-it('never treats an operator as the last admin', function () {
+it('never treats a non-admin as the last admin', function () {
     makeUser(UserRole::Admin);
-    $operator = makeUser(UserRole::Operator);
+    $recorder = makeUser(UserRole::Recorder);
 
-    expect($operator->isLastAdmin())->toBeFalse();
+    expect($recorder->isLastAdmin())->toBeFalse();
 });
 
 it('redirects a temporary-password user to the change-password page', function () {
-    $user = makeUser(UserRole::Operator, ['must_change_password' => true]);
+    $user = makeUser(UserRole::Recorder, ['must_change_password' => true]);
 
     $request = Request::create('/app');
     $request->setUserResolver(fn () => $user);
@@ -94,7 +94,7 @@ it('lets a settled user through the password-change gate', function () {
 });
 
 it('stamps last_login_at when a tenant user signs in', function () {
-    $user = makeUser(UserRole::Operator);
+    $user = makeUser(UserRole::Recorder);
     expect($user->last_login_at)->toBeNull();
 
     // Mirror real login: the auth provider hands the listener a freshly loaded
@@ -108,7 +108,7 @@ it('confines tenant users to the app panel and central users to the admin panel'
     $appPanel = Filament::getPanel('app');
     $adminPanel = Filament::getPanel('admin');
 
-    $tenantUser = new User(['role' => UserRole::Operator]); // has the role attribute
+    $tenantUser = new User(['role' => UserRole::Recorder]); // has the role attribute
     $centralUser = new User(['name' => 'Landlord']);        // no role attribute
 
     expect($tenantUser->canAccessPanel($appPanel))->toBeTrue()
@@ -137,7 +137,7 @@ it('blocks privileged Livewire actions for a temp-password user but allows the c
 });
 
 it('clears the temporary-password flag when the user sets a new password', function () {
-    $user = makeUser(UserRole::Operator, ['must_change_password' => true]);
+    $user = makeUser(UserRole::Recorder, ['must_change_password' => true]);
     test()->actingAs($user);
     Filament::setCurrentPanel(Filament::getPanel('app'));
 
