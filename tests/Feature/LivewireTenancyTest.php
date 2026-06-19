@@ -50,3 +50,61 @@ it('passes through central-domain Livewire requests without tenancy', function (
     expect($seen)->toBeNull()
         ->and($response->getContent())->toBe('central-ok');
 });
+
+it('keeps central admin-panel Livewire requests central even on a tenant host', function () {
+    // Single-workspace: the tenant host also serves the central /admin console.
+    // A Livewire action from /admin must NOT initialise the tenant, or the
+    // central admin can never authenticate.
+    $tenant = Tenant::create(['id' => 'sw']);
+    $tenant->domains()->create(['domain' => 'sw.localhost']);
+
+    $seen = 'unset';
+    app(InitializeTenancyForLivewire::class)->handle(
+        Request::create('http://sw.localhost/livewire/update', 'POST', [
+            'components' => [['snapshot' => json_encode(['memo' => ['path' => 'admin/login']])]],
+        ]),
+        function () use (&$seen) {
+            $seen = tenant('id');
+
+            return response('ok');
+        },
+    );
+
+    expect($seen)->toBeNull();
+});
+
+it('still initialises the tenant for app-panel Livewire requests on a tenant host', function () {
+    $tenant = Tenant::create(['id' => 'sw2']);
+    $tenant->domains()->create(['domain' => 'sw2.localhost']);
+
+    $seen = null;
+    app(InitializeTenancyForLivewire::class)->handle(
+        Request::create('http://sw2.localhost/livewire/update', 'POST', [
+            'components' => [['snapshot' => json_encode(['memo' => ['path' => 'app/login']])]],
+        ]),
+        function () use (&$seen) {
+            $seen = tenant('id');
+
+            return response('ok');
+        },
+    );
+
+    expect($seen)->toBe('sw2');
+});
+
+it('uses the Referer to keep admin-panel requests central when no snapshot is present', function () {
+    $tenant = Tenant::create(['id' => 'sw3']);
+    $tenant->domains()->create(['domain' => 'sw3.localhost']);
+
+    $request = Request::create('http://sw3.localhost/livewire/update', 'POST');
+    $request->headers->set('referer', 'http://sw3.localhost/admin/support-queries');
+
+    $seen = 'unset';
+    app(InitializeTenancyForLivewire::class)->handle($request, function () use (&$seen) {
+        $seen = tenant('id');
+
+        return response('ok');
+    });
+
+    expect($seen)->toBeNull();
+});
