@@ -17,6 +17,15 @@ Route::get('/', function () {
 });
 
 /*
+ * Public "how we protect your data" security showcase — the certified stack
+ * (Hostinger / Vultr / Wasabi), encryption, WORM immutability and retention.
+ * Public + central; respects the FR/EN locale.
+ */
+Route::get('/security', fn () => view('security'))
+    ->middleware(SetLocale::class)
+    ->name('security');
+
+/*
  * Public self-service sign-up — a prospective customer provisions their own
  * isolated trial workspace (tenant + subdomain). Central web routes, so this is
  * not tenant-scoped; gated by config('niu.self_service_signup').
