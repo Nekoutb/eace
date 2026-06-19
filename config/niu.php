@@ -45,4 +45,19 @@ return [
      * without a redeploy.
      */
     'two_factor_required' => (bool) env('NIU_TWO_FACTOR_REQUIRED', true),
+
+    /*
+     * The shared DGI taxpayer register (FICHIER … .xlsx). Downloaded for everyone
+     * twice a week (Mon + Thu) into the central database and used by every
+     * workspace for NIU controls.
+     */
+    'taxpayer_file' => [
+        /*
+         * Safety floor for a new snapshot, as a fraction of the last good one. A
+         * download whose row count collapses below this (default: half) is
+         * rejected and the live register is left untouched — guards against a
+         * truncated or corrupt file silently wiping the register.
+         */
+        'min_row_ratio' => (float) env('NIU_TAXPAYER_MIN_ROW_RATIO', 0.5),
+    ],
 ];

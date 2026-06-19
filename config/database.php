@@ -41,8 +41,12 @@ return [
             // Make concurrent writers wait for the lock instead of failing
             // immediately (central + every tenant DB derive from this block).
             'busy_timeout' => env('DB_BUSY_TIMEOUT', 5000),
-            'journal_mode' => null,
-            'synchronous' => null,
+            // Left null in dev (SQLite default rollback journal). In production we
+            // set DB_JOURNAL_MODE=WAL + DB_SYNCHRONOUS=NORMAL so the large taxpayer
+            // ingest (hundreds of thousands of upserts) commits in minutes, not
+            // hours, and readers never block the writer.
+            'journal_mode' => env('DB_JOURNAL_MODE'),
+            'synchronous' => env('DB_SYNCHRONOUS'),
             'transaction_mode' => 'DEFERRED',
         ],
 

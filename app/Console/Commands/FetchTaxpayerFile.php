@@ -8,6 +8,7 @@ use App\Models\TaxpayerFileExtraction;
 use App\Services\Registry\TaxpayerFileIngestionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -31,6 +32,26 @@ class FetchTaxpayerFile extends Command
     private const MONTHS = ['JANVIER', 'FEVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUILLET', 'AOUT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DECEMBRE'];
 
     public function handle(TaxpayerFileIngestionService $ingestion): int
+    {
+        // One refresh at a time — the scheduled run (Mon/Thu) and any on-demand
+        // "Update register" click share this lock, so they never collide or
+        // double-ingest. Auto-expires after 30 min if a run dies mid-flight.
+        $lock = Cache::lock('taxpayer-file:fetch', 1800);
+
+        if (! $lock->get()) {
+            $this->warn('Another taxpayer-file refresh is already running; skipping.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            return $this->fetch($ingestion);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function fetch(TaxpayerFileIngestionService $ingestion): int
     {
         $local = $this->option('file');
 

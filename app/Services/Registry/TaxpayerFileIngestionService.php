@@ -6,7 +6,9 @@ namespace App\Services\Registry;
 
 use App\Models\TaxpayerFileExtraction;
 use App\Models\TaxpayerFileRecord;
+use Illuminate\Support\Facades\DB;
 use OpenSpout\Reader\XLSX\Reader;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -36,13 +38,34 @@ final class TaxpayerFileIngestionService
             'status' => 'pending',
         ]);
 
-        try {
-            $count = $this->stream($absolutePath, (int) $extraction->id);
+        // The last good snapshot — used as a sanity floor so a truncated or
+        // corrupt download can never wipe out a healthy register (see below).
+        $previousRowCount = (int) TaxpayerFileExtraction::query()
+            ->where('status', 'completed')
+            ->whereKeyNot($extraction->getKey())
+            ->orderByDesc('id')
+            ->value('row_count');
 
-            // Prune NIUs that dropped off the new file (a full monthly snapshot).
-            TaxpayerFileRecord::query()
-                ->where('taxpayer_file_extraction_id', '!=', $extraction->id)
-                ->delete();
+        $central = (string) config('tenancy.database.central_connection');
+
+        try {
+            // One transaction for the whole snapshot: hundreds of thousands of
+            // upserts + the prune commit with a single fsync (minutes, not hours
+            // under WAL) and are atomic — readers keep seeing the old register
+            // until the new one is fully in place, and any failure rolls back
+            // cleanly, leaving the previous snapshot untouched.
+            $count = DB::connection($central)->transaction(function () use ($absolutePath, $extraction, $previousRowCount): int {
+                $count = $this->stream($absolutePath, (int) $extraction->id);
+
+                $this->assertNotCollapsed($count, $previousRowCount);
+
+                // Prune NIUs that dropped off the new file (a full monthly snapshot).
+                TaxpayerFileRecord::query()
+                    ->where('taxpayer_file_extraction_id', '!=', $extraction->id)
+                    ->delete();
+
+                return $count;
+            });
 
             $extraction->update([
                 'row_count' => $count,
@@ -56,6 +79,30 @@ final class TaxpayerFileIngestionService
         }
 
         return $extraction;
+    }
+
+    /**
+     * Refuse a snapshot whose row count has collapsed against the last good one
+     * (default: fewer than half). A healthy month-to-month register barely moves;
+     * a sudden collapse means a truncated or corrupt download, and replacing the
+     * live register with it would silently break every NIU control.
+     */
+    private function assertNotCollapsed(int $count, int $previousRowCount): void
+    {
+        if ($previousRowCount <= 0) {
+            return; // First ever import — nothing to compare against.
+        }
+
+        $ratio = (float) config('niu.taxpayer_file.min_row_ratio', 0.5);
+        $floor = (int) floor($previousRowCount * $ratio);
+
+        if ($count < $floor) {
+            throw new RuntimeException(
+                "Taxpayer file rejected: {$count} rows is below the safety floor of {$floor} ".
+                "({$ratio} of the previous {$previousRowCount}). The download looks truncated or corrupt; ".
+                'the existing register was left untouched.'
+            );
+        }
     }
 
     private function stream(string $absolutePath, int $extractionId): int
