@@ -367,6 +367,7 @@ return [
         'authenticate' => 'Authenticate (Harmony2)',
         'authenticate_confirm' => 'This runs a live check against the DGI Harmony2 portal and captures a screenshot of the verdict. It may take up to a minute.',
         'authenticate_unverified' => 'The DGI portal could not be reached or driven — recorded as unverified, no verdict was fabricated.',
+        'authenticate_reused' => 'This certificate was already authenticated on :date — the existing verdict was reused (no new portal call).',
         'ev_verified_at' => 'Checked on',
         'ev_view_snapshot' => 'Open the verdict snapshot',
         'copied_niu' => 'NIU copied',

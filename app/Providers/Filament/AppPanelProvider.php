@@ -33,6 +33,8 @@ class AppPanelProvider extends PanelProvider
             ->path('app')
             ->login(Login::class)
             ->brandName('Elite Advisors Compliance Engine')
+            ->brandLogo(fn (): string => view('filament.brand-logo')->render())
+            ->brandLogoHeight('2.05rem')
             ->colors(BrandColors::palette())
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,

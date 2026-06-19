@@ -59,6 +59,18 @@ return [
             'report' => false,
         ],
 
+        // Shared, landlord-owned storage. Like livewire-tmp, deliberately NOT in
+        // tenancy.filesystem.disks, so it stays a single CENTRAL location across
+        // all tenants — used for the cross-customer ACF authentication cache
+        // (one canonical Harmony2 screenshot per ACF reference, reused by every
+        // workspace that checks the same certificate).
+        'central' => [
+            'driver' => 'local',
+            'root' => storage_path('app/central'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

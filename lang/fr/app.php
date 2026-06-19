@@ -368,6 +368,7 @@ return [
         'authenticate' => 'Authentifier (Harmony2)',
         'authenticate_confirm' => 'Lance une vérification en direct sur le portail Harmony2 de la DGI et capture une copie d’écran du verdict. Cela peut prendre jusqu’à une minute.',
         'authenticate_unverified' => 'Le portail de la DGI n’a pu être atteint ou piloté — enregistré comme non vérifié, aucun verdict n’a été inventé.',
+        'authenticate_reused' => 'Cette attestation a déjà été authentifiée le :date — le verdict existant a été réutilisé (aucun nouvel appel au portail).',
         'ev_verified_at' => 'Vérifié le',
         'ev_view_snapshot' => 'Ouvrir la copie d’écran du verdict',
         'copied_niu' => 'NIU copié',

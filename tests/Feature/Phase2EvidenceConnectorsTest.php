@@ -28,6 +28,7 @@ beforeEach(function () {
     tenancy()->initialize($this->tenant);
     $this->actingAs(User::query()->create(['name' => 'A', 'email' => 'a', 'password' => bcrypt('x')]));
     Storage::fake('local');
+    Storage::fake('central');
 });
 
 afterEach(function () {

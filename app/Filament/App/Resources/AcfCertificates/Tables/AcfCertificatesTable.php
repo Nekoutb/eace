@@ -93,6 +93,12 @@ class AcfCertificatesTable
                         ->body(__('app.ui.authenticate_unverified')),
                 };
 
+                // Tell the user when the verdict was reused from the shared cache
+                // (the same NIU + reference was already authenticated elsewhere).
+                if ($result->wasReused()) {
+                    $notification->body(__('app.ui.authenticate_reused', ['date' => $result->reusedAt->translatedFormat('d/m/Y')]));
+                }
+
                 $notification->send();
             });
     }
