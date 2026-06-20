@@ -244,6 +244,35 @@
                 .niu-seg{width:100%}
                 .niu-seg__btn{flex:1;justify-content:center}
             }
+
+            /* Dense result tables reflow into stacked, labelled cards under ~760px,
+               so nothing relies on horizontal scrolling on a phone or tablet. */
+            @media (max-width:760px){
+                .niu-ce .niu-tablewrap{overflow:visible;border:0;background:transparent}
+                .niu-ce .niu-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+                .niu-ce .niu-table,.niu-ce .niu-table tbody,.niu-ce .niu-table tr,.niu-ce .niu-table td{display:block;width:100%}
+                .niu-ce .niu-table tr{margin-bottom:.7rem;border:1px solid var(--line);border-radius:13px;
+                    background:rgba(255,255,255,.97);overflow:hidden}
+                .niu-ce .niu-table tr:last-child{margin-bottom:0}
+                .niu-ce .niu-table td{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+                    text-align:right;padding:.5rem .8rem;border:0;border-bottom:1px solid rgba(21,128,61,.08)}
+                .niu-ce .niu-table tr td:last-child{border-bottom:0}
+                .niu-ce .niu-table td::before{content:attr(data-label);font-size:.7rem;font-weight:700;
+                    text-transform:uppercase;letter-spacing:.03em;color:var(--g800);text-align:left;flex:none}
+                .niu-ce .niu-table td:not([data-label]),.niu-ce .niu-table td[data-label='']{display:none}
+                .dark .niu-ce .niu-table tr{background:rgba(11,28,20,.92)}
+            }
+
+            /* Loading skeleton — shown in place of the empty state while checks run. */
+            .niu-skel{flex-direction:column;gap:.8rem;padding:1.5rem;margin-top:1.15rem}
+            .niu-skel__bar{height:1rem;border-radius:8px;
+                background:linear-gradient(90deg,rgba(21,128,61,.07),rgba(21,128,61,.17),rgba(21,128,61,.07));
+                background-size:200% 100%;animation:niu-shimmer 1.2s linear infinite}
+            .niu-skel__bar--lg{height:2.7rem;border-radius:14px}
+            .niu-skel__bar--w60{max-width:60%}
+            .niu-skel__bar--w40{max-width:40%}
+            @keyframes niu-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
             @media (prefers-reduced-motion:reduce){
                 .niu-ce *{transition:none!important;animation:none!important}
             }
@@ -417,10 +446,10 @@
                         @foreach ($result['checks'] as $check)
                             @php($p = $pill($check['passed'] ?? null))
                             <tr>
-                                <td class="niu-td-strong">{{ $check['label'] ?? '' }}</td>
-                                <td><span class="niu-tag">{{ $check['article'] ?? '' }}</span></td>
-                                <td class="niu-ta-c"><span class="{{ $p['cls'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
-                                <td class="niu-td-muted">{{ $check['detail'] ?? '' }}</td>
+                                <td class="niu-td-strong" data-label="{{ __('app.ui.check_col') }}">{{ $check['label'] ?? '' }}</td>
+                                <td data-label="{{ __('app.ui.basis') }}"><span class="niu-tag">{{ $check['article'] ?? '' }}</span></td>
+                                <td class="niu-ta-c" data-label="{{ __('app.ui.result') }}"><span class="{{ $p['cls'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
+                                <td class="niu-td-muted" data-label="{{ __('app.ui.output') }}">{{ $check['detail'] ?? '' }}</td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -439,10 +468,10 @@
                                 @endforeach
                             </tr></thead>
                             <tbody><tr>
-                                <td class="niu-td-strong niu-mono">{{ $result['niu'] ?? $result['raw_input'] }}</td>
+                                <td class="niu-td-strong niu-mono" data-label="{{ __('app.ui.niu') }}">{{ $result['niu'] ?? $result['raw_input'] }}</td>
                                 @foreach ($result['invoice_checks'] as $finding)
                                     @php($p = $pill($finding['passed'] ?? null))
-                                    <td class="niu-ta-c">
+                                    <td class="niu-ta-c" data-label="{{ $finding['label'] ?? '' }}">
                                         <span class="{{ $p['cls'] }} niu-pill--icon" title="{{ ($finding['label'] ?? '').' — '.($finding['detail'] ?? $p['label']) }}" aria-label="{{ ($finding['label'] ?? '').': '.$p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span>
                                     </td>
                                 @endforeach
@@ -502,17 +531,17 @@
                         <tbody>
                         @foreach ($recordingBatch['rows'] as $row)
                             <tr>
-                                <td class="niu-td-strong">{{ $row['invoice_label'] ?? '—' }}</td>
-                                <td class="niu-mono niu-td-strong">{{ $row['niu'] ?? $row['raw_input'] }}</td>
+                                <td class="niu-td-strong" data-label="{{ __('app.ui.invoice_col') }}">{{ $row['invoice_label'] ?? '—' }}</td>
+                                <td class="niu-mono niu-td-strong" data-label="{{ __('app.ui.niu') }}">{{ $row['niu'] ?? $row['raw_input'] }}</td>
                                 @foreach ($this->checkColumns() as $col)
                                     @php($cell = $row['checks_by_key'][$col['key']] ?? null)
                                     @php($p = $pill($cell['passed'] ?? null))
-                                    <td class="niu-ta-c"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
+                                    <td class="niu-ta-c" data-label="{{ $col['label'] }}"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
                                 @endforeach
                                 @php($cp = $pill($row['conformity_passed'] ?? null))
-                                <td class="niu-ta-c"><span class="{{ $cp['cls'] }} niu-pill--icon" title="{{ __('app.ui.conformity_col') }}: {{ $cp['label'] }}">@svg($cp['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $cp['label'] }}</span></span></td>
-                                <td><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
-                                <td><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
+                                <td class="niu-ta-c" data-label="{{ __('app.ui.conformity_col') }}"><span class="{{ $cp['cls'] }} niu-pill--icon" title="{{ __('app.ui.conformity_col') }}: {{ $cp['label'] }}">@svg($cp['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $cp['label'] }}</span></span></td>
+                                <td data-label="{{ __('app.ui.verdict') }}"><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
+                                <td data-label="{{ __('app.ui.decision_col') }}"><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -548,14 +577,14 @@
                         <tbody>
                         @foreach ($batch['rows'] as $row)
                             <tr>
-                                <td class="niu-mono niu-td-strong">{{ $row['niu'] ?? $row['raw_input'] }}</td>
+                                <td class="niu-mono niu-td-strong" data-label="{{ __('app.ui.niu') }}">{{ $row['niu'] ?? $row['raw_input'] }}</td>
                                 @foreach ($this->checkColumns() as $col)
                                     @php($cell = $row['checks_by_key'][$col['key']] ?? null)
                                     @php($p = $pill($cell['passed'] ?? null))
-                                    <td class="niu-ta-c"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
+                                    <td class="niu-ta-c" data-label="{{ $col['label'] }}"><span class="{{ $p['cls'] }} niu-pill--icon" title="{{ $col['label'] }}: {{ $p['label'] }}">@svg($p['icon'], 'niu-ico', ['aria-hidden' => 'true'])<span>{{ $p['label'] }}</span></span></td>
                                 @endforeach
-                                <td><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
-                                <td><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
+                                <td data-label="{{ __('app.ui.verdict') }}"><span class="niu-badge niu-badge--{{ $row['verdict']['color'] }}">@svg($row['verdict']['icon'], 'niu-ico', ['aria-hidden' => 'true']){{ $row['verdict']['label'] }}</span></td>
+                                <td data-label="{{ __('app.ui.decision_col') }}"><span class="niu-badge niu-badge--{{ $row['conclusion']['payable'] ? 'success' : 'danger' }}">@svg($row['conclusion']['payable'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle', 'niu-ico', ['aria-hidden' => 'true']){{ $row['conclusion']['decision'] }}</span></td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -594,9 +623,17 @@
             </section>
         @endif
 
+        {{-- Loading skeleton — stands in for the results while the checks run. --}}
+        <div class="glass niu-skel" wire:loading.flex wire:target="run" style="display:none" aria-hidden="true">
+            <div class="niu-skel__bar niu-skel__bar--lg"></div>
+            <div class="niu-skel__bar niu-skel__bar--w60"></div>
+            <div class="niu-skel__bar"></div>
+            <div class="niu-skel__bar niu-skel__bar--w40"></div>
+        </div>
+
         {{-- Empty state --}}
         @if (! $result && ! $recordingBatch && ! $batch)
-            <section class="niu-empty">
+            <section class="niu-empty" wire:loading.remove wire:target="run">
                 @svg('heroicon-o-shield-check', 'niu-ico niu-ico--xl', ['aria-hidden' => 'true'])
                 <h3>{{ __('app.ui.no_results_title') }}</h3>
                 <p>{{ __('app.ui.no_results_body') }}</p>

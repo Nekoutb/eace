@@ -156,6 +156,17 @@ return [
         'done' => 'Mot de passe mis à jour.',
     ],
 
+    'gs' => [
+        'title' => 'Bienvenue — commençons',
+        'intro' => 'Quelques étapes rapides pour configurer votre espace. Cette carte disparaît dès votre première facture enregistrée.',
+        'step1' => 'Lancez votre premier contrôle de conformité',
+        'step1_cta' => 'Ouvrir le moteur de conformité',
+        'step2' => 'Confirmez l’identité de votre entreprise',
+        'step2_cta' => 'Aller aux paramètres',
+        'step3' => 'Invitez votre équipe',
+        'step3_cta' => 'Gérer les utilisateurs',
+    ],
+
     'dash' => [
         'invoices_processed' => 'Factures traitées',
         'invoices_processed_desc' => 'étape enregistrement',

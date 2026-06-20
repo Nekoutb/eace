@@ -6,6 +6,7 @@ use App\Domain\Auth\UserRole;
 use App\Filament\App\Pages\ChangePassword;
 use App\Filament\App\Pages\Settings;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Filament\App\Widgets\GettingStarted;
 use App\Http\Middleware\EnforcePasswordRotation;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Models\Tenant;
@@ -129,6 +130,15 @@ it('confines tenant users to the app panel and central users to the admin panel'
         ->and($tenantUser->canAccessPanel($adminPanel))->toBeFalse()
         ->and($centralUser->canAccessPanel($adminPanel))->toBeTrue()
         ->and($centralUser->canAccessPanel($appPanel))->toBeFalse();
+});
+
+it('shows and renders the getting-started card for a brand-new workspace', function () {
+    test()->actingAs(makeUser(UserRole::Admin));
+    Filament::setCurrentPanel(Filament::getPanel('app'));
+
+    // Empty workspace → the card is shown and renders (its CTA links resolve).
+    expect(GettingStarted::canView())->toBeTrue();
+    Livewire::test(GettingStarted::class)->assertOk();
 });
 
 it('blocks privileged Livewire actions for a temp-password user but allows the setup flows', function () {

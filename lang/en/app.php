@@ -156,6 +156,17 @@ return [
         'done' => 'Password updated.',
     ],
 
+    'gs' => [
+        'title' => 'Welcome — let’s get you started',
+        'intro' => 'A few quick steps to set up your workspace. This card disappears once you record your first invoice.',
+        'step1' => 'Run your first compliance check',
+        'step1_cta' => 'Open the Compliance Engine',
+        'step2' => 'Confirm your business identity',
+        'step2_cta' => 'Go to Settings',
+        'step3' => 'Invite your team',
+        'step3_cta' => 'Manage users',
+    ],
+
     'dash' => [
         'invoices_processed' => 'Invoices processed',
         'invoices_processed_desc' => 'recording stage',

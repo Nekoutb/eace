@@ -7,6 +7,7 @@ const puppeteer = require('puppeteer');
     ['/admin/login', 'admin-login'],
     ['/', 'landing'],
     ['/register', 'signup'],
+    ['/security', 'security'],
   ];
   const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
   const page = await browser.newPage();

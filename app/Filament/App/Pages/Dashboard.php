@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Filament\App\Widgets\ComplianceStats;
+use App\Filament\App\Widgets\GettingStarted;
 use App\Filament\App\Widgets\SupportChatWidget;
 use BackedEnum;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -31,6 +32,7 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            GettingStarted::class,
             ComplianceStats::class,
             SupportChatWidget::class,
         ];
