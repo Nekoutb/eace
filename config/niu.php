@@ -39,6 +39,16 @@ return [
     'self_service_signup' => (bool) env('NIU_SELF_SERVICE_SIGNUP', true),
 
     /*
+     * Whether this is a multi-CLIENT SaaS — several isolated tenant workspaces,
+     * each provisioned with its own subdomain (client.<base>) — or a SINGLE
+     * workspace on the bare domain. Single-workspace (the default) hides the
+     * central "Provision a client" admin feature and its subdomain: there is just
+     * the one workspace. Flip to true (NIU_MULTI_CLIENT=true) to re-enable
+     * provisioning additional client workspaces.
+     */
+    'multi_client' => (bool) env('NIU_MULTI_CLIENT', false),
+
+    /*
      * Whether two-factor authentication (authenticator-app / TOTP) is MANDATORY
      * for every user — each must enrol before reaching the app. Kept as a switch
      * (not a constant) so it can be relaxed from the environment in an emergency

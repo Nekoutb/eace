@@ -12,6 +12,10 @@ use Filament\Tables\Table;
 /**
  * Central admin panel. A "client" is a tenant — provisioning one creates its
  * isolated database, subdomain, and first admin user (see ClientProvisioningService).
+ *
+ * Only shown when this is a multi-CLIENT deployment (config niu.multi_client).
+ * In the default single-workspace model there is just the one workspace on the
+ * bare domain, so provisioning additional subdomain'd clients is hidden.
  */
 class ClientResource extends Resource
 {
@@ -21,10 +25,18 @@ class ClientResource extends Resource
 
     protected static ?int $navigationSort = -10;
 
-    /** Defence in depth: only central (landlord) users may manage clients. */
+    /**
+     * Only in a multi-client deployment, and then only central (landlord) users.
+     */
     public static function canAccess(): bool
     {
-        return auth()->user()?->isCentralUser() === true;
+        return (bool) config('niu.multi_client', false)
+            && auth()->user()?->isCentralUser() === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return (bool) config('niu.multi_client', false);
     }
 
     public static function getNavigationLabel(): string
