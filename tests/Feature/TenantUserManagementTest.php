@@ -8,6 +8,7 @@ use App\Filament\App\Pages\Settings;
 use App\Filament\App\Resources\Users\UserResource;
 use App\Http\Middleware\EnforcePasswordRotation;
 use App\Http\Middleware\ForcePasswordChange;
+use App\Http\Middleware\RedirectToAccessiblePanel;
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -129,6 +130,35 @@ it('confines tenant users to the app panel and central users to the admin panel'
         ->and($tenantUser->canAccessPanel($adminPanel))->toBeFalse()
         ->and($centralUser->canAccessPanel($adminPanel))->toBeTrue()
         ->and($centralUser->canAccessPanel($appPanel))->toBeFalse();
+});
+
+it('redirects a user off a panel they cannot access to the one they can, not a 403', function () {
+    $central = new User(['name' => 'Landlord']);      // no role → central (landlord)
+    $tenantUser = new User(['role' => UserRole::Recorder]);
+    $mw = new RedirectToAccessiblePanel;
+    $ran = fn () => response('ran');
+
+    // Landlord landing on /app is sent to /admin, never 403.
+    Filament::setCurrentPanel(Filament::getPanel('app'));
+    $req = Request::create('/app', 'GET');
+    $req->setUserResolver(fn () => $central);
+    $res = $mw->handle($req, $ran);
+    expect($res->getStatusCode())->toBe(302)
+        ->and($res->getTargetUrl())->toEndWith('/admin');
+
+    // A tenant user on /app passes straight through.
+    $req2 = Request::create('/app', 'GET');
+    $req2->setUserResolver(fn () => $tenantUser);
+    expect($mw->handle($req2, $ran)->getContent())->toBe('ran');
+
+    // A tenant user landing on /admin is sent to /app.
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $req3 = Request::create('/admin', 'GET');
+    $req3->setUserResolver(fn () => $tenantUser);
+    expect($mw->handle($req3, $ran)->getTargetUrl())->toEndWith('/app');
+
+    // An anonymous visitor passes through so the login page can render.
+    expect($mw->handle(Request::create('/app', 'GET'), $ran)->getContent())->toBe('ran');
 });
 
 it('blocks privileged Livewire actions for a temp-password user but allows the change form', function () {

@@ -6,15 +6,13 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Root: send people to the right front door. On a central domain (the landlord),
- * that's the admin console; on a tenant domain (a client workspace — e.g. the
- * single-workspace production host eace.cm-ea.com), that's the compliance app.
+ * Root: under account-based (no-subdomain) tenancy the bare host is the
+ * landlord's front door, so send visitors to the admin console sign-in. Client
+ * (tenant) users reach their own workspace through the dedicated /app/login link
+ * they are given when onboarded; an already-signed-in user who lands on the wrong
+ * panel is routed to theirs by RedirectToAccessiblePanel.
  */
-Route::get('/', function () {
-    $isCentral = in_array(request()->getHost(), config('tenancy.central_domains', []), true);
-
-    return redirect($isCentral ? '/admin' : '/app');
-});
+Route::get('/', fn () => redirect('/admin'));
 
 /*
  * Public "how we protect your data" security showcase — the certified stack
@@ -27,8 +25,8 @@ Route::get('/security', fn () => view('security'))
 
 /*
  * Public self-service sign-up — a prospective customer provisions their own
- * isolated trial workspace (tenant + subdomain). Central web routes, so this is
- * not tenant-scoped; gated by config('niu.self_service_signup').
+ * isolated trial workspace and signs in at the shared /app/login. Central web
+ * routes, so this is not tenant-scoped; gated by config('niu.self_service_signup').
  */
 Route::get('/register', [SignUpController::class, 'show'])->name('signup');
 Route::post('/register', [SignUpController::class, 'register']);

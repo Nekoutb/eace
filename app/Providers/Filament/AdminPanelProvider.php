@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
+use App\Http\Middleware\RedirectToAccessiblePanel;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\Authenticate;
@@ -63,6 +64,9 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
+                // A signed-in client (tenant) user who lands on /admin is sent to
+                // /app rather than hitting a dead 403.
+                RedirectToAccessiblePanel::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
