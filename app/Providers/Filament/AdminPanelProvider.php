@@ -4,6 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
+use App\Filament\Auth\RequestPasswordReset;
+use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\RedirectToAccessiblePanel;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
@@ -33,7 +35,9 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->viteTheme('resources/css/filament/app/theme.css')
             ->login(Login::class)
+            ->passwordReset(RequestPasswordReset::class, ResetPassword::class)
             ->brandName('Elite Advisors Compliance Engine — Administration')
             ->brandLogo(fn () => new HtmlString(view('filament.brand-logo')->render()))
             ->brandLogoHeight('2.05rem')

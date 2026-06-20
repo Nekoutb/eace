@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Auth\UserRole;
+use App\Models\PendingSignup;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
 use App\Models\User;
@@ -10,6 +11,7 @@ use App\Services\Tenant\ClientProvisioningException;
 use App\Services\Tenant\ClientProvisioningService;
 use App\Services\Tenant\ProvisionedClient;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 afterEach(function () {
@@ -170,31 +172,18 @@ it('provisions with the given role and the chosen password, and no temporary one
     });
 });
 
-it('lets a customer self-provision a trial workspace from the public sign-up', function () {
-    $response = $this->post('/register', [
-        'org_name' => 'Gamma Ltd',
-        'name' => 'Gina',
-        'email' => 'gina@gamma.test',
-        'password' => 'trialpass123',
-        'password_confirmation' => 'trialpass123',
-    ]);
+it('defers public sign-up provisioning until the email is confirmed', function () {
+    // Verify-first: the public sign-up holds a pending request and does NOT create
+    // a workspace until the email is confirmed (the full flow is exercised in
+    // SelfServiceOnboardingTest). This guards against a regression to instant,
+    // unverified provisioning.
+    Mail::fake();
 
-    $response->assertRedirect();
-    expect(Tenant::find('gamma-ltd'))->not->toBeNull()
-        ->and(TenantLogin::tenantFor('gina@gamma.test'))->toBe('gamma-ltd');
-
-    Tenant::find('gamma-ltd')->run(function () {
-        $user = User::query()->sole();
-        expect($user->email)->toBe('gina@gamma.test')
-            ->and($user->role)->toBe(UserRole::Admin);
-    });
-});
-
-it('rejects a self-service sign-up with a mismatched password confirmation', function () {
     $this->post('/register', [
-        'org_name' => 'Trial Co', 'name' => 'T',
-        'email' => 't@trial.test', 'password' => 'abcdefgh1', 'password_confirmation' => 'different1',
-    ])->assertSessionHasErrors('password');
+        'org_name' => 'Gamma Ltd', 'name' => 'Gina', 'email' => 'gina@gamma.test',
+    ])->assertRedirect(route('signup.sent'));
 
-    expect(Tenant::find('trial-co'))->toBeNull();
+    expect(Tenant::find('gamma-ltd'))->toBeNull()
+        ->and(TenantLogin::tenantFor('gina@gamma.test'))->toBeNull()
+        ->and(PendingSignup::query()->where('email', 'gina@gamma.test')->exists())->toBeTrue();
 });

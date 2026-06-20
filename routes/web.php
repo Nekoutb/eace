@@ -6,13 +6,14 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Root: under account-based (no-subdomain) tenancy the bare host is the
- * landlord's front door, so send visitors to the admin console sign-in. Client
- * (tenant) users reach their own workspace through the dedicated /app/login link
- * they are given when onboarded; an already-signed-in user who lands on the wrong
- * panel is routed to theirs by RedirectToAccessiblePanel.
+ * Root: the public front door. When self-service onboarding is open this is a
+ * landing page where a prospective customer can create their own workspace or
+ * sign in (the landlord reaches the admin console from the discreet link there).
+ * When self-service is closed the bare host stays the landlord's front door.
  */
-Route::get('/', fn () => redirect('/admin'));
+Route::get('/', fn () => config('niu.self_service_signup') ? view('landing') : redirect('/admin'))
+    ->middleware(SetLocale::class)
+    ->name('home');
 
 /*
  * Public "how we protect your data" security showcase — the certified stack
@@ -24,12 +25,20 @@ Route::get('/security', fn () => view('security'))
     ->name('security');
 
 /*
- * Public self-service sign-up — a prospective customer provisions their own
- * isolated trial workspace and signs in at the shared /app/login. Central web
- * routes, so this is not tenant-scoped; gated by config('niu.self_service_signup').
+ * Public, verify-first self-service onboarding. A prospective customer enters
+ * their details, confirms their email, and only then is their isolated workspace
+ * created with a one-time password emailed to them. Central web routes (not
+ * tenant-scoped); gated by config('niu.self_service_signup'). The submitting
+ * routes are throttled to deter abuse of the email-sending + provisioning path.
  */
-Route::get('/register', [SignUpController::class, 'show'])->name('signup');
-Route::post('/register', [SignUpController::class, 'register']);
+Route::middleware(SetLocale::class)->group(function (): void {
+    Route::get('/register', [SignUpController::class, 'show'])->name('signup');
+    Route::post('/register', [SignUpController::class, 'register'])->middleware('throttle:6,1');
+    Route::get('/register/sent', [SignUpController::class, 'sent'])->name('signup.sent');
+    Route::post('/register/resend', [SignUpController::class, 'resend'])->middleware('throttle:4,1')->name('signup.resend');
+    Route::get('/onboarding/verify/{token}', [SignUpController::class, 'verify'])->name('signup.verify');
+    Route::get('/onboarding/done', [SignUpController::class, 'done'])->name('signup.done');
+});
 
 /*
  * Language switch. Tenancy-aware so the locale lands in the same (tenant or

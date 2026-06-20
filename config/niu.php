@@ -39,6 +39,21 @@ return [
     'self_service_signup' => (bool) env('NIU_SELF_SERVICE_SIGNUP', true),
 
     /*
+     * Self-service onboarding: a prospective customer's sign-up is held as a
+     * pending request and only turned into a real workspace once they confirm
+     * their email. A pending request older than this many hours is treated as
+     * expired (its verification link no longer works and a nightly job prunes it).
+     */
+    'pending_signup_expiry_hours' => (int) env('NIU_PENDING_SIGNUP_EXPIRY_HOURS', 24),
+
+    /*
+     * Optional: an address that receives a short notice each time a customer
+     * self-provisions a workspace (operator visibility, no action required). Null
+     * disables the notice.
+     */
+    'signup_admin_notify' => env('NIU_SIGNUP_ADMIN_NOTIFY'),
+
+    /*
      * Whether this is a multi-CLIENT SaaS — several isolated tenant workspaces,
      * onboarded from the landlord /admin panel, where clients all sign in at one
      * shared address (no subdomain) and are resolved to their own workspace by

@@ -1,0 +1,93 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/*
+ * Elite Advisors — shared "liquid glass" panel theme (used by both the /app and
+ * /admin panels). Principle: GLASS for the chrome (sidebar, top bar, simple-page
+ * canvas) over a soft brand-tinted backdrop; the framework keeps its SOLID,
+ * high-contrast surfaces for data (tables, forms, cards) so legibility never
+ * pays for the aesthetic. Degrades to opaque surfaces where backdrop-filter is
+ * unsupported, and carries a deep-green variant in dark mode.
+ */
+
+:root {
+    --ea-glass: rgba(255, 255, 255, 0.62);
+    --ea-glass-brd: rgba(255, 255, 255, 0.72);
+    --ea-ring: 0 0 0 3px rgba(22, 163, 74, 0.28);
+}
+
+/* One brand typeface across the whole shell. */
+.fi-body,
+.fi-simple-layout {
+    font-family: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Soft brand-tinted canvas so the frosted chrome has something to refract. */
+.fi-body,
+.fi-simple-layout {
+    background-color: #f0fdf4;
+    background-image:
+        radial-gradient(115% 70% at 0% 0%, #ecfdf3 0%, transparent 55%),
+        radial-gradient(90% 60% at 100% 0%, #e3f7ea 0%, transparent 52%);
+    background-attachment: fixed;
+}
+
+/* Liquid-glass sidebar. */
+aside.fi-sidebar {
+    background: var(--ea-glass) !important;
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border-right: 1px solid var(--ea-glass-brd);
+}
+aside.fi-sidebar .fi-sidebar-nav {
+    background: transparent !important;
+}
+
+/* Liquid-glass top bar. */
+.fi-topbar,
+.fi-topbar > nav {
+    background: var(--ea-glass) !important;
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+.fi-topbar > nav {
+    border-bottom: 1px solid var(--ea-glass-brd);
+}
+
+/* Keep the focus ring on the brand green for keyboard users. */
+.fi-input:focus,
+.fi-select-input:focus,
+.fi-btn:focus-visible {
+    box-shadow: var(--ea-ring);
+}
+
+/* Opaque fallback where the browser can't blur. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    aside.fi-sidebar,
+    .fi-topbar,
+    .fi-topbar > nav {
+        background: rgba(255, 255, 255, 0.96) !important;
+    }
+}
+
+/* Dark mode — deep-green glass on a near-black brand canvas. */
+.dark .fi-body,
+.dark .fi-simple-layout {
+    background-color: #08160f;
+    background-image:
+        radial-gradient(115% 70% at 0% 0%, #0e251a 0%, transparent 55%),
+        radial-gradient(90% 60% at 100% 0%, #0c2018 0%, transparent 52%);
+}
+.dark aside.fi-sidebar,
+.dark .fi-topbar,
+.dark .fi-topbar > nav {
+    background: rgba(13, 33, 24, 0.6) !important;
+}
+.dark aside.fi-sidebar {
+    border-right-color: rgba(134, 239, 172, 0.14);
+}
+.dark .fi-topbar > nav {
+    border-bottom-color: rgba(134, 239, 172, 0.14);
+}

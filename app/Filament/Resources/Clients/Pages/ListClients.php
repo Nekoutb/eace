@@ -3,13 +3,16 @@
 namespace App\Filament\Resources\Clients\Pages;
 
 use App\Filament\Resources\Clients\ClientResource;
+use App\Mail\WorkspaceCredentialsMail;
 use App\Services\Tenant\ClientProvisioningException;
 use App\Services\Tenant\ClientProvisioningService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
+use Throwable;
 
 class ListClients extends ListRecords
 {
@@ -63,7 +66,7 @@ class ListClients extends ListRecords
                             ->send();
 
                         return;
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         report($e);
                         Notification::make()
                             ->title(__('app.client.provision_failed'))
@@ -72,6 +75,23 @@ class ListClients extends ListRecords
                             ->send();
 
                         return;
+                    }
+
+                    // Email the new client their sign-in details. Best-effort: a
+                    // mail failure must not lose the credentials, which the toast
+                    // below still shows the operator once.
+                    $emailed = false;
+                    try {
+                        Mail::to($client->adminEmail)->locale(app()->getLocale())->send(new WorkspaceCredentialsMail(
+                            name: $data['admin_name'],
+                            orgName: $data['name'],
+                            email: $client->adminEmail,
+                            temporaryPassword: (string) $client->temporaryPassword,
+                            loginUrl: $client->loginUrl,
+                        ));
+                        $emailed = true;
+                    } catch (Throwable $e) {
+                        report($e);
                     }
 
                     // The temporary password is shown here once and never stored
@@ -83,7 +103,9 @@ class ListClients extends ListRecords
                             .e(__('app.client.cred_login_at')).' <strong>'.e($client->loginUrl).'</strong><br>'
                             .e(__('app.client.cred_email')).': <code>'.e($client->adminEmail).'</code><br>'
                             .e(__('app.client.cred_password')).': <code>'.e($client->temporaryPassword).'</code><br>'
-                            .'<em>'.e(__('app.client.cred_once')).'</em></div>'
+                            .'<em>'.e(__('app.client.cred_once')).'</em>'
+                            .($emailed ? '<br>'.e(__('app.client.cred_emailed')) : '')
+                            .'</div>'
                         ))
                         ->success()
                         ->persistent()

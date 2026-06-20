@@ -33,3 +33,9 @@ Schedule::command('queue:work --stop-when-empty --max-time=280 --tries=1')
 Schedule::command('evidence:timestamp-pending')
     ->hourly()
     ->withoutOverlapping();
+
+// Drop self-service sign-ups whose email-confirmation link has expired (they
+// never became workspaces — just holding records).
+Schedule::command('signup:prune-expired')
+    ->daily()
+    ->withoutOverlapping();

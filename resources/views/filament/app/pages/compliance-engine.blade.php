@@ -26,7 +26,7 @@
                 --gradBrand:linear-gradient(150deg,var(--g700),var(--g900));
                 --blur:16px;--r:20px;
                 position:relative;z-index:0;color:var(--ink);
-                font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+                font-family:inherit;
                 line-height:1.5;
             }
             .niu-ce::before{
@@ -46,6 +46,14 @@
             @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
                 .niu-ce .glass{background:rgba(255,255,255,.92)}
             }
+            /* Glass for chrome, SOLID for data: the form and result/comment panels
+               carry numbers and tables, so they sit on opaque high-contrast
+               surfaces — only the hero and the stage toggle stay frosted. */
+            .niu-ce .niu-form,.niu-ce .niu-result,.niu-ce .niu-disc{
+                background:rgba(255,255,255,.97);backdrop-filter:none;-webkit-backdrop-filter:none;
+                border:1px solid var(--line);box-shadow:0 8px 26px rgba(20,83,45,.09)}
+            .dark .niu-ce .niu-form,.dark .niu-ce .niu-result,.dark .niu-ce .niu-disc{
+                background:rgba(11,28,20,.92)}
             .niu-ce svg.niu-ico{width:1.1em;height:1.1em;flex:0 0 auto;display:inline-block;vertical-align:-.16em}
             .niu-ico--lg{width:1.7em!important;height:1.7em!important}
             .niu-ico--xl{width:2.6em!important;height:2.6em!important}

@@ -6,6 +6,8 @@ use App\Filament\App\Pages\Dashboard;
 use App\Filament\App\Widgets\ComplianceStats;
 use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
+use App\Filament\Auth\RequestPasswordReset;
+use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\InitializeTenancyFromSession;
 use App\Http\Middleware\RedirectToAccessiblePanel;
@@ -33,7 +35,9 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
+            ->viteTheme('resources/css/filament/app/theme.css')
             ->login(Login::class)
+            ->passwordReset(RequestPasswordReset::class, ResetPassword::class)
             ->brandName('Elite Advisors Compliance Engine')
             ->brandLogo(fn () => new HtmlString(view('filament.brand-logo')->render()))
             ->brandLogoHeight('2.05rem')
