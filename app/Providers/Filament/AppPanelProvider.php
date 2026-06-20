@@ -8,12 +8,11 @@ use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
 use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\InitializeTenancyFromSession;
-use App\Http\Middleware\RedirectToAccessiblePanel;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -71,9 +70,6 @@ class AppPanelProvider extends PanelProvider
                 // middleware, so the user resolves against their tenant database.
                 InitializeTenancyFromSession::class,
                 AuthenticateSession::class,
-                // A signed-in landlord who lands on /app is sent to /admin rather
-                // than hitting a dead 403 (and vice versa on the admin panel).
-                RedirectToAccessiblePanel::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,

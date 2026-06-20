@@ -6,10 +6,9 @@ use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
 use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
-use App\Http\Middleware\RedirectToAccessiblePanel;
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -68,9 +67,6 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
-                // A signed-in client (tenant) user who lands on /admin is sent to
-                // /app rather than hitting a dead 403.
-                RedirectToAccessiblePanel::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
