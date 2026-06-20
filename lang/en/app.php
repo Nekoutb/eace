@@ -41,6 +41,7 @@ return [
         'empty_desc' => 'Provision your first client — it gets its own database, subdomain and admin.',
         'delete' => 'Delete client',
         'delete_warning' => 'This permanently deletes the client and drops its entire database — every user, verification and certificate. This cannot be undone.',
+        'cred_login_at' => 'They sign in at',
         'cred_email' => 'Sign-in email',
         'cred_password' => 'Temporary password',
         'cred_once' => 'Shown only once — it is not stored and cannot be recovered. The administrator must change it on first sign-in.',
@@ -85,6 +86,7 @@ return [
         'cannot_demote_last_admin' => 'There must be at least one administrator.',
         'temp_password' => 'Temporary password',
         'must_change' => 'Must change password',
+        'email_taken_other_workspace' => 'This email is already registered to another client account.',
     ],
 
     'password_change' => [

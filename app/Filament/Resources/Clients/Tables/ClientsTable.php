@@ -24,11 +24,6 @@ class ClientsTable
                     ->weight('bold')
                     ->getStateUsing(fn (Tenant $record): string => (string) ($record->name ?? $record->id))
                     ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('data->name', $direction)),
-                TextColumn::make('domain')
-                    ->label(__('app.client.subdomain'))
-                    ->fontFamily(FontFamily::Mono)
-                    ->getStateUsing(fn (Tenant $record): ?string => $record->primaryDomain())
-                    ->copyable(),
                 TextColumn::make('id')
                     ->label(__('app.client.identifier'))
                     ->fontFamily(FontFamily::Mono)
@@ -52,33 +47,12 @@ class ClientsTable
             ->emptyStateIcon('heroicon-o-building-office-2')
             ->recordActions([
                 ActionGroup::make([
-                    self::openAction(),
                     self::renameAction(),
                     DeleteAction::make()
                         ->modalHeading(__('app.client.delete'))
                         ->modalDescription(__('app.client.delete_warning')),
                 ])->label(__('app.client.actions')),
             ]);
-    }
-
-    /** Open the client's tenant app in a new tab (honours the current scheme/port). */
-    private static function openAction(): Action
-    {
-        return Action::make('open')
-            ->label(__('app.client.open'))
-            ->icon('heroicon-o-arrow-top-right-on-square')
-            ->color('gray')
-            ->url(function (Tenant $record): ?string {
-                $domain = $record->primaryDomain();
-                if ($domain === null) {
-                    return null;
-                }
-                $port = request()->getPort();
-                $portPart = in_array($port, [80, 443, null], true) ? '' : ':'.$port;
-
-                return request()->getScheme().'://'.$domain.$portPart.'/app';
-            })
-            ->openUrlInNewTab();
     }
 
     private static function renameAction(): Action

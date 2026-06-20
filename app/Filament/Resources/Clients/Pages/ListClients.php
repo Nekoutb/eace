@@ -29,14 +29,6 @@ class ListClients extends ListRecords
                         ->label(__('app.client.org_name'))
                         ->required()
                         ->maxLength(255),
-                    TextInput::make('subdomain')
-                        ->label(__('app.client.subdomain'))
-                        ->required()
-                        ->maxLength(40)
-                        ->suffix('.'.config('niu.tenant_base_domain', 'localhost'))
-                        ->helperText(__('app.client.subdomain_help'))
-                        ->rule('regex:/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/')
-                        ->extraInputAttributes(['style' => 'text-transform:lowercase']),
                     TextInput::make('admin_name')
                         ->label(__('app.client.admin_name'))
                         ->required()
@@ -59,7 +51,6 @@ class ListClients extends ListRecords
                     try {
                         $client = app(ClientProvisioningService::class)->provision(
                             name: $data['name'],
-                            subdomain: $data['subdomain'],
                             adminName: $data['admin_name'],
                             adminEmail: $data['admin_email'],
                             allocatedSpaceMb: (int) $data['allocated_space_mb'],
@@ -89,7 +80,7 @@ class ListClients extends ListRecords
                         ->title(__('app.client.provisioned'))
                         ->body(new HtmlString(
                             '<div style="line-height:1.7">'
-                            .'<strong>'.e($client->domain).'/app</strong><br>'
+                            .e(__('app.client.cred_login_at')).' <strong>'.e($client->loginUrl).'</strong><br>'
                             .e(__('app.client.cred_email')).': <code>'.e($client->adminEmail).'</code><br>'
                             .e(__('app.client.cred_password')).': <code>'.e($client->temporaryPassword).'</code><br>'
                             .'<em>'.e(__('app.client.cred_once')).'</em></div>'

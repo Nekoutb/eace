@@ -73,7 +73,13 @@ return [
     |
     */
 
-    'connection' => env('SESSION_CONNECTION'),
+    // Pin sessions to the CENTRAL connection (defaults to DB_CONNECTION, the
+    // tenancy central connection). Account-based tenancy reads the workspace from
+    // the session and then initialises it; if the session itself lived on the
+    // swapped tenant connection it would move mid-request. The central connection
+    // is never swapped by stancl (the same reason CentralModel stays central),
+    // so the session stays consistent across initialise/end.
+    'connection' => env('SESSION_CONNECTION', env('DB_CONNECTION', 'sqlite')),
 
     /*
     |--------------------------------------------------------------------------

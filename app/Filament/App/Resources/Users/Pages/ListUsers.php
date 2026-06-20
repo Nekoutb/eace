@@ -4,8 +4,10 @@ namespace App\Filament\App\Resources\Users\Pages;
 
 use App\Domain\Auth\UserRole;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Models\TenantLogin;
 use App\Models\User;
 use App\Support\TempPassword;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -35,7 +37,19 @@ class ListUsers extends ListRecords
                         ->required()
                         ->email()
                         ->maxLength(255)
-                        ->unique(table: User::class, column: 'email'),
+                        ->unique(table: User::class, column: 'email')
+                        // One sign-in email belongs to exactly one workspace: reject
+                        // an email already registered to another client (central
+                        // login directory), not just one taken inside this tenant.
+                        ->rule(static function (): Closure {
+                            return static function (string $attribute, mixed $value, Closure $fail): void {
+                                $email = is_string($value) ? trim($value) : '';
+
+                                if ($email !== '' && TenantLogin::isClaimedByAnotherWorkspace($email, (string) tenant()->getTenantKey())) {
+                                    $fail((string) __('app.user.email_taken_other_workspace'));
+                                }
+                            };
+                        }),
                     Select::make('role')
                         ->label(__('app.user.role'))
                         ->required()

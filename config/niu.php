@@ -40,13 +40,12 @@ return [
 
     /*
      * Whether this is a multi-CLIENT SaaS — several isolated tenant workspaces,
-     * each provisioned with its own subdomain (client.<base>) — or a SINGLE
-     * workspace on the bare domain. Single-workspace (the default) hides the
-     * central "Provision a client" admin feature and its subdomain: there is just
-     * the one workspace. Flip to true (NIU_MULTI_CLIENT=true) to re-enable
-     * provisioning additional client workspaces.
+     * onboarded from the landlord /admin panel, where clients all sign in at one
+     * shared address (no subdomain) and are resolved to their own workspace by
+     * their account. When false the central "Provision a client" admin feature is
+     * hidden (a single-workspace deployment).
      */
-    'multi_client' => (bool) env('NIU_MULTI_CLIENT', false),
+    'multi_client' => (bool) env('NIU_MULTI_CLIENT', true),
 
     /*
      * Whether two-factor authentication (authenticator-app / TOTP) is MANDATORY

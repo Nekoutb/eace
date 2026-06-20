@@ -41,6 +41,7 @@ return [
         'empty_desc' => 'Provisionnez votre premier client — il obtient sa propre base de données, son sous-domaine et son administrateur.',
         'delete' => 'Supprimer le client',
         'delete_warning' => 'Ceci supprime définitivement le client et détruit toute sa base de données — chaque utilisateur, vérification et attestation. Irréversible.',
+        'cred_login_at' => 'Connexion sur',
         'cred_email' => 'E-mail de connexion',
         'cred_password' => 'Mot de passe temporaire',
         'cred_once' => 'Affiché une seule fois — non stocké et irrécupérable. L’administrateur devra le changer à la première connexion.',
@@ -85,6 +86,7 @@ return [
         'cannot_demote_last_admin' => 'Il doit rester au moins un administrateur.',
         'temp_password' => 'Mot de passe temporaire',
         'must_change' => 'Doit changer le mot de passe',
+        'email_taken_other_workspace' => 'Cette adresse e-mail est déjà rattachée à un autre compte client.',
     ],
 
     'password_change' => [

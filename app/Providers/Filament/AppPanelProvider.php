@@ -7,6 +7,7 @@ use App\Filament\App\Widgets\ComplianceStats;
 use App\Filament\Auth\AppAuthentication;
 use App\Filament\Auth\Login;
 use App\Http\Middleware\ForcePasswordChange;
+use App\Http\Middleware\InitializeTenancyFromSession;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\Authenticate;
@@ -23,8 +24,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -62,6 +61,10 @@ class AppPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                // Account-based tenancy (no subdomain): initialise the signed-in
+                // user's workspace from the central session BEFORE the auth/session
+                // middleware, so the user resolves against their tenant database.
+                InitializeTenancyFromSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
@@ -69,10 +72,6 @@ class AppPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 SetLocale::class,
-                // The app panel is tenant-only: identify the tenant by domain and
-                // block access from the central domains (which the admin panel owns).
-                InitializeTenancyByDomain::class,
-                PreventAccessFromCentralDomains::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

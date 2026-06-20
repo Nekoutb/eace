@@ -6,16 +6,11 @@ namespace App\Services\Tenant;
 
 use RuntimeException;
 
-/** A client could not be provisioned (e.g. the subdomain is already taken). */
+/** A client could not be provisioned (e.g. the admin email is already in use). */
 final class ClientProvisioningException extends RuntimeException
 {
-    public static function subdomainTaken(string $subdomain): self
+    public static function emailTaken(string $email): self
     {
-        return new self("The subdomain \"{$subdomain}\" is already in use.");
-    }
-
-    public static function invalidSubdomain(string $subdomain): self
-    {
-        return new self("\"{$subdomain}\" is not a valid subdomain.");
+        return new self("The email \"{$email}\" is already in use by another workspace.");
     }
 }
