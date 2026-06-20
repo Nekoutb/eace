@@ -82,10 +82,10 @@ it('redirects a temporary-password user to the change-password page', function (
         ->and($response->headers->get('Location'))->toContain('change-password');
 });
 
-it('sends a temporary-password user to change-password even from the 2FA pages (password first)', function () {
-    // Password change comes FIRST. 2FA is suppressed while the temporary password
-    // is unchanged (the panel's isRequired closure), so the user is never trapped
-    // on the 2FA set-up page — they are bounced to change-password, no loop.
+it('lets a temporary-password user reach the 2FA enrolment pages (no redirect loop)', function () {
+    // 2FA enrolment runs FIRST: the MFA gate sends a no-2FA user to set-up, so the
+    // change-password redirect must exempt those routes or the two gates loop
+    // forever (ERR_TOO_MANY_REDIRECTS).
     $user = makeUser(UserRole::Recorder, ['must_change_password' => true]);
 
     $request = Request::create('/app/multi-factor-authentication/set-up');
@@ -93,19 +93,7 @@ it('sends a temporary-password user to change-password even from the 2FA pages (
 
     $response = (new ForcePasswordChange)->handle($request, fn () => response('reached'));
 
-    expect($response->getStatusCode())->toBe(302)
-        ->and($response->headers->get('Location'))->toContain('change-password');
-});
-
-it('requires 2FA only after the temporary password is changed', function () {
-    config(['niu.two_factor_required' => true]);
-    $panel = Filament::getPanel('app');
-
-    test()->actingAs(makeUser(UserRole::Recorder, ['must_change_password' => true]));
-    expect($panel->isMultiFactorAuthenticationRequired())->toBeFalse();
-
-    test()->actingAs(makeUser(UserRole::Recorder, ['must_change_password' => false]));
-    expect($panel->isMultiFactorAuthenticationRequired())->toBeTrue();
+    expect($response->getContent())->toBe('reached');
 });
 
 it('lets a settled user through the password-change gate', function () {
@@ -143,23 +131,30 @@ it('confines tenant users to the app panel and central users to the admin panel'
         ->and($centralUser->canAccessPanel($appPanel))->toBeFalse();
 });
 
-it('blocks privileged Livewire actions for a temp-password user but allows the change form', function () {
+it('blocks privileged Livewire actions for a temp-password user but allows the setup flows', function () {
     $user = makeUser(UserRole::Admin, ['must_change_password' => true]);
 
     $privileged = Request::create('/livewire/update', 'POST', [
-        'components' => [['snapshot' => json_encode(['memo' => ['name' => 'app.filament.app.pages.settings']])]],
+        'components' => [['snapshot' => json_encode(['memo' => ['name' => 'app.filament.app.pages.settings', 'path' => 'app/settings']])]],
     ]);
     $privileged->setUserResolver(fn () => $user);
 
     expect(fn () => (new EnforcePasswordRotation)->handle($privileged, fn () => response('ran')))
         ->toThrow(HttpException::class);
 
+    // The change-password form is allowed.
     $changeForm = Request::create('/livewire/update', 'POST', [
-        'components' => [['snapshot' => json_encode(['memo' => ['name' => 'app.filament.app.pages.change-password']])]],
+        'components' => [['snapshot' => json_encode(['memo' => ['name' => 'app.filament.app.pages.change-password', 'path' => 'app/change-password']])]],
     ]);
     $changeForm->setUserResolver(fn () => $user);
-
     expect((new EnforcePasswordRotation)->handle($changeForm, fn () => response('ran'))->getContent())->toBe('ran');
+
+    // The mandatory 2FA enrolment (forced first) is allowed by its page path.
+    $mfaSetup = Request::create('/livewire/update', 'POST', [
+        'components' => [['snapshot' => json_encode(['memo' => ['name' => 'filament.auth.multi-factor.set-up', 'path' => 'app/multi-factor-authentication/set-up']])]],
+    ]);
+    $mfaSetup->setUserResolver(fn () => $user);
+    expect((new EnforcePasswordRotation)->handle($mfaSetup, fn () => response('ran'))->getContent())->toBe('ran');
 });
 
 it('clears the temporary-password flag when the user sets a new password', function () {

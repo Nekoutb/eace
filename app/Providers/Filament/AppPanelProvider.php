@@ -12,7 +12,6 @@ use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\InitializeTenancyFromSession;
 use App\Http\Middleware\SetLocale;
-use App\Models\User;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -43,25 +42,10 @@ class AppPanelProvider extends PanelProvider
             ->brandLogoHeight('2.05rem')
             ->colors(BrandColors::palette())
             // Mandatory two-factor for every user: an authenticator-app (TOTP)
-            // code on each sign-in, with one-time recovery codes. It is NOT
-            // enforced while the user still carries a temporary password — they
-            // must change it FIRST (ForcePasswordChange), then 2FA is required.
-            // This avoids the change-password ↔ 2FA-setup deadlock on first login.
-            ->multiFactorAuthentication(
-                AppAuthentication::make()->recoverable(),
-                isRequired: function (): bool {
-                    if (! (bool) config('niu.two_factor_required', true)) {
-                        return false;
-                    }
-
-                    // No user (route registration) keeps the requirement and the
-                    // set-up route; a signed-in user is exempt only until they
-                    // change their temporary password.
-                    $user = auth()->user();
-
-                    return ! ($user instanceof User && $user->must_change_password);
-                },
-            )
+            // code on each sign-in, with one-time recovery codes. On first login
+            // the user enrols 2FA first, then changes their temporary password —
+            // EnforcePasswordRotation lets both of those setup flows through.
+            ->multiFactorAuthentication(AppAuthentication::make()->recoverable(), isRequired: (bool) config('niu.two_factor_required', true))
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => view('filament.locale-switcher')->render(),

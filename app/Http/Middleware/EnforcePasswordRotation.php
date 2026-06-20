@@ -16,10 +16,12 @@ use Symfony\Component\HttpFoundation\Response;
  * (Settings::save, add user, …) directly without ever rotating their password.
  *
  * In tenant context, while the signed-in user still carries a temporary
- * password, this allows ONLY updates targeting the change-password component and
- * blocks everything else. Forging the component name to slip past would break
- * Livewire's downstream snapshot-checksum check, so no privileged action runs.
- * Central (admin) requests are untouched — tenancy is not initialised there.
+ * password, this allows ONLY the two legitimate first-login setup flows — the
+ * change-password page and the mandatory 2FA enrolment page (which Filament
+ * forces before the password change) — and blocks every other action. Forging
+ * the snapshot to fake the page would break Livewire's downstream
+ * checksum check, so no privileged action runs. Central (admin) requests are
+ * untouched — tenancy is not initialised there.
  */
 final class EnforcePasswordRotation
 {
@@ -37,9 +39,15 @@ final class EnforcePasswordRotation
         foreach ((array) $request->input('components', []) as $component) {
             $snapshot = is_array($component) ? ($component['snapshot'] ?? '{}') : '{}';
             $decoded = is_string($snapshot) ? json_decode($snapshot, true) : null;
-            $name = is_array($decoded) ? ($decoded['memo']['name'] ?? '') : '';
+            $memo = is_array($decoded) && is_array($decoded['memo'] ?? null) ? $decoded['memo'] : [];
+            $name = (string) ($memo['name'] ?? '');
+            $path = (string) ($memo['path'] ?? '');
 
-            if (! str_contains((string) $name, 'change-password')) {
+            $isSetupFlow = str_contains($name, 'change-password')
+                || str_contains($path, 'change-password')
+                || str_contains($path, 'multi-factor-authentication');
+
+            if (! $isSetupFlow) {
                 abort(403, 'You must change your temporary password before continuing.');
             }
         }
