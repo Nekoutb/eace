@@ -10,6 +10,6 @@
             <strong>{{ __('app.signup.done_password_label') }}:</strong> <code>{{ $password }}</code>
         </div>
 
-        <a class="btn" href="{{ $loginUrl }}">{{ __('app.signup.done_login_cta') }}</a>
+        <a class="btn" href="{{ $loginUrl.'?email='.rawurlencode($email) }}">{{ __('app.signup.done_login_cta') }}</a>
     </main>
 </x-guest-layout>

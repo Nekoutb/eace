@@ -54,6 +54,12 @@ it('rejects a wrong password', function () {
     expect(auth()->check())->toBeFalse();
 });
 
+it('pre-fills the sign-in email from the welcome-link query parameter', function () {
+    $this->get('/app/login?email='.urlencode('clerk@auth.test'))
+        ->assertOk()
+        ->assertSee('clerk@auth.test', escape: false);
+});
+
 it('shows the customer sign-in form to a signed-in landlord, instead of bouncing them', function () {
     // A landlord (central user, no role) follows a client's welcome-email link to
     // /app/login while still signed in to /admin — they must see the form so they

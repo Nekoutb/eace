@@ -151,7 +151,9 @@ it('renders the public wizard screens', function () {
 
 it('renders the credential and verification emails', function () {
     $credentials = new WorkspaceCredentialsMail('Jane', 'Acme', 'jane@acme.test', 'TEMPPASS1234', url('/app/login'));
-    expect($credentials->render())->toContain('TEMPPASS1234')->toContain('jane@acme.test');
+    // The "Sign in" link pre-fills the recipient's email (?email=…).
+    expect($credentials->render())->toContain('TEMPPASS1234')->toContain('jane@acme.test')
+        ->toContain('email=jane%40acme.test');
 
     $verify = new WorkspaceVerifyMail('Jane', 'Acme', 'https://eace.cm-ea.test/onboarding/verify/abc', 24);
     expect($verify->render())->toContain('https://eace.cm-ea.test/onboarding/verify/abc');

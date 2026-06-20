@@ -17,7 +17,7 @@
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
         <tr>
             <td style="border-radius:12px;background:#16a34a;">
-                <a href="{{ $loginUrl }}" style="display:inline-block;padding:12px 22px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:12px;">
+                <a href="{{ $loginUrl.'?email='.rawurlencode($email) }}" style="display:inline-block;padding:12px 22px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:12px;">
                     {{ __('app.mail.credentials.cta') }}
                 </a>
             </td>

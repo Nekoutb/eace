@@ -57,19 +57,35 @@ class Login extends BaseLogin
         $user = Filament::auth()->user();
         $panel = Filament::getCurrentPanel();
 
-        // A user already signed in but who CANNOT use this panel — e.g. the
-        // landlord following a client's welcome-email link to /app/login while
-        // still logged in to /admin — is shown the sign-in form so they can
-        // authenticate as the right (client) account, rather than being bounced
-        // back to their own panel. Everyone else keeps Filament's default: a user
-        // who can use this panel goes straight in; a guest gets the form.
-        if ($user instanceof FilamentUser && $panel !== null && ! $user->canAccessPanel($panel)) {
-            $this->form->fill();
+        // A user already signed in AND able to use this panel goes straight in.
+        if ($user instanceof FilamentUser && $panel !== null && $user->canAccessPanel($panel)) {
+            redirect()->intended(Filament::getUrl());
 
             return;
         }
 
-        parent::mount();
+        // Everyone else gets the sign-in form — a guest, or a user signed in
+        // elsewhere who can't use THIS panel (e.g. the landlord following a
+        // client's welcome-email link), who must be able to sign in as the right
+        // account rather than be bounced to their own panel. Pre-fill the email
+        // when the credentials/welcome email's "Sign in" link carries it
+        // (?email=…), so the client only types their password.
+        $prefill = $this->prefilledEmail();
+        $this->form->fill($prefill !== null ? ['email' => $prefill] : []);
+    }
+
+    /** A valid email passed in the query string, to pre-fill the /app sign-in. */
+    private function prefilledEmail(): ?string
+    {
+        if (Filament::getCurrentPanel()?->getId() !== 'app') {
+            return null;
+        }
+
+        $email = request()->query('email');
+
+        return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false
+            ? $email
+            : null;
     }
 
     public function authenticate(): ?LoginResponse
