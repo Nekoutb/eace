@@ -82,10 +82,10 @@ it('redirects a temporary-password user to the change-password page', function (
         ->and($response->headers->get('Location'))->toContain('change-password');
 });
 
-it('lets a temporary-password user reach the 2FA enrolment pages (no redirect loop)', function () {
-    // With both a temp password AND mandatory 2FA not yet set up, the MFA gate
-    // sends the user to set-up first; force-password-change must not bounce them
-    // back, or the two gates loop forever (ERR_TOO_MANY_REDIRECTS).
+it('sends a temporary-password user to change-password even from the 2FA pages (password first)', function () {
+    // Password change comes FIRST. 2FA is suppressed while the temporary password
+    // is unchanged (the panel's isRequired closure), so the user is never trapped
+    // on the 2FA set-up page — they are bounced to change-password, no loop.
     $user = makeUser(UserRole::Recorder, ['must_change_password' => true]);
 
     $request = Request::create('/app/multi-factor-authentication/set-up');
@@ -93,7 +93,19 @@ it('lets a temporary-password user reach the 2FA enrolment pages (no redirect lo
 
     $response = (new ForcePasswordChange)->handle($request, fn () => response('reached'));
 
-    expect($response->getContent())->toBe('reached');
+    expect($response->getStatusCode())->toBe(302)
+        ->and($response->headers->get('Location'))->toContain('change-password');
+});
+
+it('requires 2FA only after the temporary password is changed', function () {
+    config(['niu.two_factor_required' => true]);
+    $panel = Filament::getPanel('app');
+
+    test()->actingAs(makeUser(UserRole::Recorder, ['must_change_password' => true]));
+    expect($panel->isMultiFactorAuthenticationRequired())->toBeFalse();
+
+    test()->actingAs(makeUser(UserRole::Recorder, ['must_change_password' => false]));
+    expect($panel->isMultiFactorAuthenticationRequired())->toBeTrue();
 });
 
 it('lets a settled user through the password-change gate', function () {

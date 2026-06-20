@@ -8,6 +8,7 @@ use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\SetLocale;
+use App\Models\User;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -42,8 +43,22 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('2.05rem')
             ->colors(BrandColors::palette())
             // Mandatory two-factor for every landlord user: authenticator-app
-            // (TOTP) code on each sign-in, with one-time recovery codes.
-            ->multiFactorAuthentication(AppAuthentication::make()->recoverable(), isRequired: (bool) config('niu.two_factor_required', true))
+            // (TOTP) code on each sign-in, with one-time recovery codes. Not
+            // enforced while a user still carries a temporary password (change it
+            // first), mirroring the app panel — though landlord users never have
+            // one, this keeps both panels consistent.
+            ->multiFactorAuthentication(
+                AppAuthentication::make()->recoverable(),
+                isRequired: function (): bool {
+                    if (! (bool) config('niu.two_factor_required', true)) {
+                        return false;
+                    }
+
+                    $user = auth()->user();
+
+                    return ! ($user instanceof User && $user->must_change_password);
+                },
+            )
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => view('filament.locale-switcher')->render(),

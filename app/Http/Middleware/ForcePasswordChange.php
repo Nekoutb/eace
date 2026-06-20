@@ -15,11 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
  * shared /livewire/update route, which this never touches, so the change
  * form itself keeps working; logout stays reachable so nobody is trapped.
  *
- * The mandatory two-factor enrolment pages are also exempt: when a user has
- * BOTH a temporary password AND no 2FA yet, Filament's MFA gate sends them to
- * the set-up page first — without this exemption the two gates would redirect
- * to each other forever (ERR_TOO_MANY_REDIRECTS). MFA enrolment runs first,
- * then the password change.
+ * Password change comes FIRST: two-factor enrolment is suppressed while the
+ * temporary password is unchanged (see the panel's multiFactorAuthentication
+ * isRequired closure), so the user is never sent to the 2FA set-up page before
+ * rotating their password — which previously deadlocked the two gates.
  */
 final class ForcePasswordChange
 {
@@ -30,8 +29,7 @@ final class ForcePasswordChange
         if ($user !== null
             && ($user->must_change_password ?? false)
             && ! $request->routeIs('filament.app.pages.change-password')
-            && ! $request->routeIs('filament.app.auth.logout')
-            && ! $request->is('*multi-factor-authentication*')) {
+            && ! $request->routeIs('filament.app.auth.logout')) {
             return redirect()->route('filament.app.pages.change-password');
         }
 
