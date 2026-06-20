@@ -10,6 +10,7 @@ use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
+use Filament\Models\Contracts\FilamentUser;
 use Filament\Schemas\Components\Component;
 use Throwable;
 
@@ -49,6 +50,26 @@ class Login extends BaseLogin
         }
 
         return $field;
+    }
+
+    public function mount(): void
+    {
+        $user = Filament::auth()->user();
+        $panel = Filament::getCurrentPanel();
+
+        // A user already signed in but who CANNOT use this panel — e.g. the
+        // landlord following a client's welcome-email link to /app/login while
+        // still logged in to /admin — is shown the sign-in form so they can
+        // authenticate as the right (client) account, rather than being bounced
+        // back to their own panel. Everyone else keeps Filament's default: a user
+        // who can use this panel goes straight in; a guest gets the form.
+        if ($user instanceof FilamentUser && $panel !== null && ! $user->canAccessPanel($panel)) {
+            $this->form->fill();
+
+            return;
+        }
+
+        parent::mount();
     }
 
     public function authenticate(): ?LoginResponse

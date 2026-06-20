@@ -53,3 +53,12 @@ it('rejects a wrong password', function () {
 
     expect(auth()->check())->toBeFalse();
 });
+
+it('shows the customer sign-in form to a signed-in landlord, instead of bouncing them', function () {
+    // A landlord (central user, no role) follows a client's welcome-email link to
+    // /app/login while still signed in to /admin — they must see the form so they
+    // can sign in as the client, not be redirected back to their own panel.
+    test()->actingAs(new User(['name' => 'Landlord']));
+
+    Livewire::test(Login::class)->assertNoRedirect();
+});
