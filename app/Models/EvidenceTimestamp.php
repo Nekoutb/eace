@@ -42,13 +42,15 @@ class EvidenceTimestamp extends Model
         return $this->status === TimestampStatus::Signed;
     }
 
-    /** The seal recorded for a stored evidence image, if any. */
-    public static function forPath(?string $path, string $disk = 'local'): ?self
+    /** The seal recorded for a stored evidence reference, if any. */
+    public static function forPath(?string $ref): ?self
     {
-        if (! filled($path)) {
+        if (! filled($ref)) {
             return null;
         }
 
-        return static::query()->where('disk', $disk)->where('path', $path)->first();
+        // The ref (e.g. "wasabi::t/eace/…") is unique on its own — it encodes the
+        // disk — so match on it alone rather than filtering by the disk column.
+        return static::query()->where('path', $ref)->first();
     }
 }

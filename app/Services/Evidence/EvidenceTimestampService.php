@@ -6,7 +6,6 @@ namespace App\Services\Evidence;
 
 use App\Domain\Evidence\TimestampStatus;
 use App\Models\EvidenceTimestamp;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
@@ -18,15 +17,21 @@ use Throwable;
  */
 final class EvidenceTimestampService
 {
-    public function __construct(private TimestampAuthority $authority) {}
+    public function __construct(
+        private TimestampAuthority $authority,
+        private EvidenceStore $store,
+    ) {}
 
     /**
-     * Record (and, if enabled, seal) the trusted timestamp for a stored image.
-     * Returns the seal row; never throws.
+     * Record (and, if enabled, seal) the trusted timestamp for a stored image,
+     * keyed by its disk-prefixed EvidenceStore reference. Returns the seal row;
+     * never throws.
      */
-    public function seal(string $disk, string $path, string $bytes): EvidenceTimestamp
+    public function seal(string $ref, string $bytes): EvidenceTimestamp
     {
-        $row = EvidenceTimestamp::query()->firstOrNew(['disk' => $disk, 'path' => $path]);
+        [$disk] = $this->store->resolve($ref);
+
+        $row = EvidenceTimestamp::query()->firstOrNew(['disk' => $disk, 'path' => $ref]);
         $row->sha256 = hash('sha256', $bytes);
         $row->algo = 'sha256';
 
@@ -75,10 +80,11 @@ final class EvidenceTimestampService
             $result = $this->authority->timestamp($row->sha256);
 
             if ($result->isSigned()) {
-                $tokenPath = $row->path.'.tsr';
-                Storage::disk($row->disk)->put($tokenPath, (string) $result->tokenDer);
-
-                $row->token_path = $tokenPath;
+                // Co-locate the signed token with the evidence (same disk + WORM
+                // scheme), so the proof is as immutable as what it seals.
+                $row->token_path = $this->store->put(
+                    EvidenceStore::TYPE_EVIDENCE, null, 'seal.tsr', (string) $result->tokenDer,
+                );
                 $row->timestamped_at = $result->timestampedAt;
                 $row->tsa_url = $result->tsaUrl;
                 $row->status = TimestampStatus::Signed;

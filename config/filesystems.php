@@ -84,6 +84,24 @@ return [
             'report' => false,
         ],
 
+        // Wasabi (S3-compatible) — immutable, encrypted document storage for
+        // compliance evidence, invoices, ACFs and manifests. Object Lock is set
+        // per-object by EvidenceStore (it cannot be a disk-wide default), so the
+        // disk itself is a plain private S3 mount. Region drives the endpoint:
+        // https://s3.<region>.wasabisys.com.
+        'wasabi' => [
+            'driver' => 's3',
+            'key' => env('WASABI_KEY'),
+            'secret' => env('WASABI_SECRET'),
+            'region' => env('WASABI_REGION', 'us-east-1'),
+            'bucket' => env('WASABI_BUCKET'),
+            'endpoint' => env('WASABI_ENDPOINT', 'https://s3.'.env('WASABI_REGION', 'us-east-1').'.wasabisys.com'),
+            'use_path_style_endpoint' => (bool) env('WASABI_PATH_STYLE', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

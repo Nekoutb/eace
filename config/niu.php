@@ -62,6 +62,27 @@ return [
     ],
 
     /*
+     * Immutable document storage on Wasabi (S3-compatible). When disabled (dev,
+     * tests, or before credentials are set) EvidenceStore transparently falls
+     * back to the local disk, so the app works either way. Keys follow
+     * t/<tenant>/<doc_type>/<YYYY>/<MM>/v_<id>/<file>, confined to the active
+     * tenant's prefix.
+     */
+    'wasabi' => [
+        'enabled' => (bool) env('WASABI_ENABLED', false),
+        'disk' => 'wasabi',
+        // Server-side encryption applied to every object (AES-256 SSE-S3).
+        'sse' => env('WASABI_SSE', 'AES256'),
+        // Object Lock: evidence + manifests are sealed in COMPLIANCE mode (true
+        // WORM — not even root can delete during the window); invoices + ACFs use
+        // GOVERNANCE so a mis-upload can still be corrected by a privileged admin.
+        'object_lock' => (bool) env('WASABI_OBJECT_LOCK', true),
+        'retention_years' => (int) env('WASABI_RETENTION_YEARS', 2),
+        // Document types sealed in COMPLIANCE mode (the rest use GOVERNANCE).
+        'compliance_types' => ['evidence', 'manifests'],
+    ],
+
+    /*
      * Trusted timestamping of evidence captures (the DGI / Harmony2 screenshots).
      * Every capture carries a VISIBLE date/time band; when this is enabled each
      * capture's SHA-256 is also sealed by an independent RFC-3161 Timestamp

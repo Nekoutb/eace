@@ -7,9 +7,10 @@
 @php($acfUrl = $acf !== null ? \App\Filament\App\Resources\AcfCertificates\AcfCertificateResource::getUrl('view', ['record' => $acf]) : null)
 @php($filesUrl = \App\Filament\App\Resources\TaxpayerFiles\TaxpayerFileResource::getUrl())
 @php($acfAuth = $acf?->authenticity_status)
-@php($acfSnap = ($acf && $acf->authenticity_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($acf->authenticity_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($acf->authenticity_snapshot_path)) : null)
+@php($evStore = app(\App\Services\Evidence\EvidenceStore::class))
+@php($acfSnap = $evStore->dataUri($acf?->authenticity_snapshot_path))
 @php($fiscPresence = $record->fiscalis_presence)
-@php($fiscSnap = ($record->fiscalis_snapshot_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($record->fiscalis_snapshot_path)) ? 'data:image/png;base64,'.base64_encode((string) \Illuminate\Support\Facades\Storage::disk('local')->get($record->fiscalis_snapshot_path)) : null)
+@php($fiscSnap = $evStore->dataUri($record->fiscalis_snapshot_path))
 @php($fiscTs = \App\Models\EvidenceTimestamp::forPath($record->fiscalis_snapshot_path))
 @php($acfTs = \App\Models\EvidenceTimestamp::forPath($acf?->authenticity_snapshot_path))
 

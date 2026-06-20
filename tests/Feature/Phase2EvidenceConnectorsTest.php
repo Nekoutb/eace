@@ -16,6 +16,7 @@ use App\Services\Acf\AcfAuthenticityConnector;
 use App\Services\Acf\AcfAuthenticityResult;
 use App\Services\Acf\FakeAcfAuthenticityConnector;
 use App\Services\Acf\Harmony2AcfConnector;
+use App\Services\Evidence\EvidenceStore;
 use App\Services\Fiscalis\DgiFiscalisConnector;
 use App\Services\Fiscalis\FakeFiscalisConnector;
 use App\Services\Fiscalis\FiscalisConnector;
@@ -77,7 +78,7 @@ it('stores the Harmony2 verdict screenshot and updates the certificate', functio
     expect($result->status)->toBe(AcfAuthenticityStatus::Authentic)
         ->and($acf->authenticity_status)->toBe(AcfAuthenticityStatus::Authentic)
         ->and($acf->authenticity_snapshot_path)->not->toBeNull()
-        ->and(Storage::disk('local')->exists($acf->authenticity_snapshot_path))->toBeTrue()
+        ->and(app(EvidenceStore::class)->exists($acf->authenticity_snapshot_path))->toBeTrue()
         ->and($acf->last_verified_at)->not->toBeNull();
 });
 
@@ -111,7 +112,7 @@ it('stores the DGI consultation screenshot and updates the verification', functi
     expect($result->presence)->toBe(FiscalisPresence::Present)
         ->and($verification->fiscalis_presence)->toBe(FiscalisPresence::Present)
         ->and($verification->fiscalis_snapshot_path)->not->toBeNull()
-        ->and(Storage::disk('local')->exists($verification->fiscalis_snapshot_path))->toBeTrue()
+        ->and(app(EvidenceStore::class)->exists($verification->fiscalis_snapshot_path))->toBeTrue()
         ->and($verification->fiscalis_checked_at)->not->toBeNull();
 });
 

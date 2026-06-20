@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace App\Services\Fiscalis;
 
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceStore;
 use App\Services\Evidence\EvidenceTimestampService;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Runs the live DGI national-file consultation for a verification's NIU, stores
- * the verdict screenshot on the tenant disk, and writes the outcome back onto
- * the verification (presence, snapshot path, checked-at). The connector never
- * throws, so neither does this.
+ * the verdict screenshot via EvidenceStore (immutable Wasabi when enabled, else
+ * the local disk), and writes the outcome back onto the verification (presence,
+ * snapshot reference, checked-at). The connector never throws, so neither does this.
  */
 final class FiscalisStatusService
 {
     public function __construct(
         private FiscalisConnector $connector,
         private EvidenceTimestampService $timestamps,
+        private EvidenceStore $store,
     ) {}
 
     public function capture(Verification $verification): FiscalisResult
@@ -27,14 +28,12 @@ final class FiscalisStatusService
         $niu = (string) ($verification->niu ?? $verification->raw_input);
         $result = $this->connector->check($niu);
 
-        $disk = Storage::disk('local');
         $path = $verification->fiscalis_snapshot_path;
 
         if ($result->hasScreenshot()) {
             $bytes = (string) $result->screenshotPng;
-            $path = 'fiscalis-snapshots/niu-'.$verification->getKey().'-'.CarbonImmutable::now()->format('Ymd-His').'.png';
-            $disk->put($path, $bytes);
-            $this->timestamps->seal('local', $path, $bytes);
+            $path = $this->store->put(EvidenceStore::TYPE_EVIDENCE, $verification->getKey(), 'fiscalis.png', $bytes);
+            $this->timestamps->seal($path, $bytes);
         }
 
         $verification->forceFill([

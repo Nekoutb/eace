@@ -7,6 +7,7 @@ namespace App\Services\Acf;
 use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Models\AcfAuthentication;
 use App\Models\AcfCertificate;
+use App\Services\Evidence\EvidenceStore;
 use App\Services\Evidence\EvidenceTimestampService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +29,7 @@ final class AcfAuthenticationService
     public function __construct(
         private AcfAuthenticityConnector $connector,
         private EvidenceTimestampService $timestamps,
+        private EvidenceStore $store,
     ) {}
 
     public function authenticate(AcfCertificate $acf): AcfAuthenticityResult
@@ -62,9 +64,8 @@ final class AcfAuthenticationService
 
         if (filled($cached->snapshot_path) && Storage::disk('central')->exists($cached->snapshot_path)) {
             $bytes = (string) Storage::disk('central')->get($cached->snapshot_path);
-            $tenantPath = 'acf-snapshots/acf-'.$acf->getKey().'-'.CarbonImmutable::now()->format('Ymd-His').'.png';
-            Storage::disk('local')->put($tenantPath, $bytes);
-            $this->timestamps->seal('local', $tenantPath, $bytes);
+            $tenantPath = $this->store->put(EvidenceStore::TYPE_ACF, $acf->getKey(), 'authenticity.png', $bytes);
+            $this->timestamps->seal($tenantPath, $bytes);
         }
 
         $this->writeOntoCertificate(
@@ -91,9 +92,8 @@ final class AcfAuthenticationService
         }
 
         $bytes = (string) $result->screenshotPng;
-        $path = 'acf-snapshots/acf-'.$acf->getKey().'-'.CarbonImmutable::now()->format('Ymd-His').'.png';
-        Storage::disk('local')->put($path, $bytes);
-        $this->timestamps->seal('local', $path, $bytes);
+        $path = $this->store->put(EvidenceStore::TYPE_ACF, $acf->getKey(), 'authenticity.png', $bytes);
+        $this->timestamps->seal($path, $bytes);
 
         return $path;
     }

@@ -8,8 +8,9 @@
         {{ $ts->timestamped_at?->format('d/m/Y H:i:s') ?? '—' }}
         @if (filled($ts->tsa_url)) · {{ \Illuminate\Support\Str::of((string) $ts->tsa_url)->after('//')->before('/') }} @endif
     </span>
-    @if (filled($ts->token_path) && \Illuminate\Support\Facades\Storage::disk($ts->disk)->exists($ts->token_path))
-        <a href="data:application/timestamp-reply;base64,{{ base64_encode((string) \Illuminate\Support\Facades\Storage::disk($ts->disk)->get($ts->token_path)) }}"
+    @php($tokenUri = app(\App\Services\Evidence\EvidenceStore::class)->dataUri($ts->token_path, 'application/timestamp-reply'))
+    @if ($tokenUri)
+        <a href="{{ $tokenUri }}"
            download="evidence-timestamp.tsr" class="ev-link" style="margin-top:.2rem"
            title="openssl ts -verify -in evidence-timestamp.tsr -digest {{ $ts->sha256 }} -CAfile <tsa-ca.pem>">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.timestamp.download_token') }}</a>
     @endif

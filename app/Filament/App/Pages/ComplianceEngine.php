@@ -14,6 +14,7 @@ use App\Models\OrganizationProfile;
 use App\Models\Verification;
 use App\Services\Acf\AcfAuthenticationService;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Evidence\EvidenceStore;
 use App\Services\Evidence\EvidenceTimestampService;
 use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Fiscalis\FiscalisStatusService;
@@ -244,24 +245,32 @@ class ComplianceEngine extends Page
         foreach ($this->invoiceUploads as $upload) {
             $name = $upload->getClientOriginalName();
 
-            $path = $upload->store('invoices', 'local');
-            if (! is_string($path)) {
+            $tmpPath = $upload->store('invoices', 'local');
+            if (! is_string($tmpPath)) {
                 Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($name)->danger()->send();
 
                 continue;
             }
 
             try {
-                $invoice = $reader->read($path, 'local');
+                $invoice = $reader->read($tmpPath, 'local');
             } catch (\Throwable $e) {
                 Notification::make()->title(__('app.ui.notif_invoice_unreadable'))->body($name.' — '.$e->getMessage())->danger()->send();
+                Storage::disk('local')->delete($tmpPath);
 
                 continue;
             }
 
+            // Archive the invoice via EvidenceStore (immutable Wasabi when enabled),
+            // then drop the local OCR temp so there's a single, authoritative copy.
+            $ref = app(EvidenceStore::class)->put(
+                EvidenceStore::TYPE_INVOICES, null, $name, (string) (Storage::disk('local')->get($tmpPath) ?? ''),
+            );
+            Storage::disk('local')->delete($tmpPath);
+
             $this->invoices[] = [
                 'name' => $name,
-                'path' => $path,
+                'path' => $ref,
                 'data' => $invoice->toArray(),
                 'extracted' => $this->extractedSummary($invoice),
             ];
@@ -324,10 +333,11 @@ class ComplianceEngine extends Page
 
         if ($result->hasScreenshot()) {
             $bytes = (string) $result->screenshotPng;
-            $path = 'fiscalis-snapshots/niu-'.preg_replace('/[^A-Za-z0-9]/', '', $niu).'-'.now()->format('Ymd-His').'.png';
-            Storage::disk('local')->put($path, $bytes);
-            app(EvidenceTimestampService::class)->seal('local', $path, $bytes);
-            $this->fiscalisSnapshotPath = $path;
+            $ref = app(EvidenceStore::class)->put(
+                EvidenceStore::TYPE_EVIDENCE, null, 'fiscalis-'.preg_replace('/[^A-Za-z0-9]/', '', $niu).'.png', $bytes,
+            );
+            app(EvidenceTimestampService::class)->seal($ref, $bytes);
+            $this->fiscalisSnapshotPath = $ref;
         }
 
         Notification::make()
