@@ -28,12 +28,27 @@ class Login extends BaseLogin
 {
     protected function getEmailFormComponent(): Component
     {
-        return TextInput::make('email')
-            ->label(__('app.ui.identifier'))
+        // On the shared customer sign-in (/app) the credential is always the
+        // account's EMAIL — the central login directory resolves the workspace
+        // from it. Label and validate it as an email so no one types the
+        // workspace identifier by mistake. The /admin console keeps a plain
+        // identifier for the landlord's "admin" username.
+        $isApp = Filament::getCurrentPanel()?->getId() === 'app';
+
+        $field = TextInput::make('email')
+            ->label($isApp ? __('app.ui.email_label') : __('app.ui.identifier'))
             ->required()
-            ->autocomplete()
+            ->autocomplete('username')
             ->autofocus()
             ->extraInputAttributes(['tabindex' => 1]);
+
+        if ($isApp) {
+            $field->email()
+                ->placeholder(__('app.ui.email_placeholder'))
+                ->helperText(__('app.ui.email_help'));
+        }
+
+        return $field;
     }
 
     public function authenticate(): ?LoginResponse

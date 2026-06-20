@@ -405,6 +405,9 @@ return [
     'ui' => [
         'lang' => 'Langue',
         'identifier' => 'Identifiant',
+        'email_label' => 'Adresse e-mail',
+        'email_placeholder' => 'vous@entreprise.com',
+        'email_help' => 'Connectez-vous avec l’adresse e-mail utilisée pour créer votre espace — pas le nom de l’espace.',
         'engine_intro' => 'Choisissez l’étape de vérification.',
         'phase_recording_desc' => 'Un fournisseur dépose une facture : importez l’ACF et lancez les quatre contrôles.',
         'phase_settlement_desc' => 'Au moment du paiement, vérifiez un lot de NIU avant de régler les factures.',

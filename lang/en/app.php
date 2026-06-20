@@ -405,6 +405,9 @@ return [
     'ui' => [
         'lang' => 'Language',
         'identifier' => 'Username',
+        'email_label' => 'Email address',
+        'email_placeholder' => 'you@company.com',
+        'email_help' => 'Sign in with the email address your workspace was created with — not the workspace name.',
         'engine_intro' => 'Choose the verification phase.',
         'phase_recording_desc' => 'A vendor submits an invoice: import the ACF and run the four checks.',
         'phase_settlement_desc' => 'At payment time, verify a batch of NIUs before settling invoices.',
