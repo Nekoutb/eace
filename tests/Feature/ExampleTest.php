@@ -7,25 +7,11 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * With self-service onboarding open, the root is the public landing page where
-     * a prospective customer can create a workspace or sign in.
+     * The bare host is the customer front door: it sends visitors into the
+     * compliance application (/app), not the landlord admin console.
      */
-    public function test_the_root_shows_the_public_landing_when_signup_is_open(): void
+    public function test_the_root_redirects_to_the_application(): void
     {
-        config(['niu.self_service_signup' => true]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertSee(__('app.landing.create_cta'));
-    }
-
-    /**
-     * With self-service closed, the bare host stays the landlord's front door.
-     */
-    public function test_the_root_redirects_to_admin_when_signup_is_closed(): void
-    {
-        config(['niu.self_service_signup' => false]);
-
-        $this->get('/')->assertRedirect('/admin');
+        $this->get('/')->assertRedirect('/app');
     }
 }

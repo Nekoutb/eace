@@ -6,14 +6,13 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Root: the public front door. When self-service onboarding is open this is a
- * landing page where a prospective customer can create their own workspace or
- * sign in (the landlord reaches the admin console from the discreet link there).
- * When self-service is closed the bare host stays the landlord's front door.
+ * Root: the bare host is the CUSTOMER front door — most visitors typing the
+ * domain are clients, so send them into the compliance application (/app). An
+ * unauthenticated client lands on the /app sign-in; a signed-in client lands in
+ * their workspace; the landlord (admin) is routed on to /admin by the auth step.
+ * The operator reaches the admin console directly at /admin.
  */
-Route::get('/', fn () => config('niu.self_service_signup') ? view('landing') : redirect('/admin'))
-    ->middleware(SetLocale::class)
-    ->name('home');
+Route::get('/', fn () => redirect('/app'))->name('home');
 
 /*
  * Public "how we protect your data" security showcase — the certified stack
