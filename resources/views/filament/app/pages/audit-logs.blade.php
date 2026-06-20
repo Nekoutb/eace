@@ -4,10 +4,10 @@
             .niu-hub{--g100:#dcfce7;--g200:#bbf7d0;--g500:#22c55e;--g600:#16a34a;--g700:#15803d;--g800:#166534;--g900:#14532d;
                 --ink:#0f231a;--ink-soft:#46685a;--line:rgba(21,128,61,.16);
                 position:relative;z-index:0;color:var(--ink);display:flex;flex-direction:column;gap:1.1rem;
-                font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+                font-family:inherit}
             .niu-hub::before{content:"";position:absolute;inset:-26px -18px;z-index:-1;border-radius:30px;pointer-events:none;
                 background:radial-gradient(60% 70% at 10% -4%,rgba(134,239,172,.5),transparent 60%),linear-gradient(180deg,#f4fdf7,#ecfdf3)}
-            .niu-hub__card{background:rgba(255,255,255,.6);backdrop-filter:blur(16px) saturate(135%);
+            .niu-hub__card{background:rgba(255,255,255,.93);backdrop-filter:blur(16px) saturate(135%);
                 -webkit-backdrop-filter:blur(16px) saturate(135%);border:1px solid rgba(255,255,255,.78);
                 border-radius:18px;box-shadow:0 12px 32px rgba(20,83,45,.13);padding:1.2rem 1.3rem}
             @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.niu-hub__card{background:rgba(255,255,255,.93)}}

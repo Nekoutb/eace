@@ -25,7 +25,7 @@
         .ev-lightbox__hint{position:fixed;top:1rem;right:1.25rem;color:#fff;font-size:.8rem;opacity:.85}
         .ev{--g100:#dcfce7;--g200:#bbf7d0;--g500:#22c55e;--g600:#16a34a;--g700:#15803d;--g800:#166534;
             --ink:#0f231a;--ink-soft:#46685a;--line:rgba(21,128,61,.16);color:var(--ink);
-            font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+            font-family:inherit}
         .ev svg.ev-ico{width:1.05em;height:1.05em;flex:0 0 auto;vertical-align:-.15em}
         .ev-mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}
         .ev-head{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1.1rem}

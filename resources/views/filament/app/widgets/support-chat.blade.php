@@ -7,8 +7,8 @@
                 --line:rgba(21,128,61,.16);--ring:0 0 0 3px rgba(34,197,94,.35);
                 --grad:linear-gradient(150deg,var(--g700),var(--g900));
                 position:relative;z-index:0;color:var(--ink);
-                font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-            .niu-chat .glass{background:rgba(255,255,255,.62);backdrop-filter:blur(16px) saturate(135%);
+                font-family:inherit}
+            .niu-chat .glass{background:rgba(255,255,255,.9);backdrop-filter:blur(16px) saturate(135%);
                 -webkit-backdrop-filter:blur(16px) saturate(135%);border:1px solid rgba(255,255,255,.78);
                 border-radius:18px;box-shadow:0 12px 36px rgba(20,83,45,.12);padding:1.15rem 1.25rem}
             @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.niu-chat .glass{background:rgba(255,255,255,.92)}}

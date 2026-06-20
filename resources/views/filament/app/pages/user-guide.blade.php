@@ -6,7 +6,7 @@
                 --g700:#15803d;--g800:#166534;--g900:#14532d;--ink:#0f231a;--ink-soft:#46685a;
                 --line:rgba(21,128,61,.16);--grad:linear-gradient(150deg,var(--g700),var(--g900));
                 position:relative;z-index:0;color:var(--ink);
-                font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+                font-family:inherit;line-height:1.55}
             .niu-guide::before{content:"";position:absolute;inset:-26px -18px;z-index:-1;border-radius:30px;pointer-events:none;
                 background:radial-gradient(60% 70% at 12% -4%,rgba(134,239,172,.5),transparent 60%),linear-gradient(180deg,#f4fdf7,#ecfdf3)}
             .niu-guide .glass{background:rgba(255,255,255,.62);backdrop-filter:blur(16px) saturate(135%);

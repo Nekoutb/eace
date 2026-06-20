@@ -106,7 +106,7 @@
     </div>
 
     <section class="panel">
-        <h2>🗄️ {{ $fr ? 'Capacité & conservation' : 'Capacity & retention' }}</h2>
+        <h2>@svg('heroicon-o-circle-stack', '', ['style' => 'width:1.05em;height:1.05em;vertical-align:-.14em;margin-right:.4rem;color:#15803d', 'aria-hidden' => 'true']){{ $fr ? 'Capacité & conservation' : 'Capacity & retention' }}</h2>
         <div class="kpis">
             <div class="kpi"><b>{{ $fr ? 'Évolutif' : 'Scalable' }}</b><span>{{ $fr ? 'stockage dédié et sécurisé' : 'dedicated, secured storage' }}</span></div>
             <div class="kpi"><b>2 {{ $fr ? 'ans' : 'years' }}</b><span>{{ $fr ? 'accès direct (stockage chaud)' : 'direct access (hot storage)' }}</span></div>
@@ -118,7 +118,7 @@
     </section>
 
     <section class="panel">
-        <h2>🔐 {{ $fr ? 'Chiffrement & immuabilité' : 'Encryption & immutability' }}</h2>
+        <h2>@svg('heroicon-o-lock-closed', '', ['style' => 'width:1.05em;height:1.05em;vertical-align:-.14em;margin-right:.4rem;color:#15803d', 'aria-hidden' => 'true']){{ $fr ? 'Chiffrement & immuabilité' : 'Encryption & immutability' }}</h2>
         <p>{{ $fr
             ? 'Chaque document est chiffré en AES-256 au repos et transmis via HTTPS/TLS. Les preuves de conformité (captures des portails de la DGI, attestations, manifestes d’audit) sont verrouillées en écriture unique / lecture multiple (Object Lock) : elles ne peuvent être ni modifiées ni supprimées pendant la durée de conservation, garantissant une piste d’audit inviolable.'
             : 'Every document is AES-256 encrypted at rest and transmitted over HTTPS/TLS. Compliance evidence (DGI portal captures, certificates, audit manifests) is write-once / read-many locked (Object Lock): it cannot be altered or deleted during the retention period, guaranteeing a tamper-proof audit trail.' }}</p>

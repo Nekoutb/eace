@@ -7,7 +7,7 @@
                 --line:rgba(21,128,61,.16);--ring:0 0 0 3px rgba(34,197,94,.4);
                 --grad:linear-gradient(150deg,var(--g700),var(--g900));
                 position:relative;z-index:0;color:var(--ink);
-                font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+                font-family:inherit;
             }
             .niu-set::before{content:"";position:absolute;inset:-26px -18px;z-index:-1;border-radius:30px;pointer-events:none;
                 background:radial-gradient(60% 70% at 12% -4%,rgba(134,239,172,.5),transparent 60%),linear-gradient(180deg,#f4fdf7,#ecfdf3)}
