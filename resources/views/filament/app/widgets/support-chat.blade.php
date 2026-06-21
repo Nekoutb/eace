@@ -68,21 +68,23 @@
                 </div>
             </form>
 
-            @php($queries = $this->recentQueries())
-            @if ($queries->isNotEmpty())
+            @php($conversations = $this->recentConversations())
+            @if ($conversations->isNotEmpty())
                 <div class="niu-chat__thread">
                     <p class="niu-chat__th">{{ __('app.chat.your_questions') }}</p>
-                    @foreach ($queries as $q)
+                    @foreach ($conversations as $c)
+                        @php($opening = optional($c->messages->first(fn ($m) => $m->author === \App\Domain\Support\MessageAuthor::Customer))->body ?? $c->subject)
+                        @php($reply = $c->messages->last(fn ($m) => $m->author->isStaffSide()))
                         <div class="niu-chat__msg">
                             <div class="niu-chat__q">
-                                <span style="flex:1">{{ $q->message }}</span>
-                                <span class="niu-chat__pill niu-chat__pill--{{ $q->isAnswered() ? 'answered' : 'new' }}">{{ $q->isAnswered() ? __('app.chat.status_answered') : __('app.chat.status_new') }}</span>
+                                <span style="flex:1">{{ $opening }}</span>
+                                <span class="niu-chat__pill niu-chat__pill--{{ $reply ? 'answered' : 'new' }}">{{ $reply ? __('app.chat.status_answered') : __('app.chat.status_new') }}</span>
                             </div>
-                            <p class="niu-chat__meta">{{ $q->created_at?->translatedFormat('d/m/Y H:i') }}</p>
-                            @if (filled($q->response))
+                            <p class="niu-chat__meta">{{ $c->created_at?->translatedFormat('d/m/Y H:i') }}</p>
+                            @if ($reply)
                                 <div class="niu-chat__reply">
                                     <b>@svg('heroicon-o-lifebuoy', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.chat.reply_label') }}</b>
-                                    <p>{{ $q->response }}</p>
+                                    <p>{{ $reply->body }}</p>
                                 </div>
                             @endif
                         </div>
