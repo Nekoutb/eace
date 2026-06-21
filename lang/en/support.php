@@ -89,6 +89,9 @@ return [
         'resolved_30d_desc' => 'conversations closed out',
         'csat' => 'CSAT',
         'csat_desc' => 'satisfaction after resolution — coming with surveys',
+        'csat_real_desc' => 'satisfied after resolution — higher is better',
+        'nps' => 'NPS',
+        'nps_desc' => 'net promoter (survey) — higher is better',
         'by_nature' => 'Requests by nature',
         'complaints_by_nature' => 'Complaints by nature',
         'pending' => 'Awaiting later phase',
@@ -105,6 +108,21 @@ return [
     'telegram' => [
         'reply_hint' => 'Reply to this message to answer the customer.',
         'open_console' => 'Open the console',
+    ],
+
+    'survey' => [
+        'subject' => 'How are we doing? (1-minute anonymous survey)',
+        'greeting' => 'Hello :name,',
+        'intro' => 'We’d love your honest feedback on :org’s experience with the Elite Advisors Compliance Engine — service quality, ease of use and more. It’s anonymous and takes under a minute.',
+        'cta' => 'Take the survey',
+        'note' => 'Your answers are anonymous — they are not linked to your account or name.',
+        'nav' => 'Survey responses',
+        'service_quality' => 'Service quality',
+        'ease_of_use' => 'Ease of use',
+        'responsiveness' => 'Responsiveness',
+        'recommend' => 'Recommend (NPS)',
+        'comment' => 'Comment',
+        'submitted_at' => 'Submitted',
     ],
 
     'staff' => [

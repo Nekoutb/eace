@@ -595,6 +595,11 @@ return [
         'status_new' => 'Awaiting reply',
         'status_answered' => 'Answered',
         'reply_label' => 'Reply from Elite Advisors',
+        'csat_q' => 'Did we resolve it?',
+        'csat_up' => 'Yes, satisfied',
+        'csat_down' => 'No, not satisfied',
+        'csat_done' => 'Thanks for rating:',
+        'csat_thanks' => 'Thanks for your feedback!',
     ],
 
     'guide' => [

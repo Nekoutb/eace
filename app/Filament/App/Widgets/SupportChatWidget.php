@@ -75,4 +75,23 @@ class SupportChatWidget extends Widget
 
         Notification::make()->title(__('app.chat.notif_sent'))->success()->send();
     }
+
+    /** Post-resolution CSAT: the customer rates a resolved conversation 👍/👎 (once). */
+    public function rate(int $conversationId, int $score): void
+    {
+        $conversation = Conversation::query()
+            ->whereKey($conversationId)
+            ->where('tenant_id', tenant()->getTenantKey())
+            ->where('requester_email', auth()->user()?->email)
+            ->whereNull('csat_score')
+            ->first();
+
+        if ($conversation === null) {
+            return;
+        }
+
+        $conversation->forceFill(['csat_score' => $score >= 1 ? 1 : 0])->save();
+
+        Notification::make()->title(__('app.chat.csat_thanks'))->success()->send();
+    }
 }

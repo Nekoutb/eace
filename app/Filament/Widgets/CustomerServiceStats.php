@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Domain\Support\ConversationNature;
 use App\Models\Conversation;
+use App\Models\SurveyResponse;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -53,6 +54,15 @@ class CustomerServiceStats extends StatsOverviewWidget
         $deflected = $recent->filter(fn (Conversation $c): bool => $c->bot_resolved)->count();
         $deflectionRate = $total > 0 ? (int) round($deflected / $total * 100) : 0;
 
+        // CSAT — the post-resolution thumbs (1 = satisfied) over the last 30 days.
+        $rated = $recent->filter(fn (Conversation $c): bool => $c->csat_score !== null);
+        $csat = $rated->count() > 0
+            ? (int) round($rated->filter(fn (Conversation $c): bool => (int) $c->csat_score >= 1)->count() / $rated->count() * 100)
+            : null;
+
+        // NPS — from the anonymous survey, over the last 12 months.
+        $nps = SurveyResponse::nps(SurveyResponse::query()->where('submitted_at', '>=', now()->subDays(365))->get());
+
         return [
             Stat::make(__('support.kpi.open_backlog'), (string) $backlog)
                 ->description(__('support.kpi.open_backlog_desc'))
@@ -94,10 +104,15 @@ class CustomerServiceStats extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
-            Stat::make(__('support.kpi.csat'), '—')
-                ->description(__('support.kpi.csat_desc'))
+            Stat::make(__('support.kpi.csat'), $csat === null ? '—' : $csat.'%')
+                ->description(__('support.kpi.csat_real_desc'))
                 ->descriptionIcon('heroicon-m-face-smile')
-                ->color('gray'),
+                ->color($csat === null ? 'gray' : ($csat >= 85 ? 'success' : ($csat >= 60 ? 'warning' : 'danger'))),
+
+            Stat::make(__('support.kpi.nps'), $nps === null ? '—' : (string) $nps)
+                ->description(__('support.kpi.nps_desc'))
+                ->descriptionIcon('heroicon-m-hand-thumb-up')
+                ->color($nps === null ? 'gray' : ($nps >= 30 ? 'success' : ($nps >= 0 ? 'warning' : 'danger'))),
         ];
     }
 

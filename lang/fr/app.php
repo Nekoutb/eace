@@ -599,6 +599,11 @@ return [
         'status_new' => 'En attente de réponse',
         'status_answered' => 'Répondu',
         'reply_label' => 'Réponse d’Elite Advisors',
+        'csat_q' => 'Avons-nous résolu votre demande ?',
+        'csat_up' => 'Oui, satisfait',
+        'csat_down' => 'Non, pas satisfait',
+        'csat_done' => 'Merci pour votre note :',
+        'csat_thanks' => 'Merci pour votre retour !',
     ],
 
     'guide' => [

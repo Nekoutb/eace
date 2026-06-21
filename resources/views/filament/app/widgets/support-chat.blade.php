@@ -42,6 +42,11 @@
             .niu-chat__pill{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:.1rem .45rem;border-radius:999px;white-space:nowrap}
             .niu-chat__pill--new{color:#92400e;background:#fef3c7;border:1px solid #fde68a}
             .niu-chat__pill--answered{color:var(--g800);background:var(--g100);border:1px solid var(--g200)}
+            .niu-chat__csat{display:flex;align-items:center;gap:.5rem;margin-top:.55rem;font-size:.8rem;color:var(--ink-soft)}
+            .niu-chat__csat-btn{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.7);border-radius:9px;
+                padding:.2rem .5rem;font-size:1rem;line-height:1;transition:transform .12s,border-color .12s}
+            .niu-chat__csat-btn:hover{transform:translateY(-1px);border-color:var(--g500)}
+            .niu-chat__csat--done{font-weight:600;color:var(--g800)}
             .dark .niu-chat{--ink:#e8f6ee;--ink-soft:#9cc4ad;--line:rgba(134,239,172,.18)}
             .dark .niu-chat .glass{background:rgba(16,40,28,.55)}
             .dark .niu-chat__ta{background:rgba(255,255,255,.06);color:var(--ink)}
@@ -86,6 +91,16 @@
                                     <b>@svg('heroicon-o-lifebuoy', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.chat.reply_label') }}</b>
                                     <p>{{ $reply->body }}</p>
                                 </div>
+                            @endif
+
+                            @if ($c->status === \App\Domain\Support\ConversationStatus::Resolved && $c->csat_score === null)
+                                <div class="niu-chat__csat">
+                                    <span>{{ __('app.chat.csat_q') }}</span>
+                                    <button type="button" wire:click="rate({{ $c->id }}, 1)" class="niu-chat__csat-btn" aria-label="{{ __('app.chat.csat_up') }}">👍</button>
+                                    <button type="button" wire:click="rate({{ $c->id }}, 0)" class="niu-chat__csat-btn" aria-label="{{ __('app.chat.csat_down') }}">👎</button>
+                                </div>
+                            @elseif ($c->csat_score !== null)
+                                <div class="niu-chat__csat niu-chat__csat--done">{{ __('app.chat.csat_done') }} {{ $c->csat_score >= 1 ? '👍' : '👎' }}</div>
                             @endif
                         </div>
                     @endforeach

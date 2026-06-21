@@ -89,6 +89,9 @@ return [
         'resolved_30d_desc' => 'conversations clôturées',
         'csat' => 'CSAT',
         'csat_desc' => 'satisfaction après résolution — à venir avec les enquêtes',
+        'csat_real_desc' => 'satisfaits après résolution — plus c’est haut, mieux c’est',
+        'nps' => 'NPS',
+        'nps_desc' => 'net promoter (enquête) — plus c’est haut, mieux c’est',
         'by_nature' => 'Demandes par nature',
         'complaints_by_nature' => 'Réclamations par nature',
         'pending' => 'Phase ultérieure',
@@ -105,6 +108,21 @@ return [
     'telegram' => [
         'reply_hint' => 'Répondez à ce message pour répondre au client.',
         'open_console' => 'Ouvrir la console',
+    ],
+
+    'survey' => [
+        'subject' => 'Votre avis ? (enquête anonyme d’une minute)',
+        'greeting' => 'Bonjour :name,',
+        'intro' => 'Nous aimerions votre avis sincère sur l’expérience de :org avec Elite Advisors Compliance Engine — qualité du service, facilité d’utilisation, etc. C’est anonyme et cela prend moins d’une minute.',
+        'cta' => 'Répondre à l’enquête',
+        'note' => 'Vos réponses sont anonymes — elles ne sont liées ni à votre compte ni à votre nom.',
+        'nav' => 'Réponses à l’enquête',
+        'service_quality' => 'Qualité du service',
+        'ease_of_use' => 'Facilité d’utilisation',
+        'responsiveness' => 'Réactivité',
+        'recommend' => 'Recommandation (NPS)',
+        'comment' => 'Commentaire',
+        'submitted_at' => 'Envoyé le',
     ],
 
     'staff' => [

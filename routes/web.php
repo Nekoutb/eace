@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SignUpController;
+use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Http\Middleware\SetLocale;
@@ -30,6 +31,16 @@ Route::get('/security', fn () => view('security'))
  * by the secret in the path AND the X-Telegram-Bot-Api-Secret-Token header.
  */
 Route::post('/telegram/webhook/{secret}', TelegramWebhookController::class)->name('telegram.webhook');
+
+/*
+ * Public, anonymous customer-experience survey. The link carries an encrypted
+ * workspace token (no user identity), so responses segment by client but stay
+ * anonymous. FR/EN aware.
+ */
+Route::middleware(SetLocale::class)->group(function () {
+    Route::get('/survey', [SurveyController::class, 'show'])->name('survey.show');
+    Route::post('/survey', [SurveyController::class, 'submit'])->name('survey.submit');
+});
 
 /*
  * Public, verify-first self-service onboarding. A prospective customer enters
