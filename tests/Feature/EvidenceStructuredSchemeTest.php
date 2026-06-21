@@ -134,3 +134,14 @@ it('stages transient bytes on the local disk and can prune them', function () {
     $store->delete($ref);
     expect($store->exists($ref))->toBeFalse();
 });
+
+it('archives a tax-register download under its own central tree, no tenant prefix', function () {
+    $tmp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'reg-'.bin2hex(random_bytes(5)).'.xlsx';
+    file_put_contents($tmp, 'XLSXBYTES');
+
+    $ref = (new EvidenceStore)->putTaxRegister($tmp, 'ListeContribuables_22062026.xlsx', CarbonImmutable::parse('2026-06-22 03:00:15'));
+    @unlink($tmp);
+
+    expect($ref)->toBe('local::tax-register/2026/06/2026-06-22_030015/ListeContribuables_22062026.xlsx')
+        ->and((new EvidenceStore)->get($ref))->toBe('XLSXBYTES');
+});

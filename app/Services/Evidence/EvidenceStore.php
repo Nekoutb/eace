@@ -128,6 +128,45 @@ final class EvidenceStore
         }
     }
 
+    /**
+     * Archive a downloaded DGI taxpayer-register export under its own central,
+     * tenant-independent tree — tax-register/<year>/<month>/<Y-m-d_His>/<file> —
+     * one folder per Monday/Thursday download. Streamed from the local file so the
+     * ~52 MB export is never held in memory. Falls back to the local disk.
+     */
+    public function putTaxRegister(string $localPath, string $filename, ?CarbonImmutable $at = null): string
+    {
+        $at ??= CarbonImmutable::now();
+        $key = sprintf(
+            'tax-register/%s/%s/%s/%s',
+            $at->format('Y'),
+            $at->format('m'),
+            $at->format('Y-m-d_His'),
+            $this->safeFile($filename),
+        );
+
+        if ($this->wasabiEnabled()) {
+            try {
+                $this->putFileToWasabi(self::TYPE_EXPORTS, $key, $localPath);
+
+                return 'wasabi'.self::SEP.$key;
+            } catch (Throwable $e) {
+                report($e);
+                // fall through to local so the archive is not lost
+            }
+        }
+
+        $stream = @fopen($localPath, 'rb');
+        if ($stream !== false) {
+            Storage::disk('local')->writeStream($key, $stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        return 'local'.self::SEP.$key;
+    }
+
     /** Shared write path: Wasabi (WORM) when enabled, else the local disk. Never throws. */
     private function write(string $docType, string $key, string $bytes): string
     {
@@ -305,17 +344,30 @@ final class EvidenceStore
         return (bool) config('niu.wasabi.enabled') && filled(config('filesystems.disks.wasabi.bucket'));
     }
 
-    /** Write to Wasabi with per-type Object Lock + server-side encryption. */
+    /** Write in-memory bytes to Wasabi with per-type Object Lock + server-side encryption. */
     private function putToWasabi(string $docType, string $key, string $bytes): void
     {
-        /** @var AwsS3V3Adapter $disk */
-        $disk = Storage::disk(config('niu.wasabi.disk', 'wasabi'));
-        $client = $disk->getClient();
+        $this->wasabiPut($this->wasabiParams($docType, $key) + ['Body' => $bytes]);
+    }
 
+    /** Stream a local file to Wasabi (no in-memory copy — for large downloads). */
+    private function putFileToWasabi(string $docType, string $key, string $localPath): void
+    {
+        $this->wasabiPut($this->wasabiParams($docType, $key) + ['SourceFile' => $localPath]);
+    }
+
+    /**
+     * The putObject params shared by the byte and file writers: bucket, key, SSE,
+     * and per-type Object Lock (COMPLIANCE WORM for evidence/manifests, GOVERNANCE
+     * for the rest), with the configured retention.
+     *
+     * @return array<string, mixed>
+     */
+    private function wasabiParams(string $docType, string $key): array
+    {
         $params = [
             'Bucket' => (string) config('filesystems.disks.wasabi.bucket'),
             'Key' => $key,
-            'Body' => $bytes,
             'ServerSideEncryption' => (string) config('niu.wasabi.sse', 'AES256'),
         ];
 
@@ -326,6 +378,16 @@ final class EvidenceStore
                 ->addYears((int) config('niu.wasabi.retention_years', 2));
         }
 
-        $client->putObject($params);
+        return $params;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function wasabiPut(array $params): void
+    {
+        /** @var AwsS3V3Adapter $disk */
+        $disk = Storage::disk(config('niu.wasabi.disk', 'wasabi'));
+        $disk->getClient()->putObject($params);
     }
 }

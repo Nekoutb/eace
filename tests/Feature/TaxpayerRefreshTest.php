@@ -9,6 +9,7 @@ use App\Models\TaxpayerFileExtraction;
 use App\Models\TaxpayerFileRecord;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\TaxpayerFileIngestionService;
 use Filament\Facades\Filament;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -16,6 +17,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -86,6 +88,33 @@ it('skips the fetch command while another refresh holds the lock', function () {
 
     // The lock was held, so nothing was ingested under that period label.
     expect(TaxpayerFileExtraction::query()->where('period_label', 'LOCKED 2026')->exists())->toBeFalse();
+});
+
+it('archives each live download into the central tax-register store', function () {
+    Storage::fake('local');
+    config(['niu.wasabi.enabled' => false]);
+
+    $path = taxpayerFileWith(['P100000000001A', 'P100000000002B']);
+
+    // DgiExportDownloader is final; bind a stand-in that returns the local export.
+    app()->instance(DgiExportDownloader::class, new class($path)
+    {
+        public function __construct(private string $path) {}
+
+        /** @return array{0: ?string, 1: ?string} */
+        public function download(): array
+        {
+            return [$this->path, null];
+        }
+    });
+
+    $this->artisan('taxpayer-file:fetch')->assertExitCode(0);
+    @unlink($path);
+
+    $archived = Storage::disk('local')->allFiles('tax-register');
+
+    expect($archived)->toHaveCount(1)
+        ->and($archived[0])->toMatch('#^tax-register/\d{4}/\d{2}/\d{4}-\d{2}-\d{2}_\d{6}/.+\.xlsx$#');
 });
 
 it('queues a central, unique refresh job', function () {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\TaxpayerFileExtraction;
+use App\Services\Evidence\EvidenceStore;
 use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\TaxpayerFileIngestionService;
 use Illuminate\Console\Command;
@@ -83,12 +84,29 @@ class FetchTaxpayerFile extends Command
             return self::FAILURE;
         }
 
+        // Archive the raw download to its own immutable Wasabi tree
+        // (tax-register/<year>/<month>/<date-time>/<file>), one folder per
+        // Monday/Thursday run, before it is ingested or pruned locally.
+        $this->archiveDownload($path);
+
         $result = $this->ingestFrom($ingestion, $path, $period, (string) config('services.dgi.export_url'));
 
         // Keep only the latest download so the twice-weekly 52 MB exports don't pile up.
         $this->pruneOldExports($path);
 
         return $result;
+    }
+
+    /** Stream the downloaded export into the central tax-register archive. Never fatal. */
+    private function archiveDownload(string $path): void
+    {
+        try {
+            $ref = app(EvidenceStore::class)->putTaxRegister($path, basename($path));
+            $this->info('Archived the download → '.$ref);
+        } catch (\Throwable $e) {
+            report($e);
+            $this->warn('Could not archive the download: '.$e->getMessage());
+        }
     }
 
     private function ingestFrom(TaxpayerFileIngestionService $ingestion, string $path, string $period, ?string $url): int
