@@ -58,3 +58,13 @@ it('builds a base64 data-URI for inline display', function () {
     expect((new EvidenceStore)->dataUri($ref))->toBe('data:image/png;base64,'.base64_encode('IMG'))
         ->and((new EvidenceStore)->dataUri(null))->toBeNull();
 });
+
+it('serves a display URL — local files inline, missing refs null (no blocking read on render)', function () {
+    // With Wasabi off, a local/legacy file falls back to an inline data-URI; in
+    // production a wasabi:: ref yields a short-lived presigned URL instead, so the
+    // page render never reads (or base64-inlines) a multi-MB image.
+    $ref = (new EvidenceStore)->put(EvidenceStore::TYPE_EVIDENCE, 1, 'p.png', 'IMG');
+
+    expect((new EvidenceStore)->displayUrl($ref))->toBe('data:image/png;base64,'.base64_encode('IMG'))
+        ->and((new EvidenceStore)->displayUrl(null))->toBeNull();
+});

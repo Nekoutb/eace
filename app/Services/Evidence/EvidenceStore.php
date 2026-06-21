@@ -226,6 +226,34 @@ final class EvidenceStore
     }
 
     /**
+     * A browser-loadable URL for a stored object — a short-lived presigned Wasabi
+     * URL so the browser fetches it DIRECTLY (the page render makes no network call
+     * and never base64-inlines a multi-MB image), or a local data-URI fallback for
+     * dev / tests / legacy local files. Prefer this over dataUri() on pages: a slow
+     * or stalled object then only delays its own <img>, never the whole response.
+     */
+    public function displayUrl(?string $ref, string $mime = 'image/png', int $minutes = 15): ?string
+    {
+        [$disk, $key] = $this->resolve($ref);
+        if ($key === null) {
+            return null;
+        }
+
+        if ($disk === 'wasabi' && $this->wasabiEnabled()) {
+            try {
+                return Storage::disk('wasabi')->temporaryUrl($key, CarbonImmutable::now()->addMinutes($minutes));
+            } catch (Throwable $e) {
+                report($e);
+
+                return null;
+            }
+        }
+
+        // Local (dev, tests, or a legacy local file) — an instant disk read, safe to inline.
+        return $this->dataUri($ref, $mime);
+    }
+
+    /**
      * The raw [disk, key] for a stored reference; a legacy bare path is local.
      *
      * @return array{0: string, 1: ?string}

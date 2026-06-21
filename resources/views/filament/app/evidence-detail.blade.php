@@ -8,9 +8,9 @@
 @php($filesUrl = \App\Filament\App\Resources\TaxpayerFiles\TaxpayerFileResource::getUrl())
 @php($acfAuth = $acf?->authenticity_status)
 @php($evStore = app(\App\Services\Evidence\EvidenceStore::class))
-@php($acfSnap = $evStore->dataUri($acf?->authenticity_snapshot_path))
+@php($acfSnap = $evStore->displayUrl($acf?->authenticity_snapshot_path))
 @php($fiscPresence = $record->fiscalis_presence)
-@php($fiscSnap = $evStore->dataUri($record->fiscalis_snapshot_path))
+@php($fiscSnap = $evStore->displayUrl($record->fiscalis_snapshot_path))
 @php($fiscTs = \App\Models\EvidenceTimestamp::forPath($record->fiscalis_snapshot_path))
 @php($acfTs = \App\Models\EvidenceTimestamp::forPath($acf?->authenticity_snapshot_path))
 
@@ -186,7 +186,7 @@
                     </td>
                     <td>
                         @if ($fiscSnap)
-                            <img src="{{ $fiscSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
+                            <img src="{{ $fiscSnap }}" loading="lazy" decoding="async" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             <a href="{{ $fiscSnap }}" download="fiscalis-{{ $record->niu ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-mono ev-muted">{{ $snapshot ? \Illuminate\Support\Str::limit((string) $snapshot->content_hash, 16) : '—' }}</span>
@@ -227,7 +227,7 @@
                     </td>
                     <td>
                         @if ($acfSnap)
-                            <img src="{{ $acfSnap }}" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
+                            <img src="{{ $acfSnap }}" loading="lazy" decoding="async" alt="{{ __('app.ui.ev_view_snapshot') }}" class="ev-zoom" @click="zoom = $el.src" title="{{ __('app.ui.ev_zoom_hint') }}" style="width:128px;height:auto;border-radius:8px;border:1px solid var(--line);display:block" />
                             <a href="{{ $acfSnap }}" download="acf-authentication-{{ $acf?->reference ?? 'snapshot' }}.png" class="ev-link" style="margin-top:.35rem">@svg('heroicon-o-arrow-down-tray', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.download_snapshot') }}</a>
                         @else
                             <span class="ev-muted">—</span>

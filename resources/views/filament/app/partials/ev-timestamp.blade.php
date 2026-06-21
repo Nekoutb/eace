@@ -8,7 +8,7 @@
         {{ $ts->timestamped_at?->format('d/m/Y H:i:s') ?? '—' }}
         @if (filled($ts->tsa_url)) · {{ \Illuminate\Support\Str::of((string) $ts->tsa_url)->after('//')->before('/') }} @endif
     </span>
-    @php($tokenUri = app(\App\Services\Evidence\EvidenceStore::class)->dataUri($ts->token_path, 'application/timestamp-reply'))
+    @php($tokenUri = app(\App\Services\Evidence\EvidenceStore::class)->displayUrl($ts->token_path, 'application/timestamp-reply'))
     @if ($tokenUri)
         <a href="{{ $tokenUri }}"
            download="evidence-timestamp.tsr" class="ev-link" style="margin-top:.2rem"

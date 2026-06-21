@@ -100,6 +100,14 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // Hard timeouts so a stalled Wasabi connection can NEVER hang a request
+            // indefinitely (a missing timeout once hung a page for 20 minutes). The
+            // total is generous enough for the ~52 MB taxpayer-register upload.
+            'http' => [
+                'connect_timeout' => (float) env('WASABI_CONNECT_TIMEOUT', 5),
+                'timeout' => (float) env('WASABI_TIMEOUT', 120),
+            ],
+            'retries' => (int) env('WASABI_RETRIES', 1),
         ],
 
     ],
