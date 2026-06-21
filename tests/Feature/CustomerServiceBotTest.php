@@ -1,0 +1,118 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domain\Auth\UserRole;
+use App\Domain\Support\ConversationNature;
+use App\Domain\Support\ConversationStatus;
+use App\Domain\Support\MessageAuthor;
+use App\Filament\App\Widgets\SupportChatWidget;
+use App\Filament\Widgets\CustomerServiceStats;
+use App\Jobs\AnswerConversationWithBot;
+use App\Models\Conversation;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Services\Support\BotReply;
+use App\Services\Support\SupportBotConnector;
+use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    config(['niu.support.bot_enabled' => true]);
+});
+
+/** Bind a deterministic bot returning a fixed reply (no network). */
+function bindBot(BotReply $reply): void
+{
+    app()->instance(SupportBotConnector::class, new class($reply) implements SupportBotConnector
+    {
+        public function __construct(private BotReply $reply) {}
+
+        public function respond(string $question, string $workspace, string $locale): BotReply
+        {
+            return $this->reply;
+        }
+    });
+}
+
+it('lets the bot resolve a how-to question and stamps the first response', function () {
+    bindBot(new BotReply('Open the Compliance Engine and upload your ACF.', true, ConversationNature::HowTo, false));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'tenant_name' => 'Acme', 'status' => ConversationStatus::New, 'nature' => ConversationNature::Question]);
+    $c->postMessage(MessageAuthor::Customer, 'How do I record an invoice?');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+    $c->refresh();
+
+    expect($c->bot_resolved)->toBeTrue()
+        ->and($c->status)->toBe(ConversationStatus::AwaitingCustomer)
+        ->and($c->nature)->toBe(ConversationNature::HowTo)
+        ->and($c->first_response_at)->not->toBeNull()
+        ->and($c->messages()->where('author', 'bot')->count())->toBe(1);
+});
+
+it('escalates a complaint instead of answering it', function () {
+    bindBot(new BotReply('Sorry to hear that — a specialist will follow up.', false, ConversationNature::Complaint, true, 'negative'));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::New, 'nature' => ConversationNature::Question]);
+    $c->postMessage(MessageAuthor::Customer, 'This keeps failing and I am furious');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+    $c->refresh();
+
+    expect($c->status)->toBe(ConversationStatus::Escalated)
+        ->and($c->escalated_at)->not->toBeNull()
+        ->and($c->bot_resolved)->toBeFalse()
+        ->and($c->nature)->toBe(ConversationNature::Complaint);
+});
+
+it('never lets the bot mark a complaint as resolved (guardrail)', function () {
+    // Even if the model wrongly claims resolved=true, a complaint is forced to escalate.
+    bindBot(new BotReply('All good!', true, ConversationNature::Complaint, true));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::New, 'nature' => ConversationNature::Question]);
+    $c->postMessage(MessageAuthor::Customer, 'I want a refund, this is unacceptable');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    expect($c->fresh()->status)->toBe(ConversationStatus::Escalated)
+        ->and($c->fresh()->bot_resolved)->toBeFalse();
+});
+
+it('the chat widget triggers the bot on a new question', function () {
+    bindBot(new BotReply('Here is how to settle a payment…', true, ConversationNature::HowTo, false));
+
+    $tenant = Tenant::create(['id' => 'botcs']);
+    tenancy()->initialize($tenant);
+    Filament::setCurrentPanel('app');
+    $user = User::query()->create(['name' => 'C', 'email' => 'c@botcs.test', 'password' => Hash::make('secret123'), 'role' => UserRole::Admin]);
+    test()->actingAs($user);
+
+    Livewire::test(SupportChatWidget::class)
+        ->set('message', 'How do I settle a payment?')
+        ->call('send');
+
+    $c = Conversation::query()->where('tenant_id', 'botcs')->first();
+
+    expect($c)->not->toBeNull()
+        ->and($c->bot_resolved)->toBeTrue()
+        ->and($c->messages()->where('author', 'bot')->count())->toBe(1);
+
+    tenancy()->end();
+    $tenant->delete();
+});
+
+it('counts bot-resolved conversations in the deflection KPI', function () {
+    // 4 in the last 30 days, 1 bot-resolved → 25% deflection.
+    Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::AwaitingCustomer, 'nature' => ConversationNature::HowTo, 'bot_resolved' => true, 'created_at' => now()->subDay()]);
+    foreach (['b', 'c', 'd'] as $t) {
+        Conversation::query()->create(['tenant_id' => $t, 'status' => ConversationStatus::Open, 'nature' => ConversationNature::Question, 'bot_resolved' => false, 'created_at' => now()->subDay()]);
+    }
+
+    $owner = User::query()->create(['name' => 'O', 'email' => 'def@ea.test', 'password' => Hash::make('secret123')]);
+    test()->actingAs($owner);
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(CustomerServiceStats::class)->assertSee('25%');
+});

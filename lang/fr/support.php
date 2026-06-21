@@ -83,6 +83,8 @@ return [
         'complaint_rate_desc' => 'réclamations ÷ total — plus c’est bas, mieux c’est',
         'escalation_rate' => 'Taux d’escalade',
         'escalation_rate_desc' => 'transmis à un humain — plus c’est bas, mieux c’est',
+        'deflection' => 'Résolu par l’assistant',
+        'deflection_desc' => 'traité par l’assistant — plus c’est haut, mieux c’est',
         'resolved_30d' => 'Résolues (30 jours)',
         'resolved_30d_desc' => 'conversations clôturées',
         'csat' => 'CSAT',

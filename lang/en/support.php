@@ -83,6 +83,8 @@ return [
         'complaint_rate_desc' => 'complaints ÷ all requests — lower is better',
         'escalation_rate' => 'Escalation rate',
         'escalation_rate_desc' => 'handed to a human — lower is better',
+        'deflection' => 'Bot deflection',
+        'deflection_desc' => 'resolved by the assistant — higher is better',
         'resolved_30d' => 'Resolved (30 days)',
         'resolved_30d_desc' => 'conversations closed out',
         'csat' => 'CSAT',
@@ -94,6 +96,10 @@ return [
         'hours' => ':n h',
         'days' => ':n d',
         'none' => '—',
+    ],
+
+    'bot' => [
+        'holding' => 'Thanks for your message — a member of our team will follow up shortly.',
     ],
 
     'staff' => [

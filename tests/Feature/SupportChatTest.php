@@ -14,6 +14,7 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    config(['niu.support.bot_enabled' => false]); // isolate the widget from the bot (tested separately)
     Conversation::query()->delete();
     $this->tenant = Tenant::create(['id' => 'chat', 'name' => 'Chat Co']);
     tenancy()->initialize($this->tenant);

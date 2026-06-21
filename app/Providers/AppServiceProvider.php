@@ -25,6 +25,9 @@ use App\Services\Invoice\FakeInvoiceReader;
 use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\FakeRegistryResolver;
 use App\Services\Registry\TaxpayerFileResolver;
+use App\Services\Support\ClaudeSupportBot;
+use App\Services\Support\FakeSupportBot;
+use App\Services\Support\SupportBotConnector;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -74,6 +77,17 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new FakeInvoiceReader;
+        });
+
+        // Customer-service bot: live Claude when enabled AND a key is set, else the
+        // no-network fake that always escalates to a human (never fabricates an answer).
+        $this->app->bind(SupportBotConnector::class, function () {
+            $key = config('services.anthropic.key');
+            if (config('niu.support.bot_enabled') && filled($key)) {
+                return new ClaudeSupportBot((string) $key, (string) config('niu.support.bot_model'));
+            }
+
+            return new FakeSupportBot;
         });
 
         // ACF authenticity (Harmony2): the live headless-browser connector when

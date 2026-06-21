@@ -50,6 +50,9 @@ class CustomerServiceStats extends StatsOverviewWidget
         $escalated = $recent->filter(fn (Conversation $c): bool => $c->escalated_at !== null)->count();
         $escalationRate = $total > 0 ? (int) round($escalated / $total * 100) : 0;
 
+        $deflected = $recent->filter(fn (Conversation $c): bool => $c->bot_resolved)->count();
+        $deflectionRate = $total > 0 ? (int) round($deflected / $total * 100) : 0;
+
         return [
             Stat::make(__('support.kpi.open_backlog'), (string) $backlog)
                 ->description(__('support.kpi.open_backlog_desc'))
@@ -80,6 +83,11 @@ class CustomerServiceStats extends StatsOverviewWidget
                 ->description(__('support.kpi.escalation_rate_desc'))
                 ->descriptionIcon('heroicon-m-arrow-up-circle')
                 ->color($escalationRate <= 30 ? 'success' : 'warning'),
+
+            Stat::make(__('support.kpi.deflection'), $deflectionRate.'%')
+                ->description(__('support.kpi.deflection_desc'))
+                ->descriptionIcon('heroicon-m-sparkles')
+                ->color($deflectionRate >= 40 ? 'success' : ($deflectionRate > 0 ? 'warning' : 'gray')),
 
             Stat::make(__('support.kpi.resolved_30d'), (string) $resolved->count())
                 ->description(__('support.kpi.resolved_30d_desc'))

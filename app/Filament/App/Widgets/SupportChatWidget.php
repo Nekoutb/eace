@@ -5,6 +5,7 @@ namespace App\Filament\App\Widgets;
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
+use App\Jobs\AnswerConversationWithBot;
 use App\Models\Conversation;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
@@ -62,6 +63,13 @@ class SupportChatWidget extends Widget
         ]);
 
         $conversation->postMessage(MessageAuthor::Customer, $body, auth()->user()?->name);
+
+        // Let the bot try to answer right away (it escalates anything it can't
+        // resolve). Run inline so the reply appears immediately rather than waiting
+        // for the once-a-minute queue drainer; failures are swallowed inside the job.
+        if (config('niu.support.bot_enabled')) {
+            AnswerConversationWithBot::dispatchSync($conversation->id, app()->getLocale());
+        }
 
         $this->message = null;
 

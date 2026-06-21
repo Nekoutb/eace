@@ -54,6 +54,7 @@ it('re-opens an awaiting-customer thread when the customer replies', function ()
 });
 
 it('opens a conversation from the customer chat widget', function () {
+    config(['niu.support.bot_enabled' => false]); // isolate the widget from the bot (tested separately)
     $tenant = Tenant::create(['id' => 'cs']);
     tenancy()->initialize($tenant);
     Filament::setCurrentPanel('app');

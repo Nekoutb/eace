@@ -130,4 +130,17 @@ return [
         // How many times the retry job re-attempts a failed/pending seal.
         'max_attempts' => (int) env('NIU_TSA_MAX_ATTEMPTS', 5),
     ],
+
+    /*
+     * Customer-service platform. The AI bot answers product/how-to questions
+     * first (using the Anthropic key already configured for OCR) and escalates
+     * anything it cannot resolve — or that is a complaint or fiscal/legal matter —
+     * to a human. frt_target_hours sets the first-response SLA each conversation
+     * is measured against.
+     */
+    'support' => [
+        'bot_enabled' => (bool) env('NIU_SUPPORT_BOT', true),
+        'bot_model' => env('NIU_SUPPORT_BOT_MODEL', env('ANTHROPIC_MODEL', 'claude-sonnet-4-6')),
+        'frt_target_hours' => (int) env('NIU_SUPPORT_FRT_HOURS', 8),
+    ],
 ];
