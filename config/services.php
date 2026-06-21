@@ -48,6 +48,16 @@ return [
         'key' => env('AZURE_DI_KEY'),
     ],
 
+    // Telegram bridge for the customer-service platform: escalated conversations
+    // are pushed to the team group, and replies there post straight back to the
+    // customer in-app. chat_id is the team group (negative for groups/supergroups);
+    // webhook_secret guards the public webhook URL + the X-Telegram secret header.
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+    ],
+
     // Headless Chromium used to capture live evidence snapshots (Harmony2 ACF
     // authenticity, DGI consultation status). On Windows, Puppeteer's auto-
     // resolver fails when the user path contains a space, so we pin the binary

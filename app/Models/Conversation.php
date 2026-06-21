@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property ConversationStatus $status
  * @property string $priority
  * @property string $channel
+ * @property ?string $telegram_message_id
  * @property ?int $assigned_to
  * @property bool $bot_resolved
  * @property ?int $csat_score

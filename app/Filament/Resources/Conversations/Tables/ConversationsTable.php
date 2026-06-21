@@ -7,6 +7,7 @@ use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\Support\TelegramNotifier;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Select;
@@ -197,7 +198,7 @@ class ConversationsTable
             ->requiresConfirmation()
             ->action(function (Conversation $record): void {
                 $record->escalate();
-                // Phase 3 will also push this to the team's Telegram group here.
+                app(TelegramNotifier::class)->pushEscalation($record);
                 Notification::make()->title(__('support.console.escalated_done'))->warning()->send();
             });
     }

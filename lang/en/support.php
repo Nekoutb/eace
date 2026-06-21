@@ -102,6 +102,11 @@ return [
         'holding' => 'Thanks for your message — a member of our team will follow up shortly.',
     ],
 
+    'telegram' => [
+        'reply_hint' => 'Reply to this message to answer the customer.',
+        'open_console' => 'Open the console',
+    ],
+
     'staff' => [
         'singular' => 'Support staff',
         'plural' => 'Support staff',

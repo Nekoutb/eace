@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SignUpController;
+use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,13 @@ Route::get('/', fn () => redirect('/app'))->name('home');
 Route::get('/security', fn () => view('security'))
     ->middleware(SetLocale::class)
     ->name('security');
+
+/*
+ * Telegram bridge webhook (customer-service platform). A server-to-server POST
+ * from Telegram — no session/CSRF (exempted in bootstrap/app.php); authenticated
+ * by the secret in the path AND the X-Telegram-Bot-Api-Secret-Token header.
+ */
+Route::post('/telegram/webhook/{secret}', TelegramWebhookController::class)->name('telegram.webhook');
 
 /*
  * Public, verify-first self-service onboarding. A prospective customer enters

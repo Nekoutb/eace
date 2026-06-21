@@ -8,6 +8,7 @@ use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
 use App\Models\Conversation;
 use App\Services\Support\SupportBotConnector;
+use App\Services\Support\TelegramNotifier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -83,8 +84,9 @@ class AnswerConversationWithBot implements ShouldQueue
             return;
         }
 
-        // Not resolved (complaint / fiscal-legal / uncertain) → hand to a human.
-        // Phase 4 will also push this to the team's Telegram group here.
+        // Not resolved (complaint / fiscal-legal / uncertain) → hand to a human and
+        // push it to the team's Telegram group (no-op until Telegram is configured).
         $conversation->escalate();
+        app(TelegramNotifier::class)->pushEscalation($conversation);
     }
 }

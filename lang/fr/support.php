@@ -98,6 +98,15 @@ return [
         'none' => '—',
     ],
 
+    'bot' => [
+        'holding' => 'Merci pour votre message — un membre de notre équipe vous répondra sous peu.',
+    ],
+
+    'telegram' => [
+        'reply_hint' => 'Répondez à ce message pour répondre au client.',
+        'open_console' => 'Ouvrir la console',
+    ],
+
     'staff' => [
         'singular' => 'Agent support',
         'plural' => 'Équipe support',
