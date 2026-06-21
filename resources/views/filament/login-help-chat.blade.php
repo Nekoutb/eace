@@ -32,9 +32,8 @@
             font-size:.86rem;font-family:inherit;outline:none;color:#0f231a}
         .nh-form textarea{resize:none;min-height:2.6rem}
         .nh-form input:focus,.nh-form textarea:focus{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
-        .nh-send{border:0;cursor:pointer;padding:.55rem;border-radius:10px;font-size:.88rem;font-weight:700;color:#fff;
-            background:linear-gradient(150deg,#16a34a,#166534)}
-        .nh-send:disabled{opacity:.6;cursor:progress}
+        .nh-hint{display:flex;align-items:center;gap:.35rem;margin:0;font-size:.7rem;color:#6b8278}
+        .nh-hint kbd{background:#ecfdf3;border:1px solid #bbf7d0;border-radius:5px;padding:0 .3rem;font-size:.66rem;font-family:inherit;color:#15803d}
         @media (prefers-reduced-motion:reduce){#niu-help *{transition:none!important}}
     </style>
 
@@ -49,9 +48,9 @@
             <div class="nh-b nh-b--bot">{{ $fr ? 'Bonjour ! Posez votre question — connexion, fonctionnement, tarifs…' : 'Hi! Ask anything — signing in, how it works, pricing…' }}</div>
         </div>
         <form class="nh-form" id="nh-form" autocomplete="off">
-            <textarea id="nh-text" rows="1" placeholder="{{ $fr ? 'Votre message…' : 'Your message…' }}" maxlength="2000" required></textarea>
+            <textarea id="nh-text" rows="2" placeholder="{{ $fr ? 'Votre message…' : 'Your message…' }}" maxlength="2000"></textarea>
             <input type="email" id="nh-email" placeholder="{{ $fr ? 'E-mail (pour une réponse)' : 'Email (so we can reply)' }}" maxlength="255">
-            <button type="submit" class="nh-send" id="nh-send">{{ $fr ? 'Envoyer' : 'Send' }}</button>
+            <p class="nh-hint" id="nh-hint"><kbd>{{ $fr ? 'Entrée' : 'Enter' }}</kbd> {{ $fr ? 'pour envoyer · Maj+Entrée = nouvelle ligne' : 'to send · Shift+Enter for a new line' }}</p>
         </form>
     </div>
 
@@ -67,8 +66,8 @@
     var url=root.dataset.url,csrf=root.dataset.csrf;
     var launch=document.getElementById('nh-launch'),panel=document.getElementById('nh-panel'),teaser=document.getElementById('nh-teaser'),
         dot=document.getElementById('nh-dot'),msgs=document.getElementById('nh-msgs'),form=document.getElementById('nh-form'),
-        text=document.getElementById('nh-text'),email=document.getElementById('nh-email'),send=document.getElementById('nh-send');
-    var opened=false;
+        text=document.getElementById('nh-text'),email=document.getElementById('nh-email'),hint=document.getElementById('nh-hint');
+    var opened=false,hintHtml=hint.innerHTML;
     function open(){opened=true;panel.classList.add('on');teaser.classList.remove('on');dot.classList.remove('on');text.focus();}
     function close(){opened=false;panel.classList.remove('on');}
     launch.addEventListener('click',function(){opened?close():open();});
@@ -76,16 +75,20 @@
     // Pop a notification teaser shortly after the page settles.
     setTimeout(function(){if(!opened){teaser.classList.add('on');dot.classList.add('on');}},4500);
     function bubble(t,who){var d=document.createElement('div');d.className='nh-b nh-b--'+who;d.textContent=t;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
+    // Enter sends; Shift+Enter inserts a new line.
+    text.addEventListener('keydown',function(e){
+        if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(text.value.trim())form.requestSubmit();}
+    });
     form.addEventListener('submit',function(e){
         e.preventDefault();
-        var m=text.value.trim();if(!m)return;
-        bubble(m,'me');text.value='';send.disabled=true;
+        var m=text.value.trim();if(!m||text.disabled)return;
+        bubble(m,'me');text.value='';text.disabled=true;hint.textContent='{{ $fr ? 'Envoi…' : 'Sending…' }}';
         var typing=bubble('…','bot');
         fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
             body:JSON.stringify({message:m,email:email.value.trim()||null})})
         .then(function(r){return r.ok?r.json():Promise.reject(r);})
-        .then(function(j){typing.textContent=j.reply;send.disabled=false;})
-        .catch(function(){typing.textContent='{{ $fr ? 'Désolé, une erreur est survenue. Réessayez.' : 'Sorry, something went wrong. Please try again.' }}';send.disabled=false;});
+        .then(function(j){typing.textContent=j.reply;text.disabled=false;hint.innerHTML=hintHtml;text.focus();})
+        .catch(function(){typing.textContent='{{ $fr ? 'Désolé, une erreur est survenue. Réessayez.' : 'Sorry, something went wrong. Please try again.' }}';text.disabled=false;hint.innerHTML=hintHtml;});
     });
 })();
 </script>

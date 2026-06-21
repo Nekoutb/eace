@@ -606,6 +606,10 @@ return [
         'float_intro' => 'Hi! Ask a question about your account or how to use the platform — our assistant replies instantly, and our team picks up anything it can’t resolve.',
         'close' => 'Close',
         'sending' => 'Sending…',
+        'enter_key' => 'Enter',
+        'enter_hint' => 'to send · Shift+Enter for a new line',
+        'from_assistant' => 'Assistant',
+        'from_support' => 'Elite Advisors',
     ],
 
     'login_chat' => [

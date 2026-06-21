@@ -610,6 +610,10 @@ return [
         'float_intro' => 'Bonjour ! Posez une question sur votre compte ou l’utilisation de la plateforme — notre assistant répond instantanément, et notre équipe prend le relais si nécessaire.',
         'close' => 'Fermer',
         'sending' => 'Envoi…',
+        'enter_key' => 'Entrée',
+        'enter_hint' => 'pour envoyer · Maj+Entrée pour un saut de ligne',
+        'from_assistant' => 'Assistant',
+        'from_support' => 'Elite Advisors',
     ],
 
     'login_chat' => [
