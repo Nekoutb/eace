@@ -11,10 +11,12 @@ use RuntimeException;
 /**
  * The live customer-service bot: Anthropic's Claude with a forced answer_support
  * tool, so it returns a structured {reply, resolved, nature, is_complaint,
- * sentiment} every time. A tight product knowledge base keeps it on-topic, and a
- * hard guardrail makes it ESCALATE (resolved=false) anything that is a complaint or
- * touches fiscal/legal/tax advice rather than answer it. The API key comes from
- * config — never handled in code.
+ * sentiment} every time. It answers BY DEFAULT from the product knowledge base in
+ * config/support_kb.php — greetings, how-to, navigation, security and data-storage
+ * questions are all handled in-chat (resolved=true). It hands off to a human
+ * (resolved=false → Telegram) ONLY for the `escalate` topics in that config
+ * (complaints, billing/pricing, account changes, fiscal/legal advice, bugs, or an
+ * explicit request for a person). The API key comes from config — never in code.
  */
 final class ClaudeSupportBot implements SupportBotConnector
 {
@@ -86,28 +88,73 @@ final class ClaudeSupportBot implements SupportBotConnector
     private function system(string $workspace, string $locale): string
     {
         $lang = str_starts_with($locale, 'fr') ? 'French' : 'English';
+        $knowledge = $this->knowledgeBase();
+        $escalate = $this->escalationPolicy();
 
         return <<<TXT
-            You are the customer-support assistant for the "Elite Advisors Compliance Engine",
-            a SaaS that helps Cameroon businesses verify supplier fiscal compliance. Its features:
-            recording invoices (upload an ACF tax-clearance certificate + scanned invoices, which
-            are OCR'd and run through four checks + the CGI art. 150 conformity checks), settling
-            payments (batch NIU verification), an evidence vault (DGI/Harmony2 screenshots, trusted
-            timestamps), a dashboard with KPIs, Settings (business identity), user roles
-            (Administrator / Invoice recording / Invoice settler), and mandatory two-factor auth.
-            The workspace asking is "{$workspace}".
+            You are the friendly customer-support assistant for "Elite Advisors Compliance Engine" (ACE),
+            a SaaS that helps Cameroon businesses verify the fiscal compliance of their suppliers before
+            recording invoices or settling payments. The workspace asking is "{$workspace}".
+            Always reply in {$lang}, warmly and concisely (2–6 sentences).
 
-            Answer ONLY questions about how to use the product, navigate it, or manage the account,
-            and only when you are confident. Be concise, friendly, and reply in {$lang}.
+            HOW TO RESPOND — answer by default:
+            - If the customer greets you or makes small talk ("hi", "hello", "bonjour", "thanks",
+              "how are you"), greet them back warmly, say who you are, and ask how you can help today.
+              That is a complete answer: set resolved=true and escalate nothing.
+            - Answer questions about the product, navigation, the account, security and how data is
+              stored CONFIDENTLY from the KNOWLEDGE BASE below, and set resolved=true. Most messages
+              should be answered, not handed off.
 
-            HARD RULES — set resolved=false (a human will take over) whenever the message:
-            - is a complaint or expresses dissatisfaction;
-            - asks for fiscal, tax, legal or accounting ADVICE, or whether a specific supplier /
-              invoice / NIU is compliant (you cannot see their data and must never advise on this);
-            - concerns billing, refunds, pricing, contracts, or anything you are unsure about.
-            In those cases still write a brief, polite holding reply saying a specialist will follow up.
-            Never invent features, prices, or legal conclusions.
+            HAND OFF TO A HUMAN (set resolved=false and write a short, polite holding reply saying a
+            specialist will follow up) ONLY when the message is about:
+            {$escalate}
+            Do not hand off ordinary how-to, navigation, security or data-storage questions — answer them.
+
+            KNOWLEDGE BASE — your ground truth; do not contradict it or invent beyond it:
+            {$knowledge}
+
+            Never invent features, prices, legal conclusions, or anything not supported above. If a
+            question is not covered and is not a hand-off topic, give your best general help; only if you
+            are genuinely unsure should you offer to have a specialist follow up.
             TXT;
+    }
+
+    /** The FAQ knowledge base, grouped by category, formatted for the prompt. */
+    private function knowledgeBase(): string
+    {
+        $byCategory = [];
+
+        foreach ((array) config('support_kb.faq', []) as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $byCategory[(string) ($entry['category'] ?? 'General')][] =
+                'Q: '.trim((string) ($entry['q'] ?? '')).' — A: '.trim((string) ($entry['a'] ?? ''));
+        }
+
+        $lines = [];
+
+        foreach ($byCategory as $category => $qas) {
+            $lines[] = '# '.$category;
+            foreach ($qas as $qa) {
+                $lines[] = '- '.$qa;
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /** The bullet list of topics that must always be handed to a human. */
+    private function escalationPolicy(): string
+    {
+        $lines = [];
+
+        foreach ((array) config('support_kb.escalate', []) as $topic) {
+            $lines[] = '- '.trim((string) $topic);
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -123,7 +170,7 @@ final class ClaudeSupportBot implements SupportBotConnector
                 'required' => ['reply', 'resolved', 'nature', 'is_complaint'],
                 'properties' => [
                     'reply' => ['type' => 'string', 'description' => 'The message to show the customer.'],
-                    'resolved' => ['type' => 'boolean', 'description' => 'True ONLY if you fully answered a product/how-to question. False for complaints, fiscal/legal advice, or anything uncertain.'],
+                    'resolved' => ['type' => 'boolean', 'description' => 'True if you answered the customer — including greetings, small talk, and any product, how-to, navigation, security or data-storage question. False ONLY for the hand-off topics: complaints, billing/pricing, account changes, fiscal/legal advice, bugs/outages, or an explicit request for a person.'],
                     'nature' => ['type' => 'string', 'enum' => ['question', 'how_to', 'complaint', 'bug', 'billing', 'feature', 'other']],
                     'is_complaint' => ['type' => 'boolean', 'description' => 'True if the customer is dissatisfied or complaining.'],
                     'sentiment' => ['type' => 'string', 'enum' => ['positive', 'neutral', 'negative']],
