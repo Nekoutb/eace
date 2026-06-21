@@ -7,10 +7,12 @@ namespace App\Models;
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
+use App\Mail\SupportReplyMail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Central (landlord) model. One customer-service conversation (a ticket thread)
@@ -130,6 +132,21 @@ class Conversation extends CentralModel
             'escalated_at' => $this->escalated_at ?? now(),
             'last_activity_at' => now(),
         ])->save();
+    }
+
+    /**
+     * Email a support reply to the requester when they have no in-app view — i.e.
+     * a visitor who asked from the login-page chat (channel = login). No-op for
+     * signed-in customers, who see replies in their workspace.
+     */
+    public function emailRequesterReply(string $body): void
+    {
+        if ($this->channel !== 'login' || blank($this->requester_email)) {
+            return;
+        }
+
+        Mail::to((string) $this->requester_email)
+            ->send(new SupportReplyMail($body, $this->subject));
     }
 
     /** Minutes from open to first support reply, or null if not yet answered. */

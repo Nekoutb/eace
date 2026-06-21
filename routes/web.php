@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HelpChatController;
 use App\Http\Controllers\SignUpController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
@@ -41,6 +42,15 @@ Route::middleware(SetLocale::class)->group(function () {
     Route::get('/survey', [SurveyController::class, 'show'])->name('survey.show');
     Route::post('/survey', [SurveyController::class, 'submit'])->name('survey.submit');
 });
+
+/*
+ * The login-page "Need help?" chat: an unauthenticated visitor's question is
+ * answered by the bot, and escalated to the team (+ Telegram) if it can't resolve.
+ * Throttled to deter abuse of this public, unauthenticated endpoint.
+ */
+Route::post('/help/ask', [HelpChatController::class, 'ask'])
+    ->middleware(['throttle:10,1', SetLocale::class])
+    ->name('help.ask');
 
 /*
  * Public, verify-first self-service onboarding. A prospective customer enters

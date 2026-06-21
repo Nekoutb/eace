@@ -54,6 +54,12 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): string => view('filament.signup-link')->render(),
             )
+            // Floating "Need help?" chat in the corner of the sign-in page — the bot
+            // answers visitors who aren't signed in, escalating to the team if needed.
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn (): string => view('filament.login-help-chat')->render(),
+            )
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
             ->pages([

@@ -106,8 +106,15 @@ return [
     ],
 
     'telegram' => [
-        'reply_hint' => 'Reply to this message to answer the customer.',
+        'reply_hint' => 'Reply to this message to answer the customer — anyone in this group can respond.',
         'open_console' => 'Open the console',
+    ],
+
+    'reply_mail' => [
+        'subject' => 'A reply from Elite Advisors support',
+        'intro' => 'Hello — our team has replied to your question:',
+        'your_question' => 'Your question:',
+        'signoff' => 'Just reply to this email if you need anything else.',
     ],
 
     'survey' => [

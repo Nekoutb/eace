@@ -606,6 +606,10 @@ return [
         'csat_thanks' => 'Merci pour votre retour !',
     ],
 
+    'login_chat' => [
+        'visitor' => 'Visiteur (connexion)',
+    ],
+
     'guide' => [
         'intro' => 'Ce que Elite Advisors Compliance Engine fait pour vous, étape par étape, et ce que vous obtenez à chaque étape.',
         'expect_label' => 'Ce que vous obtenez : ',

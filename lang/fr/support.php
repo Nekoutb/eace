@@ -106,8 +106,15 @@ return [
     ],
 
     'telegram' => [
-        'reply_hint' => 'Répondez à ce message pour répondre au client.',
+        'reply_hint' => 'Répondez à ce message pour répondre au client — tout membre de ce groupe peut répondre.',
         'open_console' => 'Ouvrir la console',
+    ],
+
+    'reply_mail' => [
+        'subject' => 'Une réponse du support Elite Advisors',
+        'intro' => 'Bonjour — notre équipe a répondu à votre question :',
+        'your_question' => 'Votre question :',
+        'signoff' => 'Répondez simplement à cet e-mail si vous avez besoin d’autre chose.',
     ],
 
     'survey' => [

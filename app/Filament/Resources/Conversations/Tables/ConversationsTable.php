@@ -113,12 +113,9 @@ class ConversationsTable
                     ->maxLength(4000),
             ])
             ->action(function (Conversation $record, array $data): void {
-                $record->postMessage(
-                    MessageAuthor::Agent,
-                    trim((string) $data['reply']),
-                    auth()->user()?->name,
-                    auth()->id(),
-                );
+                $body = trim((string) $data['reply']);
+                $record->postMessage(MessageAuthor::Agent, $body, auth()->user()?->name, auth()->id());
+                $record->emailRequesterReply($body); // login-chat visitors get it by email
 
                 if (in_array($record->status, [ConversationStatus::New, ConversationStatus::Open, ConversationStatus::Escalated], true)) {
                     $record->forceFill(['status' => ConversationStatus::AwaitingCustomer])->save();

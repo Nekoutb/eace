@@ -602,6 +602,10 @@ return [
         'csat_thanks' => 'Thanks for your feedback!',
     ],
 
+    'login_chat' => [
+        'visitor' => 'Login visitor',
+    ],
+
     'guide' => [
         'intro' => 'What the Elite Advisors Compliance Engine does for you, step by step, and what you get back at each stage.',
         'expect_label' => 'What you get: ',

@@ -46,6 +46,7 @@ class TelegramWebhookController
 
             if ($conversation !== null) {
                 $conversation->postMessage(MessageAuthor::Agent, $text, $this->authorName($message));
+                $conversation->emailRequesterReply($text); // login-chat visitors get it by email
 
                 if (in_array($conversation->status, [ConversationStatus::New, ConversationStatus::Open, ConversationStatus::Escalated], true)) {
                     $conversation->forceFill(['status' => ConversationStatus::AwaitingCustomer])->save();
