@@ -40,6 +40,7 @@ it('builds the system prompt from the knowledge base, with greeting + escalation
     expect($prompt)
         ->toContain('Acme Co')                 // the workspace is named
         ->toContain('greet them back')          // greetings are answered, not escalated
+        ->toContain('# Greetings')              // the bot still has the greeting small talk
         ->toContain('tamper-proof')             // a real KB answer (data storage) is embedded
         ->toContain('# Data & evidence')        // categories are grouped
         ->toContain('Pricing, plans, billing')  // the escalation policy is embedded
@@ -55,9 +56,13 @@ it('localises the reply language in the prompt', function () {
         ->and((string) $method->invoke($bot, 'W', 'en'))->toContain('English');
 });
 
-it('groups the FAQ by category in each language', function () {
+it('groups the FAQ by category in each language, without the bot-only greetings', function () {
     expect(SupportKnowledge::grouped('en'))->toHaveKey('Data & evidence')
-        ->and(SupportKnowledge::grouped('fr'))->toHaveKey('Données et preuves');
+        ->and(SupportKnowledge::grouped('en'))->not->toHaveKey('Greetings')
+        ->and(SupportKnowledge::grouped('fr'))->toHaveKey('Données et preuves')
+        ->and(SupportKnowledge::grouped('fr'))->not->toHaveKey('Salutations')
+        // …but the bot still has the small talk.
+        ->and(collect(SupportKnowledge::botKnowledge('en'))->pluck('category'))->toContain('Greetings');
 });
 
 it('renders the searchable FAQ page for a workspace user', function () {
@@ -74,7 +79,8 @@ it('renders the searchable FAQ page for a workspace user', function () {
     Livewire::test(Faq::class)
         ->assertOk()
         ->assertSee('Data & evidence')
-        ->assertSee('How do I record an invoice?');
+        ->assertSee('How do I record an invoice?')
+        ->assertDontSee('How are you?'); // greetings are hidden from the FAQ
 
     tenancy()->end();
     $tenant->delete();

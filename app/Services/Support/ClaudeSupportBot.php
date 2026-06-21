@@ -126,7 +126,8 @@ final class ClaudeSupportBot implements SupportBotConnector
         $byCategory = [];
 
         // English is the bot's ground truth; it replies in the customer's language.
-        foreach (SupportKnowledge::faq('en') as $entry) {
+        // botKnowledge() includes the small talk that the FAQ page hides.
+        foreach (SupportKnowledge::botKnowledge('en') as $entry) {
             $byCategory[$entry['category']][] = 'Q: '.$entry['q'].' — A: '.$entry['a'];
         }
 

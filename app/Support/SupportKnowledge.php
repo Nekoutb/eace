@@ -13,16 +13,45 @@ namespace App\Support;
 final class SupportKnowledge
 {
     /**
-     * The flat FAQ list, localised to one language.
+     * The flat FAQ list (shown on the FAQ page), localised to one language.
      *
      * @return list<array{category: string, q: string, a: string}>
      */
     public static function faq(?string $locale = null): array
     {
+        return self::entries('support_kb.faq', $locale);
+    }
+
+    /**
+     * Conversational small talk (greetings, thanks) the bot handles but that is NOT
+     * shown on the FAQ page.
+     *
+     * @return list<array{category: string, q: string, a: string}>
+     */
+    public static function smalltalk(?string $locale = null): array
+    {
+        return self::entries('support_kb.smalltalk', $locale);
+    }
+
+    /**
+     * Everything the bot answers from: small talk + the FAQ.
+     *
+     * @return list<array{category: string, q: string, a: string}>
+     */
+    public static function botKnowledge(?string $locale = null): array
+    {
+        return array_merge(self::smalltalk($locale), self::faq($locale));
+    }
+
+    /**
+     * @return list<array{category: string, q: string, a: string}>
+     */
+    private static function entries(string $configKey, ?string $locale): array
+    {
         $locale = self::lang($locale);
         $out = [];
 
-        foreach ((array) config('support_kb.faq', []) as $entry) {
+        foreach ((array) config($configKey, []) as $entry) {
             if (! is_array($entry)) {
                 continue;
             }

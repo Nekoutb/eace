@@ -21,11 +21,8 @@ declare(strict_types=1);
 
 return [
 
-    // Topics the bot answers itself (resolved = true, nothing sent to Telegram) and
-    // that appear on the FAQ page.
-    'faq' => [
-
-        // --- Greetings & small talk ------------------------------------------------
+    // Small talk the bot handles conversationally — NOT shown on the FAQ page.
+    'smalltalk' => [
         [
             'category' => ['en' => 'Greetings', 'fr' => 'Salutations'],
             'q' => ['en' => 'Hi / Hello / Good morning', 'fr' => 'Salut / Bonjour / Bonsoir'],
@@ -50,6 +47,11 @@ return [
                 'fr' => "Avec grand plaisir — ravi d'avoir pu vous aider. Souhaitez-vous faire autre chose ?",
             ],
         ],
+    ],
+
+    // Topics the bot answers itself (resolved = true, nothing sent to Telegram) and
+    // that appear on the FAQ page.
+    'faq' => [
 
         // --- About the platform ----------------------------------------------------
         [
