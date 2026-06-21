@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\App\Widgets;
+namespace App\Livewire;
 
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
@@ -8,22 +8,20 @@ use App\Domain\Support\MessageAuthor;
 use App\Jobs\AnswerConversationWithBot;
 use App\Models\Conversation;
 use Filament\Notifications\Notification;
-use Filament\Widgets\Widget;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Livewire\Component;
 
 /**
- * The home-page chat box. Tenant staff send a question; it opens a customer-service
- * conversation stored centrally so the support team can triage and answer it from
- * the admin console. The sender sees their own recent conversations and the latest
- * reply, like a light thread.
+ * The in-app support chat — a floating bubble (bottom-right) on every signed-in
+ * /app page, replacing the old dashboard card. A workspace user asks a question; it
+ * opens a conversation, the bot answers (escalating what it can't resolve), and the
+ * user sees the team's replies and rates resolved threads. Runs in the tenant +
+ * auth context (Livewire updates go through InitializeTenancyForLivewire).
  */
-class SupportChatWidget extends Widget
+class SupportChat extends Component
 {
-    protected string $view = 'filament.app.widgets.support-chat';
-
-    protected int|string|array $columnSpan = 'full';
-
     public ?string $message = null;
 
     /**
@@ -64,9 +62,7 @@ class SupportChatWidget extends Widget
 
         $conversation->postMessage(MessageAuthor::Customer, $body, auth()->user()?->name);
 
-        // Let the bot try to answer right away (it escalates anything it can't
-        // resolve). Run inline so the reply appears immediately rather than waiting
-        // for the once-a-minute queue drainer; failures are swallowed inside the job.
+        // Let the bot try to answer right away; it escalates anything it can't resolve.
         if (config('niu.support.bot_enabled')) {
             AnswerConversationWithBot::dispatchSync($conversation->id, app()->getLocale());
         }
@@ -93,5 +89,10 @@ class SupportChatWidget extends Widget
         $conversation->forceFill(['csat_score' => $score >= 1 ? 1 : 0])->save();
 
         Notification::make()->title(__('app.chat.csat_thanks'))->success()->send();
+    }
+
+    public function render(): View
+    {
+        return view('livewire.support-chat');
     }
 }

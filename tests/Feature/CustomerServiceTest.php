@@ -6,9 +6,9 @@ use App\Domain\Auth\UserRole;
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
-use App\Filament\App\Widgets\SupportChatWidget;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Filament\Widgets\CustomerServiceStats;
+use App\Livewire\SupportChat;
 use App\Models\Conversation;
 use App\Models\Tenant;
 use App\Models\User;
@@ -65,7 +65,7 @@ it('opens a conversation from the customer chat widget', function () {
     ]);
     test()->actingAs($user);
 
-    Livewire::test(SupportChatWidget::class)
+    Livewire::test(SupportChat::class)
         ->set('message', 'How do I settle an invoice?')
         ->call('send');
 

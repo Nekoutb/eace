@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Domain\Auth\UserRole;
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
-use App\Filament\App\Widgets\SupportChatWidget;
 use App\Filament\Widgets\CustomerServiceStats;
+use App\Livewire\SupportChat;
 use App\Mail\SurveyInviteMail;
 use App\Models\Conversation;
 use App\Models\SurveyResponse;
@@ -66,7 +66,7 @@ it('records post-resolution CSAT from the chat widget', function () {
 
     $c = Conversation::query()->create(['tenant_id' => 'csat', 'requester_email' => 'c@csat.test', 'status' => ConversationStatus::Resolved, 'nature' => ConversationNature::Question]);
 
-    Livewire::test(SupportChatWidget::class)->call('rate', $c->id, 1);
+    Livewire::test(SupportChat::class)->call('rate', $c->id, 1);
 
     expect($c->fresh()->csat_score)->toBe(1);
 

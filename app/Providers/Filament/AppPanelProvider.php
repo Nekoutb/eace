@@ -60,6 +60,12 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): string => view('filament.login-help-chat')->render(),
             )
+            // The same floating chat, signed-in: on every workspace page (persisted
+            // across SPA navigation). Replaces the old dashboard "Ask a question" card.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.app.support-chat-mount')->render(),
+            )
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
             ->pages([

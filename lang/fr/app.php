@@ -604,6 +604,12 @@ return [
         'csat_down' => 'Non, pas satisfait',
         'csat_done' => 'Merci pour votre note :',
         'csat_thanks' => 'Merci pour votre retour !',
+        'teaser' => '👋 Besoin d’aide ?',
+        'teaser_cta' => 'Posez-nous votre question.',
+        'float_sub' => 'Notre assistant répond tout de suite.',
+        'float_intro' => 'Bonjour ! Posez une question sur votre compte ou l’utilisation de la plateforme — notre assistant répond instantanément, et notre équipe prend le relais si nécessaire.',
+        'close' => 'Fermer',
+        'sending' => 'Envoi…',
     ],
 
     'login_chat' => [

@@ -6,9 +6,9 @@ use App\Domain\Auth\UserRole;
 use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
-use App\Filament\App\Widgets\SupportChatWidget;
 use App\Filament\Widgets\CustomerServiceStats;
 use App\Jobs\AnswerConversationWithBot;
+use App\Livewire\SupportChat;
 use App\Models\Conversation;
 use App\Models\Tenant;
 use App\Models\User;
@@ -89,7 +89,7 @@ it('the chat widget triggers the bot on a new question', function () {
     $user = User::query()->create(['name' => 'C', 'email' => 'c@botcs.test', 'password' => Hash::make('secret123'), 'role' => UserRole::Admin]);
     test()->actingAs($user);
 
-    Livewire::test(SupportChatWidget::class)
+    Livewire::test(SupportChat::class)
         ->set('message', 'How do I settle a payment?')
         ->call('send');
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Domain\Auth\UserRole;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
-use App\Filament\App\Widgets\SupportChatWidget;
 use App\Filament\Resources\Conversations\ConversationResource;
+use App\Livewire\SupportChat;
 use App\Models\Conversation;
 use App\Models\Tenant;
 use App\Models\User;
@@ -35,7 +35,7 @@ afterEach(function () {
 });
 
 it('opens a conversation centrally, tagged with the tenant and the user', function () {
-    Livewire::test(SupportChatWidget::class)
+    Livewire::test(SupportChat::class)
         ->set('message', 'How do I record an invoice?')
         ->call('send')
         ->assertSet('message', null);
@@ -64,7 +64,7 @@ it('shows the user only their own conversations, with the reply', function () {
         'subject' => 'Secret', 'status' => ConversationStatus::New,
     ]);
 
-    $conversations = Livewire::test(SupportChatWidget::class)->instance()->recentConversations();
+    $conversations = Livewire::test(SupportChat::class)->instance()->recentConversations();
 
     expect($conversations->pluck('subject')->all())->toBe(['Question A']);
 

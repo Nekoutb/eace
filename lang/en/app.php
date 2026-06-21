@@ -600,6 +600,12 @@ return [
         'csat_down' => 'No, not satisfied',
         'csat_done' => 'Thanks for rating:',
         'csat_thanks' => 'Thanks for your feedback!',
+        'teaser' => '👋 Need help?',
+        'teaser_cta' => 'Ask us anything.',
+        'float_sub' => 'Our assistant answers right away.',
+        'float_intro' => 'Hi! Ask a question about your account or how to use the platform — our assistant replies instantly, and our team picks up anything it can’t resolve.',
+        'close' => 'Close',
+        'sending' => 'Sending…',
     ],
 
     'login_chat' => [
