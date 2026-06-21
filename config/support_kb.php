@@ -295,6 +295,58 @@ return [
             ],
         ],
 
+        // --- Using the platform ----------------------------------------------------
+        [
+            'category' => ['en' => 'Using the platform', 'fr' => 'Utilisation'],
+            'q' => ['en' => 'What languages does the platform support?', 'fr' => 'Quelles langues la plateforme prend-elle en charge ?'],
+            'a' => [
+                'en' => 'The platform is fully available in French and English — switch anytime from the language toggle.',
+                'fr' => 'La plateforme est entièrement disponible en français et en anglais — changez de langue à tout moment depuis le sélecteur.',
+            ],
+        ],
+        [
+            'category' => ['en' => 'Using the platform', 'fr' => 'Utilisation'],
+            'q' => ['en' => 'Can I use it on my phone?', 'fr' => "Puis-je l'utiliser sur mon téléphone ?"],
+            'a' => [
+                'en' => "Yes — there's no separate app to install; the platform works in your web browser on a computer, tablet or phone.",
+                'fr' => 'Oui — aucune application à installer ; la plateforme fonctionne dans votre navigateur web sur ordinateur, tablette ou téléphone.',
+            ],
+        ],
+        [
+            'category' => ['en' => 'Using the platform', 'fr' => 'Utilisation'],
+            'q' => ['en' => 'Can I export my records?', 'fr' => 'Puis-je exporter mes enregistrements ?'],
+            'a' => [
+                'en' => 'Yes — verification records, evidence and compliance certificates can be downloaded from their sections, for your files or an auditor.',
+                'fr' => 'Oui — les enregistrements de vérification, les preuves et les certificats de conformité peuvent être téléchargés depuis leurs sections, pour vos dossiers ou un auditeur.',
+            ],
+        ],
+        [
+            'category' => ['en' => 'Using the platform', 'fr' => 'Utilisation'],
+            'q' => ['en' => 'What does a compliance result mean?', 'fr' => 'Que signifie un résultat de conformité ?'],
+            'a' => [
+                'en' => "Each check gives a clear compliant / not-compliant outcome based on the supplier's NIU and ACF status, with the supporting evidence attached so you can see exactly why.",
+                'fr' => "Chaque contrôle donne un résultat clair (conforme / non conforme) selon le statut du NIU et de l'ACF du fournisseur, avec les preuves à l'appui afin que vous compreniez exactement pourquoi.",
+            ],
+        ],
+
+        // --- Our technology (what we do, not how — internals stay proprietary) ------
+        [
+            'category' => ['en' => 'Our technology', 'fr' => 'Notre technologie'],
+            'q' => ['en' => 'How does your NIU verification or ACF authentication actually work?', 'fr' => "Comment fonctionnent réellement votre vérification du NIU et l'authentification de l'ACF ?"],
+            'a' => [
+                'en' => "The inner workings are part of our proprietary technology, so I can't share those details. What I can tell you is what it does for you: it confirms whether a supplier's NIU is active in the official register and whether their ACF is genuine and currently valid, then saves the result as tamper-proof evidence.",
+                'fr' => "Le fonctionnement interne fait partie de notre technologie propriétaire, je ne peux donc pas en partager les détails. Ce que je peux vous dire, c'est ce que cela fait pour vous : confirmer si le NIU d'un fournisseur est actif dans le registre officiel et si son ACF est authentique et valide, puis enregistrer le résultat comme preuve infalsifiable.",
+            ],
+        ],
+        [
+            'category' => ['en' => 'Our technology', 'fr' => 'Notre technologie'],
+            'q' => ['en' => 'Where does your data come from?', 'fr' => "D'où proviennent vos données ?"],
+            'a' => [
+                'en' => "The specifics of our data sources and how we keep them current are proprietary, so I can't go into detail. What matters for you: verifications are checked against the official national taxpayer register and refreshed regularly so results stay accurate.",
+                'fr' => 'Les détails de nos sources de données et la façon dont nous les tenons à jour sont propriétaires, je ne peux donc pas entrer dans les détails. Ce qui compte pour vous : les vérifications sont effectuées par rapport au registre national officiel des contribuables, actualisé régulièrement pour garantir des résultats exacts.',
+            ],
+        ],
+
         // --- Troubleshooting -------------------------------------------------------
         [
             'category' => ['en' => 'Troubleshooting', 'fr' => 'Dépannage'],

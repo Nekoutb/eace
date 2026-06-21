@@ -1,6 +1,9 @@
 @php($conversations = $this->recentConversations())
 @php($awaitingReply = $conversations->contains(fn ($c) => $c->status === \App\Domain\Support\ConversationStatus::AwaitingCustomer))
-<div class="nh-root" x-data="{ open: false, teaser: false }" x-init="setTimeout(() => { if (!open) teaser = true }, 4500)" wire:key="support-chat" wire:poll.10s>
+<div class="nh-root" x-data="{ open: false, teaser: false, stick: true,
+        toBottom(force = false) { this.$nextTick(() => { const b = this.$refs.body; if (b && (force || this.stick)) b.scrollTop = b.scrollHeight }) } }"
+    x-init="setTimeout(() => { if (!open) teaser = true }, 4500); $nextTick(() => { const b = $refs.body; if (b) new MutationObserver(() => toBottom()).observe(b, { childList: true, subtree: true }) })"
+    wire:key="support-chat" wire:poll.10s>
     <style>
         .nh-root{position:fixed;right:1.1rem;bottom:1.1rem;z-index:99990;font-family:inherit}
         .nh-root *{box-sizing:border-box}
@@ -61,10 +64,10 @@
             <button type="button" class="nh-x" @click="open = false" aria-label="{{ __('app.chat.close') }}">&times;</button>
         </div>
 
-        <div class="nh-body" x-ref="body">
+        <div class="nh-body" x-ref="body" @scroll="stick = $el.scrollHeight - $el.scrollTop - $el.clientHeight < 48">
             <div class="nh-intro">{{ __('app.chat.float_intro') }}</div>
 
-            @foreach ($conversations as $c)
+            @foreach ($conversations->sortBy('id') as $c)
                 <div class="nh-c" wire:key="conv-{{ $c->id }}">
                     @foreach ($c->messages->sortBy('id') as $m)
                         @if ($m->author === \App\Domain\Support\MessageAuthor::Customer)
@@ -92,7 +95,7 @@
 
         <form wire:submit="send" class="nh-form">
             <textarea wire:model="message" rows="2" placeholder="{{ __('app.chat.placeholder') }}" maxlength="2000"
-                @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); $el.form.requestSubmit() }"></textarea>
+                @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); stick = true; $el.form.requestSubmit() }"></textarea>
             @error('message') <p class="nh-err">{{ $message }}</p> @enderror
             <p class="nh-hint">
                 <span wire:loading.remove wire:target="send"><kbd>{{ __('app.chat.enter_key') }}</kbd> {{ __('app.chat.enter_hint') }}</span>
@@ -102,7 +105,7 @@
     </div>
 
     {{-- Launcher --}}
-    <button type="button" class="nh-l" @click="open = !open; teaser = false; if (open) $wire.$refresh()" aria-label="{{ __('app.chat.title') }}">
+    <button type="button" class="nh-l" @click="open = !open; teaser = false; if (open) { $wire.$refresh(); toBottom(true) }" aria-label="{{ __('app.chat.title') }}">
         @if ($awaitingReply)
             <span class="nh-dot" x-show="!open" x-cloak>1</span>
         @endif

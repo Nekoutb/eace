@@ -44,7 +44,9 @@ it('builds the system prompt from the knowledge base, with greeting + escalation
         ->toContain('tamper-proof')             // a real KB answer (data storage) is embedded
         ->toContain('# Data & evidence')        // categories are grouped
         ->toContain('Pricing, plans, billing')  // the escalation policy is embedded
-        ->toContain('answer them');             // explicit "don't hand off ordinary questions"
+        ->toContain('answer them')              // explicit "don't hand off ordinary questions"
+        ->toContain('proprietary')              // the confidentiality guardrail is present
+        ->toContain('# Our technology');        // and the "what we do, not how" KB entries
 });
 
 it('localises the reply language in the prompt', function () {
@@ -58,6 +60,7 @@ it('localises the reply language in the prompt', function () {
 
 it('groups the FAQ by category in each language, without the bot-only greetings', function () {
     expect(SupportKnowledge::grouped('en'))->toHaveKey('Data & evidence')
+        ->and(SupportKnowledge::grouped('en'))->toHaveKey('Our technology')
         ->and(SupportKnowledge::grouped('en'))->not->toHaveKey('Greetings')
         ->and(SupportKnowledge::grouped('fr'))->toHaveKey('Données et preuves')
         ->and(SupportKnowledge::grouped('fr'))->not->toHaveKey('Salutations')

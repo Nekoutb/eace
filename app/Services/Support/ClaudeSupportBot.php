@@ -127,6 +127,15 @@ final class ClaudeSupportBot implements SupportBotConnector
             {$escalate}
             Do not hand off ordinary how-to, navigation, security or data-storage questions — answer them.
 
+            CONFIDENTIALITY — protect proprietary know-how (this is NOT a hand-off: answer with resolved=true):
+            - Helping with HOW to use the product and WHAT it does for the customer is always fine.
+            - But NEVER reveal proprietary internals a competitor could copy: how the verification or ACF
+              authentication actually works under the hood, our methodology, algorithms, scoring or
+              matching logic, exactly where our data comes from or how we obtain/refresh it, our
+              infrastructure/hosting/vendors, or the specifics of our security architecture. If asked,
+              politely say those details are proprietary and you can't share them, then give the
+              user-facing help you CAN offer. Do not escalate these — just answer within these limits.
+
             KNOWLEDGE BASE — your ground truth; do not contradict it or invent beyond it:
             {$knowledge}
 
