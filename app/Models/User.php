@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Domain\Auth\StaffRole;
 use App\Domain\Auth\UserRole;
 use App\Observers\TenantLoginObserver;
 use Database\Factories\UserFactory;
@@ -28,13 +29,14 @@ use Illuminate\Support\Carbon;
  * on the central connection they are simply absent (role() reads as null).
  *
  * @property ?UserRole $role
+ * @property ?StaffRole $staff_role
  * @property bool $must_change_password
  * @property ?Carbon $last_login_at
  * @property ?string $app_authentication_secret
  * @property ?array<int, string> $app_authentication_recovery_codes
  */
 #[ObservedBy([TenantLoginObserver::class])]
-#[Fillable(['name', 'email', 'password', 'role', 'must_change_password', 'last_login_at'])]
+#[Fillable(['name', 'email', 'password', 'role', 'staff_role', 'must_change_password', 'last_login_at'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class User extends Authenticatable implements CanResetPassword, FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
@@ -57,6 +59,20 @@ class User extends Authenticatable implements CanResetPassword, FilamentUser, Ha
         return ! array_key_exists('role', $this->getAttributes());
     }
 
+    /** The SaaS operator (full central access). */
+    public function isOwner(): bool
+    {
+        return $this->staff_role === StaffRole::Owner;
+    }
+
+    /** May this central user onboard / manage other support staff? */
+    public function canManageStaff(): bool
+    {
+        return $this->isCentralUser()
+            && $this->staff_role !== null
+            && $this->staff_role->canManageStaff();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -68,6 +84,7 @@ class User extends Authenticatable implements CanResetPassword, FilamentUser, Ha
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'staff_role' => StaffRole::class,
             'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
             // Two-factor (TOTP) — encrypted at rest with the app key.

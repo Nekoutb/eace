@@ -7,6 +7,7 @@ use App\Filament\Auth\Login;
 use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -76,6 +77,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                // Force a freshly onboarded staff member to set their own password
+                // (after the mandatory 2FA enrolment) before reaching the console.
+                ForcePasswordChange::class,
             ]);
     }
 }
