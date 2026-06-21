@@ -33,24 +33,41 @@ class HelpChatController
         $message = trim((string) $data['message']);
         $email = filled($data['email'] ?? null) ? mb_strtolower(trim((string) $data['email'])) : null;
 
+        // Continue this visitor's conversation (bound to their session) so the bot
+        // answers follow-ups in context.
+        $conversation = $this->resumeOrStart($request, $message, $email);
+
+        if ($email !== null && blank($conversation->requester_email)) {
+            $conversation->forceFill(['requester_email' => $email])->save();
+        }
+
+        $conversation->postMessage(MessageAuthor::Customer, $message);
+
+        // Once a human is handling it (escalated, or an agent has replied), the bot
+        // stays silent — the message is still recorded for the team.
+        $humanHandling = $conversation->status === ConversationStatus::Escalated
+            || $conversation->messages()->where('author', MessageAuthor::Agent->value)->exists();
+
+        if ($humanHandling) {
+            return response()->json([
+                'reply' => (string) __('support.bot.holding'),
+                'escalated' => true,
+                'email' => $conversation->requester_email,
+            ]);
+        }
+
+        $context = $conversation->load('messages')->botContext();
+
         try {
-            $reply = $bot->respond($message, 'Login visitor', app()->getLocale());
+            $reply = $bot->respond($context['question'], 'Login visitor', app()->getLocale(), $context['history']);
         } catch (Throwable $e) {
             report($e);
             $reply = null;
         }
 
-        $conversation = Conversation::query()->create([
-            'tenant_id' => null,
-            'tenant_name' => (string) __('app.login_chat.visitor'),
-            'requester_email' => $email,
-            'subject' => Str::limit($message, 80),
-            'nature' => $reply->nature ?? ConversationNature::Question,
-            'status' => ConversationStatus::New,
-            'channel' => 'login',
-            'last_activity_at' => now(),
-        ]);
-        $conversation->postMessage(MessageAuthor::Customer, $message);
+        if ($reply !== null) {
+            $conversation->forceFill(['nature' => $reply->nature])->save();
+        }
 
         if ($reply !== null && filled($reply->reply)) {
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
@@ -68,7 +85,40 @@ class HelpChatController
         return response()->json([
             'reply' => $reply->reply ?? (string) __('support.bot.holding'),
             'escalated' => ! $resolved,
-            'email' => $email,
+            'email' => $conversation->requester_email,
         ]);
+    }
+
+    /** Resume the visitor's session-bound conversation, or start a new one. */
+    private function resumeOrStart(Request $request, string $message, ?string $email): Conversation
+    {
+        $id = $request->session()->get('help_chat_conversation_id');
+
+        if ($id !== null) {
+            $existing = Conversation::query()
+                ->whereKey($id)
+                ->where('channel', 'login')
+                ->whereNotIn('status', [ConversationStatus::Resolved, ConversationStatus::Closed])
+                ->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+        }
+
+        $conversation = Conversation::query()->create([
+            'tenant_id' => null,
+            'tenant_name' => (string) __('app.login_chat.visitor'),
+            'requester_email' => $email,
+            'subject' => Str::limit($message, 80),
+            'nature' => ConversationNature::Question,
+            'status' => ConversationStatus::New,
+            'channel' => 'login',
+            'last_activity_at' => now(),
+        ]);
+
+        $request->session()->put('help_chat_conversation_id', $conversation->id);
+
+        return $conversation;
     }
 }

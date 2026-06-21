@@ -12,5 +12,12 @@ namespace App\Services\Support;
  */
 interface SupportBotConnector
 {
-    public function respond(string $question, string $workspace, string $locale): BotReply;
+    /**
+     * Answer the customer's latest message, given the prior conversation so far so
+     * follow-ups are understood in context.
+     *
+     * @param  list<array{role: string, text: string}>  $history  Earlier turns
+     *                                                            (role: user|assistant), oldest first.
+     */
+    public function respond(string $question, string $workspace, string $locale, array $history = []): BotReply;
 }

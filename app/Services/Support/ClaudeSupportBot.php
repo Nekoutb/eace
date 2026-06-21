@@ -30,8 +30,27 @@ final class ClaudeSupportBot implements SupportBotConnector
         private string $model,
     ) {}
 
-    public function respond(string $question, string $workspace, string $locale): BotReply
+    public function respond(string $question, string $workspace, string $locale, array $history = []): BotReply
     {
+        $messages = [];
+
+        // Replay the prior turns so the model answers follow-ups in context. Earlier
+        // bot/agent replies are plain assistant text (no tool calls), so no
+        // tool_result bookkeeping is needed.
+        foreach ($history as $turn) {
+            $text = trim($turn['text']);
+            if ($text === '') {
+                continue;
+            }
+
+            $messages[] = [
+                'role' => $turn['role'] === 'assistant' ? 'assistant' : 'user',
+                'content' => [['type' => 'text', 'text' => $text]],
+            ];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => [['type' => 'text', 'text' => $question]]];
+
         $response = Http::withHeaders([
             'x-api-key' => $this->apiKey,
             'anthropic-version' => self::VERSION,
@@ -42,10 +61,7 @@ final class ClaudeSupportBot implements SupportBotConnector
             'system' => $this->system($workspace, $locale),
             'tools' => [$this->tool()],
             'tool_choice' => ['type' => 'tool', 'name' => 'answer_support'],
-            'messages' => [[
-                'role' => 'user',
-                'content' => [['type' => 'text', 'text' => $question]],
-            ]],
+            'messages' => $messages,
         ]);
 
         if (! $response->successful()) {

@@ -29,7 +29,7 @@ function bindBot(BotReply $reply): void
     {
         public function __construct(private BotReply $reply) {}
 
-        public function respond(string $question, string $workspace, string $locale): BotReply
+        public function respond(string $question, string $workspace, string $locale, array $history = []): BotReply
         {
             return $this->reply;
         }
@@ -115,4 +115,46 @@ it('counts bot-resolved conversations in the deflection KPI', function () {
     Filament::setCurrentPanel('admin');
 
     Livewire::test(CustomerServiceStats::class)->assertSee('25%');
+});
+
+it('turns a thread into an alternating bot context (question + history)', function () {
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Open, 'nature' => ConversationNature::Question]);
+    $c->postMessage(MessageAuthor::Customer, 'How do I record an invoice?');
+    $c->postMessage(MessageAuthor::Bot, 'Open the Compliance Engine and upload the ACF.', 'Assistant', 1);
+    $c->postMessage(MessageAuthor::Customer, 'And how do I find it later?');
+
+    $context = $c->load('messages')->botContext();
+
+    expect($context['question'])->toBe('And how do I find it later?')
+        ->and($context['history'])->toBe([
+            ['role' => 'user', 'text' => 'How do I record an invoice?'],
+            ['role' => 'assistant', 'text' => 'Open the Compliance Engine and upload the ACF.'],
+        ]);
+});
+
+it('answers a follow-up, not only the first message', function () {
+    bindBot(new BotReply('You can find it under Verifications.', true, ConversationNature::HowTo, false));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::AwaitingCustomer, 'nature' => ConversationNature::Question, 'first_response_at' => now()->subMinute()]);
+    $c->postMessage(MessageAuthor::Customer, 'How do I record an invoice?');
+    $c->postMessage(MessageAuthor::Bot, 'Open the Compliance Engine and upload the ACF.', 'Assistant', 1);
+    $c->postMessage(MessageAuthor::Customer, 'And how do I find it later?'); // follow-up
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    expect($c->fresh()->messages()->where('author', 'bot')->count())->toBe(2)
+        ->and($c->fresh()->messages()->count())->toBe(4);
+});
+
+it('stands down once a human has replied', function () {
+    bindBot(new BotReply('bot answer', true, ConversationNature::HowTo, false));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Open, 'nature' => ConversationNature::Question]);
+    $c->postMessage(MessageAuthor::Customer, 'hi');
+    $c->postMessage(MessageAuthor::Agent, 'A human is here to help.', 'Agent', 1); // human took over
+    $c->postMessage(MessageAuthor::Customer, 'thanks, one more thing');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    expect($c->fresh()->messages()->where('author', 'bot')->count())->toBe(0);
 });

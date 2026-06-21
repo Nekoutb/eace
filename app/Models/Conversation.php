@@ -107,6 +107,48 @@ class Conversation extends CentralModel
         return $message;
     }
 
+    /**
+     * Turn the loaded thread into the bot's view of it: the customer's latest
+     * message (the question to answer) plus the earlier turns as alternating
+     * user/assistant history. Consecutive same-side messages are merged and the
+     * history is trimmed to start with the customer, so it's always API-valid.
+     *
+     * @return array{question: string, history: list<array{role: string, text: string}>}
+     */
+    public function botContext(): array
+    {
+        $turns = [];
+
+        foreach ($this->messages as $message) {
+            $role = $message->author === MessageAuthor::Customer ? 'user' : 'assistant';
+            $text = trim((string) $message->body);
+
+            if ($text === '') {
+                continue;
+            }
+
+            if ($turns !== [] && $turns[array_key_last($turns)]['role'] === $role) {
+                $turns[array_key_last($turns)]['text'] .= "\n\n".$text;
+            } else {
+                $turns[] = ['role' => $role, 'text' => $text];
+            }
+        }
+
+        // History must start with a user (customer) turn.
+        while ($turns !== [] && $turns[0]['role'] !== 'user') {
+            array_shift($turns);
+        }
+
+        // The trailing customer turn is the question; everything before is history.
+        $question = '';
+        if ($turns !== [] && $turns[array_key_last($turns)]['role'] === 'user') {
+            $last = array_pop($turns);
+            $question = $last['text'];
+        }
+
+        return ['question' => $question, 'history' => $turns];
+    }
+
     public function resolve(): void
     {
         $this->forceFill([

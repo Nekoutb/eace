@@ -40,26 +40,42 @@ class AnswerConversationWithBot implements ShouldQueue
 
         $conversation = Conversation::query()->with('messages')->find($this->conversationId);
 
-        // Only auto-answer a fresh conversation no human or bot has touched yet.
-        if ($conversation === null
-            || $conversation->status !== ConversationStatus::New
-            || $conversation->first_response_at !== null) {
+        if ($conversation === null) {
             return;
         }
 
-        $question = optional(
-            $conversation->messages->last(fn ($m): bool => $m->author === MessageAuthor::Customer)
-        )->body;
+        // Stand down once a human has taken over, or the thread is escalated/closed —
+        // but keep answering follow-ups while the bot is still the one handling it.
+        $humanReplied = $conversation->messages->contains(
+            fn ($m): bool => $m->author === MessageAuthor::Agent
+        );
 
-        if (! filled($question)) {
+        if ($humanReplied || in_array($conversation->status, [
+            ConversationStatus::Escalated,
+            ConversationStatus::Resolved,
+            ConversationStatus::Closed,
+        ], true)) {
+            return;
+        }
+
+        // Only answer when the customer's message is the latest (awaiting a reply).
+        $latest = $conversation->messages->last();
+        if ($latest === null || $latest->author !== MessageAuthor::Customer) {
+            return;
+        }
+
+        $context = $conversation->botContext();
+
+        if ($context['question'] === '') {
             return;
         }
 
         try {
             $reply = $bot->respond(
-                (string) $question,
+                $context['question'],
                 (string) ($conversation->tenant_name ?? $conversation->tenant_id ?? ''),
                 $this->locale,
+                $context['history'],
             );
         } catch (Throwable $e) {
             report($e); // a bot/API failure must never lose the customer's question

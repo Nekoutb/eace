@@ -50,6 +50,17 @@ it('opens a conversation centrally, tagged with the tenant and the user', functi
         ->and($conversation->messages->first()->body)->toBe('How do I record an invoice?');
 });
 
+it('continues one conversation across messages (multi-turn)', function () {
+    $chat = Livewire::test(SupportChat::class);
+    $chat->set('message', 'How do I record an invoice?')->call('send');
+    $chat->set('message', 'And how do I find it later?')->call('send');
+
+    $conversations = Conversation::query()->where('tenant_id', 'chat')->get();
+
+    expect($conversations)->toHaveCount(1)
+        ->and($conversations->first()->messages()->count())->toBe(2); // both customer turns, one thread
+});
+
 it('shows the user only their own conversations, with the reply', function () {
     $mine = Conversation::query()->create([
         'tenant_id' => 'chat', 'requester_email' => 'asker@chat.test',

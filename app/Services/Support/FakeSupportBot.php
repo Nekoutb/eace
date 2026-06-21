@@ -13,7 +13,7 @@ use App\Domain\Support\ConversationNature;
  */
 final class FakeSupportBot implements SupportBotConnector
 {
-    public function respond(string $question, string $workspace, string $locale): BotReply
+    public function respond(string $question, string $workspace, string $locale, array $history = []): BotReply
     {
         return new BotReply(
             reply: (string) __('support.bot.holding'),

@@ -24,6 +24,24 @@ class SupportChat extends Component
 {
     public ?string $message = null;
 
+    public ?int $conversationId = null;
+
+    /**
+     * Resume the customer's latest still-open conversation so the chat continues
+     * across page loads instead of starting over each time.
+     */
+    public function mount(): void
+    {
+        $id = Conversation::query()
+            ->where('tenant_id', (string) tenant()->getTenantKey())
+            ->where('requester_email', auth()->user()?->email)
+            ->whereIn('status', ConversationStatus::openValues())
+            ->latest('id')
+            ->value('id');
+
+        $this->conversationId = $id !== null ? (int) $id : null;
+    }
+
     /**
      * This user's recent conversations, newest first, with their messages loaded.
      *
@@ -45,6 +63,47 @@ class SupportChat extends Component
         $this->validate(['message' => ['required', 'string', 'max:2000']]);
 
         $body = trim((string) $this->message);
+
+        // Continue the ongoing conversation so the bot answers in context; only start
+        // a fresh one if there's nothing open to continue.
+        $conversation = $this->activeConversation() ?? $this->openConversation($body);
+
+        $conversation->postMessage(MessageAuthor::Customer, $body, auth()->user()?->name);
+
+        // Let the bot answer right away (with the thread as context); it escalates
+        // anything it can't resolve and stands down once a human takes over.
+        if (config('niu.support.bot_enabled')) {
+            AnswerConversationWithBot::dispatchSync($conversation->id, app()->getLocale());
+        }
+
+        $this->message = null;
+
+        Notification::make()->title(__('app.chat.notif_sent'))->success()->send();
+    }
+
+    /** The conversation this chat is continuing, if it's still open and belongs to this user. */
+    private function activeConversation(): ?Conversation
+    {
+        if ($this->conversationId === null) {
+            return null;
+        }
+
+        $conversation = Conversation::query()->find($this->conversationId);
+
+        if ($conversation === null
+            || $conversation->tenant_id !== (string) tenant()->getTenantKey()
+            || $conversation->requester_email !== auth()->user()?->email
+            || in_array($conversation->status, [ConversationStatus::Resolved, ConversationStatus::Closed], true)) {
+            $this->conversationId = null;
+
+            return null;
+        }
+
+        return $conversation;
+    }
+
+    private function openConversation(string $body): Conversation
+    {
         $tenantKey = (string) tenant()->getTenantKey();
 
         $conversation = Conversation::query()->create([
@@ -60,16 +119,9 @@ class SupportChat extends Component
             'sla_due_at' => now()->addHours((int) config('niu.support.frt_target_hours', 8)),
         ]);
 
-        $conversation->postMessage(MessageAuthor::Customer, $body, auth()->user()?->name);
+        $this->conversationId = $conversation->id;
 
-        // Let the bot try to answer right away; it escalates anything it can't resolve.
-        if (config('niu.support.bot_enabled')) {
-            AnswerConversationWithBot::dispatchSync($conversation->id, app()->getLocale());
-        }
-
-        $this->message = null;
-
-        Notification::make()->title(__('app.chat.notif_sent'))->success()->send();
+        return $conversation;
     }
 
     /** Post-resolution CSAT: the customer rates a resolved conversation 👍/👎 (once). */

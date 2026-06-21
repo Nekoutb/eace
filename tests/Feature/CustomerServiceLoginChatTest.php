@@ -17,7 +17,7 @@ function bindLoginBot(BotReply $reply): void
     {
         public function __construct(private BotReply $reply) {}
 
-        public function respond(string $question, string $workspace, string $locale): BotReply
+        public function respond(string $question, string $workspace, string $locale, array $history = []): BotReply
         {
             return $this->reply;
         }
@@ -53,7 +53,7 @@ it('escalates a login-chat inquiry the bot cannot resolve and keeps the email', 
 it('rejects an empty login-chat message', function () {
     test()->postJson('/help/ask', ['message' => ''])->assertInvalid('message');
 
-    expect(\App\Models\Conversation::query()->count())->toBe(0);
+    expect(Conversation::query()->count())->toBe(0);
 });
 
 it('emails the visitor when an agent replies to a login inquiry', function () {
