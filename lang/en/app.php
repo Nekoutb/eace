@@ -14,6 +14,7 @@ return [
         'clients' => 'Clients',
         'users' => 'Users',
         'user_guide' => 'User guide',
+        'faq' => 'FAQ',
         'security' => 'Security',
     ],
 
@@ -610,6 +611,14 @@ return [
         'enter_hint' => 'to send · Shift+Enter for a new line',
         'from_assistant' => 'Assistant',
         'from_support' => 'Elite Advisors',
+    ],
+
+    'faq' => [
+        'intro' => "Quick answers about using the platform. Search or browse by topic — and if you don't find it, the chat assistant is one click away.",
+        'search' => 'Search the FAQ…',
+        'none' => 'No matching questions found. Try rephrasing, or ask the chat assistant in the corner.',
+        'help_title' => 'Still need help?',
+        'help_body' => "Open the chat bubble in the bottom-right corner — the assistant replies instantly, and our team picks up anything it can't resolve.",
     ],
 
     'login_chat' => [

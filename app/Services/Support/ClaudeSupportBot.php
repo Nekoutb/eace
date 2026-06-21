@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Support;
 
 use App\Domain\Support\ConversationNature;
+use App\Support\SupportKnowledge;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -124,13 +125,9 @@ final class ClaudeSupportBot implements SupportBotConnector
     {
         $byCategory = [];
 
-        foreach ((array) config('support_kb.faq', []) as $entry) {
-            if (! is_array($entry)) {
-                continue;
-            }
-
-            $byCategory[(string) ($entry['category'] ?? 'General')][] =
-                'Q: '.trim((string) ($entry['q'] ?? '')).' — A: '.trim((string) ($entry['a'] ?? ''));
+        // English is the bot's ground truth; it replies in the customer's language.
+        foreach (SupportKnowledge::faq('en') as $entry) {
+            $byCategory[$entry['category']][] = 'Q: '.$entry['q'].' — A: '.$entry['a'];
         }
 
         $lines = [];
@@ -150,8 +147,8 @@ final class ClaudeSupportBot implements SupportBotConnector
     {
         $lines = [];
 
-        foreach ((array) config('support_kb.escalate', []) as $topic) {
-            $lines[] = '- '.trim((string) $topic);
+        foreach (SupportKnowledge::escalationTopics() as $topic) {
+            $lines[] = '- '.$topic;
         }
 
         return implode("\n", $lines);

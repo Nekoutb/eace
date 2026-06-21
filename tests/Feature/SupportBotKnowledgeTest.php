@@ -2,19 +2,32 @@
 
 declare(strict_types=1);
 
+use App\Domain\Auth\UserRole;
+use App\Filament\App\Pages\Faq;
+use App\Models\Tenant;
+use App\Models\User;
 use App\Services\Support\ClaudeSupportBot;
+use App\Support\SupportKnowledge;
+use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 
-it('ships a non-empty, well-formed knowledge base', function () {
-    $faq = config('support_kb.faq');
-    $escalate = config('support_kb.escalate');
+it('ships a non-empty, well-formed bilingual knowledge base', function () {
+    $en = SupportKnowledge::faq('en');
+    $fr = SupportKnowledge::faq('fr');
 
-    expect($faq)->toBeArray()->not->toBeEmpty()
-        ->and($escalate)->toBeArray()->not->toBeEmpty();
+    expect($en)->toBeArray()->not->toBeEmpty()
+        ->and(count($fr))->toBe(count($en))
+        ->and(SupportKnowledge::escalationTopics())->not->toBeEmpty();
 
-    foreach ($faq as $entry) {
+    foreach ($en as $entry) {
         expect($entry)->toHaveKeys(['category', 'q', 'a'])
-            ->and(trim((string) $entry['a']))->not->toBe('');
+            ->and(trim($entry['q']))->not->toBe('')
+            ->and(trim($entry['a']))->not->toBe('');
     }
+
+    // The French rendering is actually translated, not a copy of English.
+    expect($fr[0]['a'])->not->toBe($en[0]['a']);
 });
 
 it('builds the system prompt from the knowledge base, with greeting + escalation guidance', function () {
@@ -40,4 +53,29 @@ it('localises the reply language in the prompt', function () {
 
     expect((string) $method->invoke($bot, 'W', 'fr'))->toContain('French')
         ->and((string) $method->invoke($bot, 'W', 'en'))->toContain('English');
+});
+
+it('groups the FAQ by category in each language', function () {
+    expect(SupportKnowledge::grouped('en'))->toHaveKey('Data & evidence')
+        ->and(SupportKnowledge::grouped('fr'))->toHaveKey('Données et preuves');
+});
+
+it('renders the searchable FAQ page for a workspace user', function () {
+    app()->setLocale('en');
+    $tenant = Tenant::create(['id' => 'faqpage']);
+    tenancy()->initialize($tenant);
+    Filament::setCurrentPanel('app');
+    $user = User::query()->create([
+        'name' => 'U', 'email' => 'u@faq.test',
+        'password' => Hash::make('secret123'), 'role' => UserRole::Recorder,
+    ]);
+    test()->actingAs($user);
+
+    Livewire::test(Faq::class)
+        ->assertOk()
+        ->assertSee('Data & evidence')
+        ->assertSee('How do I record an invoice?');
+
+    tenancy()->end();
+    $tenant->delete();
 });

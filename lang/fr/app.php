@@ -14,6 +14,7 @@ return [
         'clients' => 'Clients',
         'users' => 'Utilisateurs',
         'user_guide' => 'Guide utilisateur',
+        'faq' => 'FAQ',
         'security' => 'Sécurité',
     ],
 
@@ -614,6 +615,14 @@ return [
         'enter_hint' => 'pour envoyer · Maj+Entrée pour un saut de ligne',
         'from_assistant' => 'Assistant',
         'from_support' => 'Elite Advisors',
+    ],
+
+    'faq' => [
+        'intro' => "Des réponses rapides sur l'utilisation de la plateforme. Recherchez ou parcourez par thème — et si vous ne trouvez pas, l'assistant de discussion est à un clic.",
+        'search' => 'Rechercher dans la FAQ…',
+        'none' => "Aucune question correspondante. Reformulez votre recherche, ou posez la question à l'assistant dans le coin.",
+        'help_title' => "Besoin d'aide supplémentaire ?",
+        'help_body' => "Ouvrez la bulle de discussion en bas à droite — l'assistant répond instantanément, et notre équipe prend le relais si nécessaire.",
     ],
 
     'login_chat' => [
