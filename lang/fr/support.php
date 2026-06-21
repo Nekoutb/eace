@@ -116,6 +116,13 @@ return [
         'active' => 'Actif',
         'last_login' => 'Dernière connexion',
         'never' => 'Jamais',
+        'telegram' => 'Telegram',
+        'telegram_help' => 'Son @nom d’utilisateur Telegram, pour que les escalades lui parviennent. Il connecte son compte une fois votre bot Telegram actif.',
+        'telegram_none' => 'Non renseigné',
+        'telegram_chat_id' => 'ID de discussion Telegram',
+        'telegram_chat_id_help' => 'L’identifiant numérique utilisé par le bot pour le contacter. Rempli automatiquement quand il écrit au bot, ou collez-le ici.',
+        'link_telegram' => 'Telegram',
+        'telegram_saved' => 'Coordonnées Telegram enregistrées',
     ],
 
     'mail' => [

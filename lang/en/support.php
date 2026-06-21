@@ -120,6 +120,13 @@ return [
         'active' => 'Active',
         'last_login' => 'Last sign-in',
         'never' => 'Never',
+        'telegram' => 'Telegram',
+        'telegram_help' => 'Their Telegram @username, so escalations can reach them. They connect (link their chat) once your Telegram bot is live.',
+        'telegram_none' => 'Not set',
+        'telegram_chat_id' => 'Telegram chat ID',
+        'telegram_chat_id_help' => 'The numeric ID the bot uses to message them directly. Auto-filled when they message the bot, or paste it here.',
+        'link_telegram' => 'Telegram',
+        'telegram_saved' => 'Telegram details saved',
     ],
 
     'mail' => [

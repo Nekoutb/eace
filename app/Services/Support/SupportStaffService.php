@@ -24,7 +24,7 @@ final class SupportStaffService
     /**
      * @return array{user: User, password: string}
      */
-    public function onboard(string $name, string $email, StaffRole $role): array
+    public function onboard(string $name, string $email, StaffRole $role, ?string $telegramUsername = null): array
     {
         $email = mb_strtolower(trim($email));
 
@@ -39,6 +39,7 @@ final class SupportStaffService
             'email' => $email,
             'password' => Hash::make($password),
             'staff_role' => $role,
+            'telegram_username' => User::normaliseTelegramUsername($telegramUsername),
             'must_change_password' => true,
         ]);
 

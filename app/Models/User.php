@@ -30,13 +30,15 @@ use Illuminate\Support\Carbon;
  *
  * @property ?UserRole $role
  * @property ?StaffRole $staff_role
+ * @property ?string $telegram_username
+ * @property ?string $telegram_chat_id
  * @property bool $must_change_password
  * @property ?Carbon $last_login_at
  * @property ?string $app_authentication_secret
  * @property ?array<int, string> $app_authentication_recovery_codes
  */
 #[ObservedBy([TenantLoginObserver::class])]
-#[Fillable(['name', 'email', 'password', 'role', 'staff_role', 'must_change_password', 'last_login_at'])]
+#[Fillable(['name', 'email', 'password', 'role', 'staff_role', 'telegram_username', 'telegram_chat_id', 'must_change_password', 'last_login_at'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class User extends Authenticatable implements CanResetPassword, FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
@@ -71,6 +73,20 @@ class User extends Authenticatable implements CanResetPassword, FilamentUser, Ha
         return $this->isCentralUser()
             && $this->staff_role !== null
             && $this->staff_role->canManageStaff();
+    }
+
+    /** Linked to Telegram (the bot can reach this agent directly) once a chat_id is set. */
+    public function hasTelegram(): bool
+    {
+        return filled($this->telegram_chat_id);
+    }
+
+    /** Normalise a Telegram handle for storage: trimmed, no leading @, or null. */
+    public static function normaliseTelegramUsername(?string $value): ?string
+    {
+        $handle = ltrim(trim((string) ($value ?? '')), '@');
+
+        return $handle !== '' ? $handle : null;
     }
 
     /**

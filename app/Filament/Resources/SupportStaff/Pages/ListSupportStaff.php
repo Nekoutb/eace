@@ -38,12 +38,18 @@ class ListSupportStaff extends ListRecords
                         ->options(StaffRole::assignableOptions())
                         ->default(StaffRole::Agent->value)
                         ->required(),
+                    TextInput::make('telegram_username')
+                        ->label(__('support.staff.telegram'))
+                        ->placeholder('@jane_doe')
+                        ->helperText(__('support.staff.telegram_help'))
+                        ->maxLength(64),
                 ])
                 ->action(function (array $data): void {
                     $result = app(SupportStaffService::class)->onboard(
                         (string) $data['name'],
                         (string) $data['email'],
                         StaffRole::from((string) $data['staff_role']),
+                        $data['telegram_username'] ?? null,
                     );
 
                     Notification::make()

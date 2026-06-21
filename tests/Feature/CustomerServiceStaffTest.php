@@ -19,16 +19,30 @@ use Livewire\Livewire;
 it('onboards a central support agent with a temp password and emails credentials', function () {
     Mail::fake();
 
-    $result = app(SupportStaffService::class)->onboard('Amah Tee', 'Amah@EA.test', StaffRole::Agent);
+    $result = app(SupportStaffService::class)->onboard('Amah Tee', 'Amah@EA.test', StaffRole::Agent, '@AmahT');
     $user = $result['user'];
 
     expect($user->isCentralUser())->toBeTrue()
         ->and($user->staff_role)->toBe(StaffRole::Agent)
         ->and($user->must_change_password)->toBeTrue()
         ->and($user->email)->toBe('amah@ea.test') // normalised
+        ->and($user->telegram_username)->toBe('AmahT') // '@' stripped
+        ->and($user->hasTelegram())->toBeFalse()       // no chat_id linked yet
         ->and($result['password'])->toBeString();
 
     Mail::assertSent(SupportStaffCredentialsMail::class);
+});
+
+it('normalises a Telegram handle and only counts as linked once a chat_id is set', function () {
+    expect(User::normaliseTelegramUsername('  @jane_doe '))->toBe('jane_doe')
+        ->and(User::normaliseTelegramUsername(''))->toBeNull()
+        ->and(User::normaliseTelegramUsername(null))->toBeNull();
+
+    $u = User::query()->create(['name' => 'A', 'email' => 'tg@ea.test', 'password' => Hash::make('secret123'), 'staff_role' => StaffRole::Agent, 'telegram_username' => 'jane_doe']);
+    expect($u->hasTelegram())->toBeFalse();
+
+    $u->forceFill(['telegram_chat_id' => '123456789'])->save();
+    expect($u->fresh()->hasTelegram())->toBeTrue();
 });
 
 it('rejects onboarding an email already in use', function () {
