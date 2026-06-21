@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Fiscalis;
 
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceContext;
+use App\Services\Evidence\EvidenceNaming;
 use App\Services\Evidence\EvidenceStore;
 use App\Services\Evidence\EvidenceTimestampService;
 use Carbon\CarbonImmutable;
@@ -32,7 +34,13 @@ final class FiscalisStatusService
 
         if ($result->hasScreenshot()) {
             $bytes = (string) $result->screenshotPng;
-            $path = $this->store->put(EvidenceStore::TYPE_EVIDENCE, $verification->getKey(), 'fiscalis.png', $bytes);
+            $context = EvidenceContext::forVerification($verification);
+            $path = $this->store->putEvidence(
+                $context,
+                EvidenceNaming::niuStatus($result->presence->value, $niu, $context),
+                $bytes,
+                EvidenceStore::TYPE_EVIDENCE,
+            );
             $this->timestamps->seal($path, $bytes);
         }
 

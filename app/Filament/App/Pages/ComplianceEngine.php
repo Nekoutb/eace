@@ -14,6 +14,8 @@ use App\Models\OrganizationProfile;
 use App\Models\Verification;
 use App\Services\Acf\AcfAuthenticationService;
 use App\Services\Acf\AcfIngestionService;
+use App\Services\Evidence\EvidenceContext;
+use App\Services\Evidence\EvidenceNaming;
 use App\Services\Evidence\EvidenceStore;
 use App\Services\Evidence\EvidenceTimestampService;
 use App\Services\Fiscalis\FiscalisConnector;
@@ -197,6 +199,8 @@ class ComplianceEngine extends Page
             $this->rawInput = $certificate->niu;
         }
 
+        $this->archiveAcfDocument($certificate, $path);
+
         Notification::make()->title(__('app.ui.notif_acf_read'))->success()->send();
 
         // Authenticate the document live against Harmony2 right away — no manual
@@ -223,6 +227,21 @@ class ComplianceEngine extends Page
             ->title(__('app.ui.notif_doc_authenticated', ['status' => $result->status->label()]))
             ->status($result->status->color() === 'success' ? 'success' : ($result->status->color() === 'danger' ? 'danger' : 'warning'))
             ->send();
+    }
+
+    /**
+     * Archive the uploaded ACF PDF under the vendor's acf-<reference> evidence
+     * folder, then drop the local temp so there's a single authoritative copy.
+     */
+    private function archiveAcfDocument(AcfCertificate $certificate, string $tmpPath): void
+    {
+        $bytes = (string) (Storage::disk('local')->get($tmpPath) ?? '');
+        if ($bytes !== '') {
+            $context = EvidenceContext::forAcf($certificate);
+            app(EvidenceStore::class)->putEvidence($context, EvidenceNaming::acfPdf($context), $bytes, EvidenceStore::TYPE_ACF);
+        }
+
+        Storage::disk('local')->delete($tmpPath);
     }
 
     /**
@@ -261,11 +280,10 @@ class ComplianceEngine extends Page
                 continue;
             }
 
-            // Archive the invoice via EvidenceStore (immutable Wasabi when enabled),
-            // then drop the local OCR temp so there's a single, authoritative copy.
-            $ref = app(EvidenceStore::class)->put(
-                EvidenceStore::TYPE_INVOICES, null, $name, (string) (Storage::disk('local')->get($tmpPath) ?? ''),
-            );
+            // Stage the invoice locally; it is committed to its structured,
+            // immutable folder on run(), once its verification (vendor + invoice
+            // reference) exists, so the file and its checks share one leaf.
+            $ref = app(EvidenceStore::class)->putStaging($name, (string) (Storage::disk('local')->get($tmpPath) ?? ''));
             Storage::disk('local')->delete($tmpPath);
 
             $this->invoices[] = [
@@ -332,12 +350,9 @@ class ComplianceEngine extends Page
         $this->fiscalisCheckedAt = now()->toDateTimeString();
 
         if ($result->hasScreenshot()) {
-            $bytes = (string) $result->screenshotPng;
-            $ref = app(EvidenceStore::class)->put(
-                EvidenceStore::TYPE_EVIDENCE, null, 'fiscalis-'.preg_replace('/[^A-Za-z0-9]/', '', $niu).'.png', $bytes,
-            );
-            app(EvidenceTimestampService::class)->seal($ref, $bytes);
-            $this->fiscalisSnapshotPath = $ref;
+            // Stage the DGI national-file snapshot locally; it is committed (and
+            // sealed) into each invoice's structured folder on run().
+            $this->fiscalisSnapshotPath = app(EvidenceStore::class)->putStaging('national-file.png', (string) $result->screenshotPng);
         }
 
         Notification::make()
@@ -351,18 +366,57 @@ class ComplianceEngine extends Page
         return (bool) config('services.browsershot.enabled');
     }
 
-    /** Persist the stashed Fiscalis snapshot onto the freshly created verification. */
-    private function attachFiscalisSnapshot(Verification $verification): void
+    /**
+     * Commit a verification's staged captures into its structured, immutable
+     * evidence folder and point the verification at the final references: the
+     * scanned invoice (Invoice_<ref>_<datetime>) and the vendor's DGI national-file
+     * snapshot (NIU_<status>_<niu>_<datetime>, sealed with an RFC-3161 timestamp).
+     * Both were staged locally during scanning.
+     */
+    private function commitEvidence(Verification $verification, ?string $invoiceStagingRef): void
     {
-        if ($this->fiscalisPresence === null && $this->fiscalisSnapshotPath === null) {
-            return;
+        $store = app(EvidenceStore::class);
+        $context = EvidenceContext::forVerification($verification);
+        $changes = [];
+
+        if ($invoiceStagingRef !== null) {
+            $bytes = (string) ($store->get($invoiceStagingRef) ?? '');
+            if ($bytes !== '') {
+                $data = is_array($verification->invoice_data) ? $verification->invoice_data : [];
+                $invoiceNumber = is_string($data['invoice_number'] ?? null) ? $data['invoice_number'] : null;
+                $ext = pathinfo($invoiceStagingRef, PATHINFO_EXTENSION) ?: 'pdf';
+                $changes['invoice_file_path'] = $store->putEvidence(
+                    $context,
+                    EvidenceNaming::invoice($invoiceNumber, $ext, $context),
+                    $bytes,
+                    EvidenceStore::TYPE_INVOICES,
+                );
+            }
+            $store->delete($invoiceStagingRef);
         }
 
-        $verification->forceFill([
-            'fiscalis_presence' => $this->fiscalisPresence,
-            'fiscalis_snapshot_path' => $this->fiscalisSnapshotPath,
-            'fiscalis_checked_at' => $this->fiscalisCheckedAt,
-        ])->save();
+        if ($this->fiscalisSnapshotPath !== null) {
+            $bytes = (string) ($store->get($this->fiscalisSnapshotPath) ?? '');
+            if ($bytes !== '') {
+                $ref = $store->putEvidence(
+                    $context,
+                    EvidenceNaming::niuStatus($this->fiscalisPresence, $verification->niu ?? $verification->raw_input, $context),
+                    $bytes,
+                    EvidenceStore::TYPE_EVIDENCE,
+                );
+                app(EvidenceTimestampService::class)->seal($ref, $bytes);
+                $changes['fiscalis_snapshot_path'] = $ref;
+            }
+        }
+
+        if ($this->fiscalisPresence !== null) {
+            $changes['fiscalis_presence'] = $this->fiscalisPresence;
+            $changes['fiscalis_checked_at'] = $this->fiscalisCheckedAt;
+        }
+
+        if ($changes !== []) {
+            $verification->forceFill($changes)->save();
+        }
     }
 
     /** Run the checks for the current phase and reveal the results inline. */
@@ -422,13 +476,13 @@ class ComplianceEngine extends Page
                 invoiceAmountXaf: $this->invoiceAmountFor($invoiceData, $index),
                 invoiceName: $this->invoiceNameFor($invoiceData, $index),
                 invoiceData: $invoiceData,
-                invoiceFilePath: $invoice['path'] ?? null,
+                invoiceFilePath: null,
                 checkedBy: auth()->id(),
             ));
 
-            // Attach the vendor's live Fiscalis snapshot captured at scan time; it
-            // is the same vendor across every invoice, so each record carries it.
-            $this->attachFiscalisSnapshot($verification);
+            // Commit this invoice's staged captures (invoice file + the vendor's
+            // shared national-file snapshot) into its structured evidence folder.
+            $this->commitEvidence($verification, is_string($invoice['path'] ?? null) ? $invoice['path'] : null);
 
             // ACF-only recording with no snapshot yet → capture it now so the
             // record is complete.
@@ -437,6 +491,12 @@ class ComplianceEngine extends Page
             }
 
             $verifications[] = ['verification' => $verification, 'label' => $invoice['name'] ?? null];
+        }
+
+        // Every invoice has committed its own copy of the shared snapshot; drop the stage.
+        if ($this->fiscalisSnapshotPath !== null) {
+            app(EvidenceStore::class)->delete($this->fiscalisSnapshotPath);
+            $this->fiscalisSnapshotPath = null;
         }
 
         $this->presentRecording($verifications);

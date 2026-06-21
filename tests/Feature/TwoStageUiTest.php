@@ -12,7 +12,9 @@ use App\Models\AcfCertificate;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Verification;
+use App\Services\Evidence\EvidenceStore;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -75,20 +77,27 @@ it('rejects a recording with neither an ACF nor a NIU', function () {
     expect(Verification::query()->count())->toBe(0);
 });
 
-it('attaches the live Fiscalis snapshot captured at scan-time to the recording verification', function () {
-    // Mirrors the page: the snapshot is captured when the invoice is scanned and
-    // stashed on the component, then persisted onto the verification by run().
+it('commits the scan-time national-file snapshot into the recording verification evidence folder', function () {
+    Storage::fake('local');
+    config(['niu.wasabi.enabled' => false]);
+
+    // Mirrors the page: the snapshot is staged when the invoice is scanned, then
+    // committed into the verification's structured evidence folder by run().
+    $staged = app(EvidenceStore::class)->putStaging('national-file.png', 'PNGBYTES');
+
     Livewire::test(ComplianceEngine::class)
         ->set('rawInput', 'M058712345678X')
         ->set('fiscalisPresence', 'present')
-        ->set('fiscalisSnapshotPath', 'fiscalis-snapshots/niu-test.png')
+        ->set('fiscalisSnapshotPath', $staged)
         ->set('fiscalisCheckedAt', now()->toDateTimeString())
         ->call('run');
 
     $verification = Verification::query()->where('stage', VerificationStage::Recording->value)->first();
 
     expect($verification->fiscalis_presence)->toBe(FiscalisPresence::Present)
-        ->and($verification->fiscalis_snapshot_path)->toBe('fiscalis-snapshots/niu-test.png')
+        ->and($verification->fiscalis_snapshot_path)->toContain('/suppliers/M058712345678X/')
+        ->and($verification->fiscalis_snapshot_path)->toContain('NIU_present_M058712345678X_')
+        ->and(app(EvidenceStore::class)->get($verification->fiscalis_snapshot_path))->toBe('PNGBYTES')
         ->and($verification->fiscalis_checked_at)->not->toBeNull();
 });
 

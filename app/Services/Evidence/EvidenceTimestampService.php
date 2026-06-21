@@ -80,11 +80,10 @@ final class EvidenceTimestampService
             $result = $this->authority->timestamp($row->sha256);
 
             if ($result->isSigned()) {
-                // Co-locate the signed token with the evidence (same disk + WORM
-                // scheme), so the proof is as immutable as what it seals.
-                $row->token_path = $this->store->put(
-                    EvidenceStore::TYPE_EVIDENCE, null, 'seal.tsr', (string) $result->tokenDer,
-                );
+                // Co-locate the signed token beside the evidence it seals (same
+                // disk + key + ".tsr"), so the proof is as immutable as, and filed
+                // next to, what it seals.
+                $row->token_path = $this->store->putSeal($row->path, (string) $result->tokenDer);
                 $row->timestamped_at = $result->timestampedAt;
                 $row->tsa_url = $result->tsaUrl;
                 $row->status = TimestampStatus::Signed;
