@@ -14,6 +14,7 @@ return [
         'clients' => 'Clients',
         'users' => 'Utilisateurs',
         'user_guide' => 'Guide utilisateur',
+        'security' => 'Sécurité',
     ],
 
     // Provisionnement des clients (locataires) côté admin central + gestion des utilisateurs par locataire.

@@ -14,6 +14,7 @@ return [
         'clients' => 'Clients',
         'users' => 'Users',
         'user_guide' => 'User guide',
+        'security' => 'Security',
     ],
 
     // Central-admin client (tenant) provisioning + per-tenant user management.
