@@ -78,7 +78,10 @@ final class TelegramNotifier
         }
 
         $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-        $who = $conversation->requester_name ?: ($conversation->requester_email ?: '—');
+        // Data minimisation (art. 32): the name is enough for the team to respond;
+        // the email is not sent to the external messaging service — it stays in the
+        // console for anyone who needs it.
+        $who = $conversation->requester_name ?: (string) __('support.telegram.anonymous');
 
         $text = '📩 <b>'.(string) __('support.telegram.follow_up').'</b> — '.$e($who)."\n\n"
             .'<i>'.$e(Str::limit($customerMessage, 600)).'</i>';
@@ -94,7 +97,10 @@ final class TelegramNotifier
     {
         $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
         $url = rtrim((string) config('app.url'), '/').'/admin/conversations';
-        $who = $conversation->requester_name ?: ($conversation->requester_email ?: '—');
+        // Data minimisation (art. 32): the name is enough for the team to respond;
+        // the email is not sent to the external messaging service — it stays in the
+        // console for anyone who needs it.
+        $who = $conversation->requester_name ?: (string) __('support.telegram.anonymous');
 
         return '🔺 <b>'.$e($conversation->nature->label()).'</b> — '.$e($conversation->tenant_name ?: $conversation->tenant_id)."\n"
             .'👤 '.$e($who)."\n\n"

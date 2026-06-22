@@ -160,5 +160,8 @@ return [
         'policy_updated' => env('DP_POLICY_UPDATED', '2026-06-22'),
         'dsar_reply_days' => (int) env('DP_DSAR_REPLY_DAYS', 30),
         'authority_reference' => env('DP_AUTHORITY_REFERENCE', ''),
+        // How long read-level access logs (operational metadata, not audit evidence)
+        // are kept before `data:retention --prune` rotates them out.
+        'access_log_retention_months' => (int) env('DP_ACCESS_LOG_RETENTION_MONTHS', 24),
     ],
 ];

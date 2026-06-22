@@ -109,6 +109,7 @@ return [
         'reply_hint' => 'Reply to this message to answer the customer — anyone in this group can respond.',
         'open_console' => 'Open the console',
         'follow_up' => 'New message from the customer',
+        'anonymous' => 'A customer',
     ],
 
     'reply_mail' => [

@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources\AuditLogs\Tables;
 
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Fiscalis\FiscalisPresence;
+use App\Models\DataAccessLog;
 use App\Models\Verification;
 use App\Services\Evidence\EvidenceArchiveService;
 use App\Services\Fiscalis\FiscalisStatusService;
@@ -100,9 +101,14 @@ class AuditLogsTable
                 Action::make('export')
                     ->label(__('app.audit.export'))
                     ->icon(Heroicon::OutlinedArrowDownTray)
-                    ->action(fn (Verification $record): BinaryFileResponse => response()
-                        ->download(app(EvidenceArchiveService::class)->exportZip($record), 'evidence-'.($record->niu ?? $record->getKey()).'.zip')
-                        ->deleteFileAfterSend()),
+                    ->action(function (Verification $record): BinaryFileResponse {
+                        // Read-level audit (art. 27): record this export of evidence (PII).
+                        DataAccessLog::record('export', 'evidence', 'verification #'.$record->getKey().($record->niu ? ' / '.$record->niu : ''));
+
+                        return response()
+                            ->download(app(EvidenceArchiveService::class)->exportZip($record), 'evidence-'.($record->niu ?? $record->getKey()).'.zip')
+                            ->deleteFileAfterSend();
+                    }),
                 Action::make('archive')
                     ->label(__('app.audit.archive'))
                     ->icon(Heroicon::OutlinedArchiveBoxArrowDown)
