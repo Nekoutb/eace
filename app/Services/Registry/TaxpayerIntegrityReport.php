@@ -37,6 +37,7 @@ final readonly class TaxpayerIntegrityReport
         public array $columnsMissing = [],
         public ?int $previousRowCount = null,
         public ?string $error = null,
+        public ?TaxpayerChangeSet $changes = null,
     ) {}
 
     public function duplicateNiu(): int

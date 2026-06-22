@@ -44,6 +44,30 @@
                 {!! $row('File size', $mb) !!}
                 {!! $row('File hash (SHA-256)', '<span style="font-family:monospace;font-size:11px">'.($r->fileHash ?? '—').'</span>') !!}
             </table>
+
+            @if($r->changes && $r->changes->hasChanges())
+                @php($c = $r->changes)
+                <h3 style="font-size:13px;color:{{ $accent }};margin:1.2rem 0 .3rem;text-transform:uppercase;letter-spacing:.04em">Register changes vs previous file</h3>
+                <table style="width:100%;border-collapse:collapse">
+                    {!! $row('NIU added', $fmt($c->addedTotal).' &nbsp;(<span style="color:#15803d">'.$fmt($c->addedFirstTime).' first-time ever</span> · '.$fmt($c->addedReturning).' returning)') !!}
+                    {!! $row('NIU removed (fell off)', $fmt($c->removedTotal)) !!}
+                </table>
+                <p style="font-size:12px;color:{{ $soft }};margin:.5rem 0 0">
+                    <strong>First-time ever</strong> = never appeared in any file we have ingested.
+                    <strong>Returning</strong> = seen in an earlier file, had dropped off, now back.
+                </p>
+                @if($c->added !== [])
+                    <p style="font-size:12px;color:{{ $soft }};margin:.5rem 0 0"><strong>Sample added:</strong> <span style="font-family:monospace">{{ implode(', ', array_slice($c->added, 0, 10)) }}</span>@if($c->addedTotal > 10) … @endif</p>
+                @endif
+                @if($c->removed !== [])
+                    <p style="font-size:12px;color:{{ $soft }};margin:.25rem 0 0"><strong>Sample removed:</strong> <span style="font-family:monospace">{{ implode(', ', array_slice($c->removed, 0, 10)) }}</span>@if($c->removedTotal > 10) … @endif</p>
+                @endif
+                <p style="font-size:12px;color:{{ $soft }};margin:.5rem 0 0">
+                    The complete added/removed NIU lists (each added NIU labelled first-time vs returning) are attached as <strong>register-changes.csv</strong>.@if($c->capped) Lists are capped at 50,000 rows each; the totals above are exact. @endif
+                </p>
+            @elseif($r->changes)
+                <p style="font-size:12px;color:{{ $soft }};margin:.8rem 0 0">No NIUs were added or removed versus the previous file — the population is identical.</p>
+            @endif
         @endif
 
         @if($r->warnings() !== [])

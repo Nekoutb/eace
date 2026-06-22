@@ -188,6 +188,7 @@ class FetchTaxpayerFile extends Command
             columnsFound: $metrics['columnsFound'],
             columnsMissing: $metrics['columnsMissing'],
             previousRowCount: $previousCount,
+            changes: $ingestion->lastChangeSet(),
         ));
 
         return self::SUCCESS;

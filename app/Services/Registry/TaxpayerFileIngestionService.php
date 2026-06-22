@@ -6,6 +6,8 @@ namespace App\Services\Registry;
 
 use App\Models\TaxpayerFileExtraction;
 use App\Models\TaxpayerFileRecord;
+use App\Models\TaxpayerNiuSeen;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use OpenSpout\Reader\XLSX\Reader;
 use RuntimeException;
@@ -36,6 +38,14 @@ final class TaxpayerFileIngestionService
         'centre' => 'CENTRE_DE_RATTACHEMENT',
     ];
 
+    private ?TaxpayerChangeSet $lastChangeSet = null;
+
+    /** The added/removed NIU change set computed by the most recent ingest, if any. */
+    public function lastChangeSet(): ?TaxpayerChangeSet
+    {
+        return $this->lastChangeSet;
+    }
+
     /**
      * @param  array<string, mixed>  $meta  source_url, file_path, file_hash
      */
@@ -65,12 +75,27 @@ final class TaxpayerFileIngestionService
             // under WAL) and are atomic — readers keep seeing the old register
             // until the new one is fully in place, and any failure rolls back
             // cleanly, leaving the previous snapshot untouched.
-            $count = DB::connection($central)->transaction(function () use ($absolutePath, $extraction, $previousRowCount): int {
+            $count = DB::connection($central)->transaction(function () use ($absolutePath, $extraction, $previousRowCount, $central): int {
+                // Seed the "ever seen" NIU history once from the existing register, so
+                // a NIU that drops off and later returns is recognised (not mislabelled
+                // first-time) from the very first run onward.
+                if (TaxpayerNiuSeen::query()->doesntExist()) {
+                    $this->seedSeen($central);
+                }
+
+                // The upsert keeps existing rows' ids and assigns new ids to inserted
+                // (added) rows, so "id beyond this mark" == the NIUs this file added.
+                $maxIdBefore = (int) (TaxpayerFileRecord::query()->max('id') ?? 0);
+
                 $count = $this->stream($absolutePath, (int) $extraction->id);
 
                 $this->assertNotCollapsed($count, $previousRowCount);
 
-                // Prune NIUs that dropped off the new file (a full monthly snapshot).
+                // Diff the new snapshot vs the previous one + the ever-seen history,
+                // BEFORE pruning dropped NIUs and before recording this run's new ones.
+                $this->lastChangeSet = $this->computeChangeSet($central, (int) $extraction->id, $maxIdBefore);
+
+                // Prune NIUs that dropped off the new file (a full snapshot).
                 TaxpayerFileRecord::query()
                     ->where('taxpayer_file_extraction_id', '!=', $extraction->id)
                     ->delete();
@@ -90,6 +115,62 @@ final class TaxpayerFileIngestionService
         }
 
         return $extraction;
+    }
+
+    /** Seed the ever-seen NIU history from the current register (one-time, when empty). */
+    private function seedSeen(string $central): void
+    {
+        DB::connection($central)->statement(
+            'INSERT OR IGNORE INTO taxpayer_niu_seen (niu, first_seen_at) SELECT niu, ? FROM taxpayer_file_records',
+            [now()->toDateTimeString()],
+        );
+    }
+
+    /**
+     * Diff the just-loaded snapshot against the previous one and the ever-seen
+     * history: which NIUs were added (split first-time vs returning) and removed.
+     * Must run AFTER the upsert but BEFORE the prune + before recording new NIUs.
+     */
+    private function computeChangeSet(string $central, int $extractionId, int $maxIdBefore): TaxpayerChangeSet
+    {
+        $cap = 50000;
+
+        $addedTotal = TaxpayerFileRecord::query()->where('id', '>', $maxIdBefore)->count();
+        $removedTotal = TaxpayerFileRecord::query()->where('taxpayer_file_extraction_id', '!=', $extractionId)->count();
+
+        // Of the added NIUs, which have we EVER seen before (returning)? Computed
+        // before this run's new NIUs are recorded, so the history reflects the past.
+        $returningCount = 0;
+        $returningNius = [];
+        if ($addedTotal > 0) {
+            $returningBase = fn () => TaxpayerFileRecord::query()
+                ->where('id', '>', $maxIdBefore)
+                ->whereExists(fn (QueryBuilder $q) => $q->from('taxpayer_niu_seen')->whereColumn('taxpayer_niu_seen.niu', 'taxpayer_file_records.niu'));
+            $returningCount = $returningBase()->count();
+            $returningNius = $returningBase()->limit($cap)->pluck('niu')->all();
+        }
+
+        $added = TaxpayerFileRecord::query()->where('id', '>', $maxIdBefore)->limit($cap)->pluck('niu')->all();
+        $removed = TaxpayerFileRecord::query()->where('taxpayer_file_extraction_id', '!=', $extractionId)->limit($cap)->pluck('niu')->all();
+
+        // Record any genuinely-new NIUs so a future re-appearance is recognised.
+        if ($addedTotal > 0) {
+            DB::connection($central)->statement(
+                'INSERT OR IGNORE INTO taxpayer_niu_seen (niu, first_seen_at) SELECT niu, ? FROM taxpayer_file_records WHERE id > ?',
+                [now()->toDateTimeString(), $maxIdBefore],
+            );
+        }
+
+        return new TaxpayerChangeSet(
+            addedTotal: $addedTotal,
+            addedFirstTime: $addedTotal - $returningCount,
+            addedReturning: $returningCount,
+            removedTotal: $removedTotal,
+            added: array_values(array_map(strval(...), $added)),
+            removed: array_values(array_map(strval(...), $removed)),
+            returning: array_values(array_map(strval(...), $returningNius)),
+            capped: $addedTotal > $cap || $removedTotal > $cap,
+        );
     }
 
     /**
