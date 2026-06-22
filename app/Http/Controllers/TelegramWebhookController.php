@@ -12,12 +12,15 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * Receives Telegram updates for the customer-service bridge. A team member who
- * REPLIES (in the group) to one of the bot's escalation messages has their reply
- * posted straight back into the matching conversation — and so to the customer
- * in-app. The endpoint is guarded by a secret in both the URL and Telegram's
- * X-Telegram-Bot-Api-Secret-Token header. It also opportunistically links a staff
- * member's numeric chat_id the first time they message the bot.
+ * Receives Telegram updates for the customer-service bridge. Any team member's
+ * message in the group is posted straight back into a conversation — and so to the
+ * customer in-app — with NO login required (group membership is the authorisation).
+ * A REPLY to one of the bot's escalation messages routes precisely to that
+ * conversation; a plain message routes to the most recent still-open escalation
+ * (handy for the usual single active case — needs the bot's group privacy mode OFF
+ * so it can see non-reply messages). The endpoint is guarded by a secret in both the
+ * URL and Telegram's X-Telegram-Bot-Api-Secret-Token header, and it opportunistically
+ * links a staff member's numeric chat_id the first time they post.
  */
 class TelegramWebhookController
 {
@@ -38,23 +41,54 @@ class TelegramWebhookController
 
         $this->autoLinkAgent($message);
 
-        $replyTo = $message['reply_to_message']['message_id'] ?? null;
+        $from = is_array($message['from'] ?? null) ? $message['from'] : [];
         $text = trim((string) ($message['text'] ?? ''));
 
-        if ($replyTo !== null && $text !== '') {
-            $conversation = Conversation::query()->where('telegram_message_id', (string) $replyTo)->first();
+        // Only a human's plain text becomes a customer reply — skip the bot's own
+        // posts, empty/non-text updates, and slash-commands.
+        if ($text === '' || ($from['is_bot'] ?? false) === true || str_starts_with($text, '/')) {
+            return response('ok');
+        }
 
-            if ($conversation !== null) {
-                $conversation->postMessage(MessageAuthor::Agent, $text, $this->authorName($message));
-                $conversation->emailRequesterReply($text); // login-chat visitors get it by email
+        $conversation = $this->targetConversation($message);
 
-                if (in_array($conversation->status, [ConversationStatus::New, ConversationStatus::Open, ConversationStatus::Escalated], true)) {
-                    $conversation->forceFill(['status' => ConversationStatus::AwaitingCustomer])->save();
-                }
+        if ($conversation !== null) {
+            $conversation->postMessage(MessageAuthor::Agent, $text, $this->authorName($message));
+            $conversation->emailRequesterReply($text); // login-chat visitors get it by email
+
+            if (in_array($conversation->status, [
+                ConversationStatus::New,
+                ConversationStatus::Open,
+                ConversationStatus::Escalated,
+            ], true)) {
+                $conversation->forceFill(['status' => ConversationStatus::AwaitingCustomer])->save();
             }
         }
 
         return response('ok');
+    }
+
+    /**
+     * The conversation this group message answers: the one the agent REPLIED to
+     * (precise), or — for a plain message — the most recent still-open conversation
+     * that was escalated to the group, so "just type a reply" works for the usual
+     * single active escalation.
+     *
+     * @param  array<string, mixed>  $message
+     */
+    private function targetConversation(array $message): ?Conversation
+    {
+        $replyTo = $message['reply_to_message']['message_id'] ?? null;
+
+        if ($replyTo !== null) {
+            return Conversation::query()->where('telegram_message_id', (string) $replyTo)->first();
+        }
+
+        return Conversation::query()
+            ->whereNotNull('telegram_message_id')
+            ->whereIn('status', ConversationStatus::openValues())
+            ->orderByDesc('last_activity_at')
+            ->first();
     }
 
     /**

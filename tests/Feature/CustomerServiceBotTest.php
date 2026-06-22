@@ -158,3 +158,17 @@ it('stands down once a human has replied', function () {
 
     expect($c->fresh()->messages()->where('author', 'bot')->count())->toBe(0);
 });
+
+it('keeps helping an escalated thread but leaves it in the human queue', function () {
+    bindBot(new BotReply('Your evidence is kept in an encrypted vault.', true, ConversationNature::Question, false));
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Escalated, 'nature' => ConversationNature::Question, 'escalated_at' => now()->subMinute(), 'telegram_message_id' => '14']);
+    $c->postMessage(MessageAuthor::Customer, 'I need training on tax');             // what escalated it
+    $c->postMessage(MessageAuthor::Bot, 'A specialist will follow up.', 'Bot', 1);
+    $c->postMessage(MessageAuthor::Customer, 'meanwhile, how is my data stored?');  // answerable follow-up
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    expect($c->fresh()->messages()->where('author', 'bot')->count())->toBe(2)        // bot helped in the meantime
+        ->and($c->fresh()->status)->toBe(ConversationStatus::Escalated);             // still waiting on a human
+});

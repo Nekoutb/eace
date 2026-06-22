@@ -43,18 +43,19 @@ class HelpChatController
 
         $conversation->postMessage(MessageAuthor::Customer, $message);
 
-        // Once a human is handling it (escalated, or an agent has replied), the bot
-        // stays silent — the message is still recorded for the team.
-        $humanHandling = $conversation->status === ConversationStatus::Escalated
-            || $conversation->messages()->where('author', MessageAuthor::Agent->value)->exists();
+        // Stand down only once a human has ACTUALLY replied — an escalated thread is
+        // still waiting on the team, so the bot keeps helping in the meantime.
+        $humanReplied = $conversation->messages()->where('author', MessageAuthor::Agent->value)->exists();
 
-        if ($humanHandling) {
+        if ($humanReplied) {
             return response()->json([
                 'reply' => (string) __('support.bot.holding'),
                 'escalated' => true,
                 'email' => $conversation->requester_email,
             ]);
         }
+
+        $alreadyEscalated = $conversation->status === ConversationStatus::Escalated;
 
         $context = $conversation->load('messages')->botContext();
 
@@ -71,6 +72,16 @@ class HelpChatController
 
         if ($reply !== null && filled($reply->reply)) {
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
+        }
+
+        // Already with a human — the reply above was interim help; keep it escalated
+        // (don't downgrade it out of the queue or re-ping Telegram).
+        if ($alreadyEscalated) {
+            return response()->json([
+                'reply' => $reply->reply ?? (string) __('support.bot.holding'),
+                'escalated' => true,
+                'email' => $conversation->requester_email,
+            ]);
         }
 
         $resolved = $reply !== null && $reply->resolved && ! $reply->isComplaint;

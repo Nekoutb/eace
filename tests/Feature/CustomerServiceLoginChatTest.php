@@ -73,3 +73,14 @@ it('does not email a signed-in customer (app channel) on reply', function () {
 
     Mail::assertNothingSent();
 });
+
+it('keeps the bot helping an escalated login thread until a human replies', function () {
+    bindLoginBot(new BotReply('A specialist will follow up shortly.', false, ConversationNature::Billing, false));
+
+    test()->postJson('/help/ask', ['message' => 'How much does it cost?'])->assertOk()->assertJson(['escalated' => true]);
+    test()->postJson('/help/ask', ['message' => 'and what are your support hours?'])->assertOk();
+
+    $c = Conversation::query()->where('channel', 'login')->first();
+    expect($c->status)->toBe(ConversationStatus::Escalated)              // still waiting on a human
+        ->and($c->messages()->where('author', 'bot')->count())->toBe(2); // bot replied to BOTH messages, no silence
+});

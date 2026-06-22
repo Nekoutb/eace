@@ -44,14 +44,14 @@ class AnswerConversationWithBot implements ShouldQueue
             return;
         }
 
-        // Stand down once a human has taken over, or the thread is escalated/closed —
-        // but keep answering follow-ups while the bot is still the one handling it.
+        // Stand down only once a HUMAN has actually replied (or the thread is
+        // resolved/closed). An ESCALATED thread is still waiting on a human, so the
+        // bot keeps helping with follow-ups in the meantime instead of going silent.
         $humanReplied = $conversation->messages->contains(
             fn ($m): bool => $m->author === MessageAuthor::Agent
         );
 
         if ($humanReplied || in_array($conversation->status, [
-            ConversationStatus::Escalated,
             ConversationStatus::Resolved,
             ConversationStatus::Closed,
         ], true)) {
@@ -63,6 +63,10 @@ class AnswerConversationWithBot implements ShouldQueue
         if ($latest === null || $latest->author !== MessageAuthor::Customer) {
             return;
         }
+
+        // If a human is already on it (escalated), the bot still answers to help, but
+        // must not downgrade the status out of the queue or re-ping Telegram.
+        $alreadyEscalated = $conversation->status === ConversationStatus::Escalated;
 
         $context = $conversation->botContext();
 
@@ -87,6 +91,12 @@ class AnswerConversationWithBot implements ShouldQueue
 
         if (filled($reply->reply)) {
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
+        }
+
+        // Already with a human — leave it in the queue; the reply above was just
+        // interim help while they get to it.
+        if ($alreadyEscalated) {
+            return;
         }
 
         // Guardrail (defence in depth, also enforced in ClaudeSupportBot::map): a

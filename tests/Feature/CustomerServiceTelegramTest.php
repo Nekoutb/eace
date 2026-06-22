@@ -78,3 +78,30 @@ it('auto-links a staff member chat_id the first time they message the bot', func
 
     expect($agent->fresh()->telegram_chat_id)->toBe('999');
 });
+
+it('routes a plain group message (no reply) to the most recent open escalation', function () {
+    config(['services.telegram.webhook_secret' => 's3cr3t']);
+
+    Conversation::query()->create(['tenant_id' => 'old', 'status' => ConversationStatus::Escalated, 'telegram_message_id' => '10', 'last_activity_at' => now()->subHour()]);
+    $newest = Conversation::query()->create(['tenant_id' => 'new', 'status' => ConversationStatus::Escalated, 'telegram_message_id' => '11', 'last_activity_at' => now()]);
+
+    test()->withHeaders(['X-Telegram-Bot-Api-Secret-Token' => 's3cr3t'])
+        ->postJson('/telegram/webhook/s3cr3t', [
+            'message' => ['text' => 'Here is your answer', 'from' => ['first_name' => 'Rep', 'is_bot' => false]],
+        ])->assertOk();
+
+    expect($newest->fresh()->messages()->where('author', 'agent')->where('body', 'Here is your answer')->exists())->toBeTrue()
+        ->and($newest->fresh()->status)->toBe(ConversationStatus::AwaitingCustomer);
+});
+
+it('ignores the bot own posts and slash-commands in the group', function () {
+    config(['services.telegram.webhook_secret' => 's3cr3t']);
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Escalated, 'telegram_message_id' => '20', 'last_activity_at' => now()]);
+
+    test()->withHeaders(['X-Telegram-Bot-Api-Secret-Token' => 's3cr3t'])
+        ->postJson('/telegram/webhook/s3cr3t', ['message' => ['text' => 'Reply to this message…', 'from' => ['is_bot' => true, 'first_name' => 'Bot']]])->assertOk();
+    test()->withHeaders(['X-Telegram-Bot-Api-Secret-Token' => 's3cr3t'])
+        ->postJson('/telegram/webhook/s3cr3t', ['message' => ['text' => '/help', 'from' => ['first_name' => 'Rep']]])->assertOk();
+
+    expect($c->fresh()->messages()->where('author', 'agent')->count())->toBe(0);
+});
