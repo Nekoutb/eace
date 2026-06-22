@@ -32,7 +32,7 @@ afterEach(function () {
 
 it('holds a pending sign-up and emails a verification link without creating a workspace', function () {
     $this->post('/register', [
-        'org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test',
+        'org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test', 'consent' => '1',
     ])->assertRedirect(route('signup.sent'));
 
     expect(PendingSignup::query()->where('email', 'jane@acme.test')->exists())->toBeTrue()
@@ -44,7 +44,7 @@ it('holds a pending sign-up and emails a verification link without creating a wo
 });
 
 it('provisions the workspace and emails credentials only after the email is confirmed', function () {
-    $this->post('/register', ['org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test']);
+    $this->post('/register', ['org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test', 'consent' => '1']);
     $token = PendingSignup::query()->where('email', 'jane@acme.test')->value('token');
 
     $this->get(route('signup.verify', $token))->assertRedirect(route('signup.done'));
@@ -65,7 +65,7 @@ it('provisions the workspace and emails credentials only after the email is conf
 });
 
 it('cannot provision twice from the same confirmation link', function () {
-    $this->post('/register', ['org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test']);
+    $this->post('/register', ['org_name' => 'Acme Ltd', 'name' => 'Jane', 'email' => 'jane@acme.test', 'consent' => '1']);
     $token = PendingSignup::query()->where('email', 'jane@acme.test')->value('token');
 
     $this->get(route('signup.verify', $token))->assertRedirect(route('signup.done'));
@@ -87,7 +87,7 @@ it('rejects an expired confirmation token and provisions nothing', function () {
 it('refuses a sign-up for an email that already owns a workspace', function () {
     TenantLogin::link('taken@x.test', 'some-tenant');
 
-    $this->post('/register', ['org_name' => 'Beta Co', 'name' => 'B', 'email' => 'taken@x.test'])
+    $this->post('/register', ['org_name' => 'Beta Co', 'name' => 'B', 'email' => 'taken@x.test', 'consent' => '1'])
         ->assertSessionHasErrors('email');
 
     expect(PendingSignup::query()->where('email', 'taken@x.test')->exists())->toBeFalse();
@@ -96,7 +96,7 @@ it('refuses a sign-up for an email that already owns a workspace', function () {
 it('refuses a second sign-up while one is still pending for the same email', function () {
     PendingSignup::start('Beta Co', 'B', 'dup@x.test');
 
-    $this->post('/register', ['org_name' => 'Beta Two', 'name' => 'B', 'email' => 'dup@x.test'])
+    $this->post('/register', ['org_name' => 'Beta Two', 'name' => 'B', 'email' => 'dup@x.test', 'consent' => '1'])
         ->assertSessionHasErrors('email');
 });
 
@@ -114,7 +114,7 @@ it('re-sends the verification link on request', function () {
 it('notifies the operator of a new workspace when configured', function () {
     config(['niu.signup_admin_notify' => 'ops@cm-ea.com']);
 
-    $this->post('/register', ['org_name' => 'Gamma SARL', 'name' => 'G', 'email' => 'g@gamma.test']);
+    $this->post('/register', ['org_name' => 'Gamma SARL', 'name' => 'G', 'email' => 'g@gamma.test', 'consent' => '1']);
     $token = PendingSignup::query()->where('email', 'g@gamma.test')->value('token');
     $this->get(route('signup.verify', $token));
 

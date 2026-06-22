@@ -36,7 +36,9 @@ class SignUpController
             'org_name' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-        ]);
+            // Privacy-notice consent (Loi 2024/017 art. 9) — must be ticked.
+            'consent' => ['accepted'],
+        ], ['consent.accepted' => (string) __('app.signup.consent_required')]);
 
         $email = trim($data['email']);
 

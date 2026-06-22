@@ -27,6 +27,15 @@ Route::get('/security', fn () => view('security'))
     ->name('security');
 
 /*
+ * Public privacy notice (Loi N° 2024/017 art. 14 & 21): controller identity,
+ * purposes, data categories, recipients, international transfers, retention,
+ * data-subject rights and how to exercise them. Public + central; FR/EN aware.
+ */
+Route::get('/privacy', fn () => view('privacy'))
+    ->middleware(SetLocale::class)
+    ->name('privacy');
+
+/*
  * Telegram bridge webhook (customer-service platform). A server-to-server POST
  * from Telegram — no session/CSRF (exempted in bootstrap/app.php); authenticated
  * by the secret in the path AND the X-Telegram-Bot-Api-Secret-Token header.

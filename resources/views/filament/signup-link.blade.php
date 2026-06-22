@@ -4,6 +4,7 @@
     </div>
 @endif
 
-<div style="margin-top:.9rem;text-align:center;font-size:.82rem">
-    <a href="{{ url('/security') }}" style="color:#46685a;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;justify-content:center">@svg('heroicon-m-lock-closed', '', ['style' => 'width:1em;height:1em', 'aria-hidden' => 'true']){{ app()->getLocale() === 'fr' ? 'Sécurité & protection des données' : 'Security & data protection' }}</a>
+<div style="margin-top:.9rem;text-align:center;font-size:.82rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <a href="{{ url('/security') }}" style="color:#46685a;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem">@svg('heroicon-m-lock-closed', '', ['style' => 'width:1em;height:1em', 'aria-hidden' => 'true']){{ app()->getLocale() === 'fr' ? 'Sécurité & protection des données' : 'Security & data protection' }}</a>
+    <a href="{{ url('/privacy') }}" style="color:#46685a;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem">@svg('heroicon-m-document-text', '', ['style' => 'width:1em;height:1em', 'aria-hidden' => 'true']){{ app()->getLocale() === 'fr' ? 'Confidentialité' : 'Privacy' }}</a>
 </div>

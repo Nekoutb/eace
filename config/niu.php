@@ -143,4 +143,22 @@ return [
         'bot_model' => env('NIU_SUPPORT_BOT_MODEL', env('ANTHROPIC_MODEL', 'claude-sonnet-4-6')),
         'frt_target_hours' => (int) env('NIU_SUPPORT_FRT_HOURS', 8),
     ],
+
+    /*
+     * Data protection (Cameroon Loi N° 2024/017). The published privacy notice's
+     * controller identity, contact + version, and the data-subject-request reply
+     * window. Set controller_* to your registered legal entity — they appear on the
+     * public /privacy page and the consent text. authority_reference holds the
+     * Authority's authorisation/registration number once obtained (shown on the
+     * Record of Processing); blank until then.
+     */
+    'data_protection' => [
+        'controller_name' => env('DP_CONTROLLER_NAME', 'Elite Advisors'),
+        'controller_contact' => env('DP_CONTROLLER_CONTACT', 'privacy@cm-ea.com'),
+        'controller_address' => env('DP_CONTROLLER_ADDRESS', ''),
+        'policy_version' => env('DP_POLICY_VERSION', '1.0'),
+        'policy_updated' => env('DP_POLICY_UPDATED', '2026-06-22'),
+        'dsar_reply_days' => (int) env('DP_DSAR_REPLY_DAYS', 30),
+        'authority_reference' => env('DP_AUTHORITY_REFERENCE', ''),
+    ],
 ];

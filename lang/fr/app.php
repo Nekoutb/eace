@@ -62,6 +62,7 @@ return [
         'signin' => 'Se connecter',
         'link' => 'Nouveau ? Créez un espace d’essai',
         'email_taken' => 'Cet e-mail dispose déjà d’un espace. Veuillez vous connecter ou réinitialiser votre mot de passe.',
+        'consent_required' => 'Veuillez lire et accepter la politique de confidentialité pour continuer.',
         // Étapes
         'step_details' => 'Vos informations',
         'step_verify' => 'Confirmer l’e-mail',

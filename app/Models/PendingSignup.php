@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
  * @property string $org_name
  * @property string $name
  * @property string $email
+ * @property ?string $consent_version
+ * @property ?Carbon $consent_accepted_at
  * @property Carbon $expires_at
  */
 class PendingSignup extends CentralModel
@@ -24,7 +26,7 @@ class PendingSignup extends CentralModel
 
     protected function casts(): array
     {
-        return ['expires_at' => 'datetime'];
+        return ['expires_at' => 'datetime', 'consent_accepted_at' => 'datetime'];
     }
 
     /** Begin a pending sign-up, returning the row carrying the verification token. */
@@ -38,6 +40,10 @@ class PendingSignup extends CentralModel
             'org_name' => trim($orgName),
             'name' => trim($name),
             'email' => $email,
+            // Consent was required + validated before reaching here (art. 9): record
+            // which version of the privacy notice was accepted, and when.
+            'consent_version' => (string) config('niu.data_protection.policy_version', '1.0'),
+            'consent_accepted_at' => now(),
             'expires_at' => now()->addHours((int) config('niu.pending_signup_expiry_hours', 24)),
         ]);
     }

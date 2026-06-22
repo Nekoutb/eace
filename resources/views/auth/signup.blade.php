@@ -20,6 +20,12 @@
             <p class="help">{{ __('app.signup.email_help') }}</p>
             @error('email') <p class="err">{{ $message }}</p> @enderror
 
+            <label for="consent" style="display:flex;gap:.5rem;align-items:flex-start;font-weight:500;color:var(--ink);font-size:.84rem;margin-top:1.1rem">
+                <input id="consent" type="checkbox" name="consent" value="1" required {{ old('consent') ? 'checked' : '' }} style="width:auto;margin-top:.15rem">
+                <span>@if(app()->getLocale() === 'fr') J'ai lu et j'accepte la <a href="{{ url('/privacy') }}" target="_blank" rel="noopener">politique de confidentialité</a>. @else I have read and accept the <a href="{{ url('/privacy') }}" target="_blank" rel="noopener">privacy notice</a>. @endif</span>
+            </label>
+            @error('consent') <p class="err">{{ $message }}</p> @enderror
+
             <button class="btn" type="submit">{{ __('app.signup.submit') }}</button>
         </form>
 

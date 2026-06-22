@@ -180,7 +180,7 @@ it('defers public sign-up provisioning until the email is confirmed', function (
     Mail::fake();
 
     $this->post('/register', [
-        'org_name' => 'Gamma Ltd', 'name' => 'Gina', 'email' => 'gina@gamma.test',
+        'org_name' => 'Gamma Ltd', 'name' => 'Gina', 'email' => 'gina@gamma.test', 'consent' => '1',
     ])->assertRedirect(route('signup.sent'));
 
     expect(Tenant::find('gamma-ltd'))->toBeNull()
