@@ -83,6 +83,13 @@ return [
          * truncated or corrupt file silently wiping the register.
          */
         'min_row_ratio' => (float) env('NIU_TAXPAYER_MIN_ROW_RATIO', 0.5),
+
+        /*
+         * Address that receives the post-refresh email — a download confirmation
+         * plus the data-integrity report (hash, schema, completeness, validity,
+         * row-count change). Null disables the email.
+         */
+        'report_email' => env('NIU_TAXPAYER_REPORT_EMAIL'),
     ],
 
     /*

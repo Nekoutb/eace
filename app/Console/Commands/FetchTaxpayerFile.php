@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Mail\TaxpayerFetchReportMail;
 use App\Models\TaxpayerFileExtraction;
+use App\Models\TaxpayerFileRecord;
 use App\Services\Evidence\EvidenceStore;
 use App\Services\Registry\DgiExportDownloader;
 use App\Services\Registry\TaxpayerFileIngestionService;
+use App\Services\Registry\TaxpayerFileIntegrityChecker;
+use App\Services\Registry\TaxpayerIntegrityReport;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Refreshes the shared NIU-existence register from the DGI consultation portal.
@@ -80,6 +86,7 @@ class FetchTaxpayerFile extends Command
                 'message' => 'Live export failed: '.$error,
                 'extracted_at' => now(),
             ]);
+            $this->emailReport(new TaxpayerIntegrityReport(status: 'failed', period: $period, error: 'Live export failed: '.$error));
 
             return self::FAILURE;
         }
@@ -103,7 +110,7 @@ class FetchTaxpayerFile extends Command
         try {
             $ref = app(EvidenceStore::class)->putTaxRegister($path, basename($path));
             $this->info('Archived the download → '.$ref);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
             $this->warn('Could not archive the download: '.$e->getMessage());
         }
@@ -114,12 +121,14 @@ class FetchTaxpayerFile extends Command
         $hash = hash_file('sha256', $path);
         if ($hash === false) {
             $this->error('Could not hash the file.');
+            $this->emailReport(new TaxpayerIntegrityReport(status: 'failed', period: $period, error: 'Could not hash the downloaded file.'));
 
             return self::FAILURE;
         }
 
         $relativePath = 'taxpayer-files/'.basename($path);
         $current = TaxpayerFileExtraction::current();
+        $previousCount = $current?->row_count;
 
         if ($current !== null && $current->file_hash === $hash) {
             TaxpayerFileExtraction::query()->create([
@@ -132,19 +141,73 @@ class FetchTaxpayerFile extends Command
                 'extracted_at' => now(),
             ]);
             $this->info("Taxpayer file unchanged ({$period}) — recorded, {$current->row_count} taxpayers.");
+            $this->emailReport(new TaxpayerIntegrityReport(
+                status: 'unchanged',
+                period: $period,
+                fileHash: $hash,
+                distinctNiu: (int) $current->row_count,
+                previousRowCount: $previousCount,
+            ));
 
             return self::SUCCESS;
         }
 
-        $extraction = $ingestion->ingest($path, $period, [
-            'source_url' => $url,
-            'file_path' => $relativePath,
-            'file_hash' => $hash,
-        ]);
+        try {
+            $extraction = $ingestion->ingest($path, $period, [
+                'source_url' => $url,
+                'file_path' => $relativePath,
+                'file_hash' => $hash,
+            ]);
+        } catch (Throwable $e) {
+            // A collapsed/corrupt file leaves the register untouched (handled in the
+            // ingestion service); confirm the failure by email and exit gracefully.
+            $this->error('Ingest failed: '.$e->getMessage());
+            $this->emailReport(new TaxpayerIntegrityReport(
+                status: 'failed', period: $period, fileHash: $hash, previousRowCount: $previousCount, error: $e->getMessage(),
+            ));
+
+            return self::FAILURE;
+        }
 
         $this->info("Ingested {$period}: ".number_format($extraction->row_count).' taxpayers.');
 
+        // Build + email the data-integrity report: file-level checks (schema,
+        // completeness, validity, provenance) + the DB-derived distinct/duplicate
+        // count + the change vs the previous snapshot.
+        $metrics = app(TaxpayerFileIntegrityChecker::class)->check($path);
+        $this->emailReport(new TaxpayerIntegrityReport(
+            status: 'completed',
+            period: $period,
+            fileHash: $metrics['fileHash'],
+            fileSizeBytes: $metrics['fileSizeBytes'],
+            totalRows: $metrics['total'],
+            rowsWithNiu: $metrics['rowsWithNiu'],
+            distinctNiu: TaxpayerFileRecord::query()->count(),
+            rowsWithName: $metrics['rowsWithName'],
+            niuFormatValid: $metrics['niuValid'],
+            columnsFound: $metrics['columnsFound'],
+            columnsMissing: $metrics['columnsMissing'],
+            previousRowCount: $previousCount,
+        ));
+
         return self::SUCCESS;
+    }
+
+    /** Email the post-refresh confirmation + integrity report, if a recipient is configured. */
+    private function emailReport(TaxpayerIntegrityReport $report): void
+    {
+        $to = config('niu.taxpayer_file.report_email');
+        if (! is_string($to) || $to === '') {
+            return;
+        }
+
+        try {
+            Mail::to($to)->send(new TaxpayerFetchReportMail($report));
+            $this->info('Integrity report emailed to '.$to.'.');
+        } catch (Throwable $e) {
+            report($e);
+            $this->warn('Could not email the integrity report: '.$e->getMessage());
+        }
     }
 
     /** Remove every downloaded-export directory except the one just ingested. */
