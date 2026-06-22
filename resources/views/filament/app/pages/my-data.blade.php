@@ -39,8 +39,13 @@
         </div>
 
         <a class="niu-my__notice" href="{{ url('/privacy') }}" target="_blank" rel="noopener">
-            @svg('heroicon-o-document-text', '', ['style' => 'width:1.1em;height:1.1em'])
-            {{ __('dp.my.notice_link') }} →
+            @svg('heroicon-o-arrow-top-right-on-square', '', ['style' => 'width:1.1em;height:1.1em'])
+            {{ __('dp.my.notice_link') }}
         </a>
+
+        {{-- The full privacy notice, embedded so it's readable without leaving the app. --}}
+        <div style="margin-top:1.4rem">
+            @include('partials.privacy-notice')
+        </div>
     </div>
 </x-filament-panels::page>

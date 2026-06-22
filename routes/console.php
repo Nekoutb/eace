@@ -8,11 +8,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Refresh the shared DGI taxpayer register twice a week — Mondays and Thursdays
-// at 03:00. Downloaded once for everyone; every workspace queries the same file.
+// Refresh the shared DGI taxpayer register EVERY calendar day at midnight (00:00).
+// Downloaded once for everyone; every workspace queries the same file. The ingest
+// REPLACES the register in place (upsert by NIU + prune of dropped NIUs), so the
+// table stays a constant size no matter how often it runs; a byte-identical
+// re-download is recorded "unchanged" and not re-ingested. withoutOverlapping +
+// the 30-min cache lock mean a slow run can never collide with the next day's.
 Schedule::command('taxpayer-file:fetch')
-    ->days([1, 4]) // 1 = Monday, 4 = Thursday
-    ->at('03:00')
+    ->dailyAt('00:00')
     ->withoutOverlapping()
     ->runInBackground();
 
