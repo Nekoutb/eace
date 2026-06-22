@@ -153,9 +153,9 @@ return [
      * Record of Processing); blank until then.
      */
     'data_protection' => [
-        'controller_name' => env('DP_CONTROLLER_NAME', 'Elite Advisors'),
+        'controller_name' => env('DP_CONTROLLER_NAME', 'Elite Advisors SARLU'),
         'controller_contact' => env('DP_CONTROLLER_CONTACT', 'privacy@cm-ea.com'),
-        'controller_address' => env('DP_CONTROLLER_ADDRESS', ''),
+        'controller_address' => env('DP_CONTROLLER_ADDRESS', 'Bonaberi, Douala'),
         'policy_version' => env('DP_POLICY_VERSION', '1.0'),
         'policy_updated' => env('DP_POLICY_UPDATED', '2026-06-22'),
         'dsar_reply_days' => (int) env('DP_DSAR_REPLY_DAYS', 30),
