@@ -16,6 +16,7 @@ use App\Services\Support\BotReply;
 use App\Services\Support\SupportBotConnector;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -171,4 +172,32 @@ it('keeps helping an escalated thread but leaves it in the human queue', functio
 
     expect($c->fresh()->messages()->where('author', 'bot')->count())->toBe(2)        // bot helped in the meantime
         ->and($c->fresh()->status)->toBe(ConversationStatus::Escalated);             // still waiting on a human
+});
+
+it('forwards a still-unresolved follow-up in an escalated thread to the team Telegram', function () {
+    config(['services.telegram.bot_token' => 'TT', 'services.telegram.chat_id' => '-100']);
+    Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 77]])]);
+    bindBot(new BotReply('A specialist will follow up.', false, ConversationNature::Billing, false)); // hand-off, unresolved
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Escalated, 'nature' => ConversationNature::Question, 'escalated_at' => now()->subMinute(), 'telegram_message_id' => '14']);
+    $c->postMessage(MessageAuthor::Customer, 'Do you have tiered pricing?');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    Http::assertSent(fn ($r): bool => str_contains($r->url(), '/sendMessage') && ($r['reply_to_message_id'] ?? null) === 14);
+    expect($c->fresh()->telegram_message_id)->toBe('77'); // the reply anchor advanced to the follow-up
+});
+
+it('does NOT forward a follow-up the bot can resolve', function () {
+    config(['services.telegram.bot_token' => 'TT', 'services.telegram.chat_id' => '-100']);
+    Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 88]])]);
+    bindBot(new BotReply('Your evidence is kept in an encrypted vault.', true, ConversationNature::Question, false)); // resolved
+
+    $c = Conversation::query()->create(['tenant_id' => 'a', 'status' => ConversationStatus::Escalated, 'nature' => ConversationNature::Question, 'escalated_at' => now()->subMinute(), 'telegram_message_id' => '14']);
+    $c->postMessage(MessageAuthor::Customer, 'how is my data stored?');
+
+    AnswerConversationWithBot::dispatchSync($c->id, 'en');
+
+    Http::assertNothingSent();                                  // the bot handled it; no need to ping the team
+    expect($c->fresh()->telegram_message_id)->toBe('14');       // anchor unchanged
 });

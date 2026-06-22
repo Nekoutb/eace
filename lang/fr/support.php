@@ -108,6 +108,7 @@ return [
     'telegram' => [
         'reply_hint' => 'Répondez à ce message pour répondre au client — tout membre de ce groupe peut répondre.',
         'open_console' => 'Ouvrir la console',
+        'follow_up' => 'Nouveau message du client',
     ],
 
     'reply_mail' => [

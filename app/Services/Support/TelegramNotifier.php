@@ -65,6 +65,31 @@ final class TelegramNotifier
         }
     }
 
+    /**
+     * Surface a new customer message in an ALREADY-escalated thread to the team —
+     * threaded under the existing card (a reply to it), and advance the reply anchor
+     * so a reply to this latest note still routes back. Avoids spamming new cards.
+     */
+    public function pushFollowUp(Conversation $conversation, string $customerMessage): void
+    {
+        $chatId = config('services.telegram.chat_id');
+        if (! $this->enabled() || blank($chatId) || blank($conversation->telegram_message_id)) {
+            return;
+        }
+
+        $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+        $who = $conversation->requester_name ?: ($conversation->requester_email ?: '—');
+
+        $text = '📩 <b>'.(string) __('support.telegram.follow_up').'</b> — '.$e($who)."\n\n"
+            .'<i>'.$e(Str::limit($customerMessage, 600)).'</i>';
+
+        $messageId = $this->sendMessage((string) $chatId, $text, (int) $conversation->telegram_message_id);
+
+        if ($messageId !== null) {
+            $conversation->forceFill(['telegram_message_id' => (string) $messageId])->save();
+        }
+    }
+
     private function escalationText(Conversation $conversation, string $question): string
     {
         $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');

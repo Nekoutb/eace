@@ -93,9 +93,14 @@ class AnswerConversationWithBot implements ShouldQueue
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
         }
 
-        // Already with a human — leave it in the queue; the reply above was just
-        // interim help while they get to it.
+        // Already with a human — leave it in the queue; the reply above was interim
+        // help. If this new message still needs a human (the bot couldn't resolve it),
+        // surface it to the team's Telegram thread so they don't miss it.
         if ($alreadyEscalated) {
+            if (! ($reply->resolved && ! $reply->isComplaint)) {
+                app(TelegramNotifier::class)->pushFollowUp($conversation, $context['question']);
+            }
+
             return;
         }
 

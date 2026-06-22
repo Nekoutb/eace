@@ -74,17 +74,21 @@ class HelpChatController
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
         }
 
-        // Already with a human — the reply above was interim help; keep it escalated
-        // (don't downgrade it out of the queue or re-ping Telegram).
+        $resolved = $reply !== null && $reply->resolved && ! $reply->isComplaint;
+
+        // Already with a human — the reply above was interim help; keep it escalated.
+        // Surface a still-unresolved follow-up to the team's Telegram thread.
         if ($alreadyEscalated) {
+            if (! $resolved) {
+                app(TelegramNotifier::class)->pushFollowUp($conversation, $context['question']);
+            }
+
             return response()->json([
                 'reply' => $reply->reply ?? (string) __('support.bot.holding'),
                 'escalated' => true,
                 'email' => $conversation->requester_email,
             ]);
         }
-
-        $resolved = $reply !== null && $reply->resolved && ! $reply->isComplaint;
 
         if ($resolved) {
             $conversation->forceFill(['bot_resolved' => true, 'status' => ConversationStatus::AwaitingCustomer])->save();
