@@ -192,3 +192,47 @@ aside.fi-sidebar .fi-sidebar-nav {
 .dark .fi-header-heading {
     color: var(--ea-g200);
 }
+
+/* ── ACF expiry-reminder dot (Certificates table) ─────────────────────
+   A steady green dot while there is ample time; an orange flashing dot
+   inside the orange window, red inside the red window; solid dark-red once
+   expired. Purely a visual reminder cue. */
+.niu-exp-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    flex: none;
+    border-radius: 9999px;
+    background: #9ca3af;
+}
+.niu-exp-dot--ok {
+    background: #22c55e;
+}
+.niu-exp-dot--orange {
+    background: #f59e0b;
+    animation: niu-exp-flash 1s ease-in-out infinite;
+}
+.niu-exp-dot--red {
+    background: #ef4444;
+    animation: niu-exp-flash 0.8s ease-in-out infinite;
+}
+.niu-exp-dot--expired {
+    background: #b91c1c;
+}
+
+@keyframes niu-exp-flash {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.25;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .niu-exp-dot--orange,
+    .niu-exp-dot--red {
+        animation: none;
+    }
+}

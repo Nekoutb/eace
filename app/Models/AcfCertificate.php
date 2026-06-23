@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Domain\Acf\AcfExpiryAlert;
 use App\Domain\Acf\AcfStatus;
 use App\Domain\Acf\AcfValidity;
 use Carbon\CarbonImmutable;
@@ -28,6 +29,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $authenticity_snapshot_path
  * @property ?string $authenticity_note
  * @property ?CarbonImmutable $last_verified_at
+ * @property ?CarbonImmutable $reminded_at
+ * @property int $reminder_count
  */
 class AcfCertificate extends Model
 {
@@ -39,6 +42,8 @@ class AcfCertificate extends Model
             'issued_at' => 'immutable_date',
             'expires_at' => 'immutable_date',
             'last_verified_at' => 'immutable_datetime',
+            'reminded_at' => 'immutable_datetime',
+            'reminder_count' => 'integer',
             'validity_months' => 'integer',
             'has_moratorium' => 'boolean',
             'status' => AcfStatus::class,
@@ -71,6 +76,22 @@ class AcfCertificate extends Model
     public function isReusableForSettlement(): bool
     {
         return AcfValidity::isReusableForSettlement($this->status, $this->authenticity_status);
+    }
+
+    /** Whole days until expiry: positive in the future, 0 today, negative once past. */
+    public function daysToExpiry(?CarbonImmutable $now = null): int
+    {
+        return AcfValidity::daysToExpiry($this->expires_at, $now ?? CarbonImmutable::now());
+    }
+
+    /** The reminder-dot level (none/orange/red/expired) from the configured thresholds. */
+    public function expiryAlert(?CarbonImmutable $now = null): AcfExpiryAlert
+    {
+        return AcfValidity::expiryAlert(
+            $this->daysToExpiry($now),
+            (int) config('niu.acf_reminder.orange_days', 20),
+            (int) config('niu.acf_reminder.red_days', 10),
+        );
     }
 
     /**

@@ -79,4 +79,39 @@ final class AcfValidity
     {
         return $authenticity === AcfAuthenticityStatus::Authentic && $status === AcfStatus::Valid;
     }
+
+    /**
+     * Whole days from `now` until expiry on a date granularity: positive in the
+     * future, 0 on the expiry day itself, negative once past. Drives the
+     * Certificates-screen reminder dot and countdown text.
+     */
+    public static function daysToExpiry(CarbonInterface $expiresAt, CarbonInterface $now): int
+    {
+        $expiry = CarbonImmutable::instance($expiresAt)->startOfDay();
+        $today = CarbonImmutable::instance($now)->startOfDay();
+
+        return (int) $today->diffInDays($expiry, false);
+    }
+
+    /**
+     * Reminder-dot level from days-to-expiry: expired once negative, red inside
+     * the red window, orange inside the (wider) orange window, none beyond it.
+     * A purely visual reminder cue — independent of the settlement buffer.
+     */
+    public static function expiryAlert(int $daysToExpiry, int $orangeDays, int $redDays): AcfExpiryAlert
+    {
+        if ($daysToExpiry < 0) {
+            return AcfExpiryAlert::Expired;
+        }
+
+        if ($daysToExpiry <= $redDays) {
+            return AcfExpiryAlert::Red;
+        }
+
+        if ($daysToExpiry <= $orangeDays) {
+            return AcfExpiryAlert::Orange;
+        }
+
+        return AcfExpiryAlert::None;
+    }
 }

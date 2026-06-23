@@ -278,6 +278,27 @@ return [
         'unverified' => 'Unverified',
     ],
 
+    // Certificates screen: expiry countdown dot + taxpayer reminder email.
+    'acf_reminder' => [
+        'col_label' => 'Expiry',
+        'in_days' => '{1}in 1 day|[2,*]in :count days',
+        'today' => 'Expires today',
+        'expired_ago' => '{1}expired 1 day ago|[2,*]expired :count days ago',
+        'reminded_on' => 'Reminded on :date',
+        'filter_expiring' => 'Expiring soon (≤ :days days)',
+        'filter_expired' => 'Expired',
+        'remind' => 'Remind taxpayer',
+        'remind_heading' => 'Remind the taxpayer',
+        'remind_desc' => 'Email the taxpayer that this certificate is about to expire. Their reply comes back to you.',
+        'email_label' => 'Taxpayer email',
+        'email_help' => 'Pre-filled from the counterparty record — edit it if needed.',
+        'note_label' => 'Personal note (optional)',
+        'note_placeholder' => 'Add a line in your own words — it appears above your signature.',
+        'send' => 'Send reminder',
+        'sent' => 'Reminder sent to :email.',
+        'failed' => 'The reminder could not be sent. Please try again.',
+    ],
+
     'entity_type' => [
         'physique' => 'Individual',
         'morale' => 'Legal entity',

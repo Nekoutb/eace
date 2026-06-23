@@ -9,6 +9,18 @@ return [
     'acf_validity_buffer_days' => (int) env('NIU_ACF_BUFFER_DAYS', 5),
 
     /*
+     * Reminder thresholds (days before expiry) for the Certificates screen's
+     * expiry dot: an orange flashing dot once a certificate is within
+     * `orange_days` of expiry, escalating to a red flashing dot within `red_days`.
+     * Purely a visual reminder cue — separate from `acf_validity_buffer_days`,
+     * which gates whether an ACF may be reused at settlement.
+     */
+    'acf_reminder' => [
+        'orange_days' => (int) env('NIU_ACF_REMINDER_ORANGE_DAYS', 20),
+        'red_days' => (int) env('NIU_ACF_REMINDER_RED_DAYS', 10),
+    ],
+
+    /*
      * Audit-log retention. After this many months a verification's bulky evidence
      * (the scanned PDFs) is purged to free space, keeping only the tamper-proof
      * manifest. The scheduled job only runs when this is set — null disables the

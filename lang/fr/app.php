@@ -278,6 +278,27 @@ return [
         'unverified' => 'Non vérifiée',
     ],
 
+    // Écran Attestations : pastille de compte à rebours + relance du contribuable.
+    'acf_reminder' => [
+        'col_label' => 'Échéance',
+        'in_days' => '{1}dans 1 jour|[2,*]dans :count jours',
+        'today' => 'Expire aujourd’hui',
+        'expired_ago' => '{1}expirée depuis 1 jour|[2,*]expirée depuis :count jours',
+        'reminded_on' => 'Relancé le :date',
+        'filter_expiring' => 'Échéance proche (≤ :days jours)',
+        'filter_expired' => 'Expirée',
+        'remind' => 'Relancer le contribuable',
+        'remind_heading' => 'Relancer le contribuable',
+        'remind_desc' => 'Informer le contribuable par e-mail que son attestation arrive à échéance. Sa réponse vous parviendra directement.',
+        'email_label' => 'E-mail du contribuable',
+        'email_help' => 'Pré-rempli depuis la fiche du tiers — modifiable si nécessaire.',
+        'note_label' => 'Message personnel (facultatif)',
+        'note_placeholder' => 'Ajoutez quelques mots — ils apparaîtront au-dessus de votre signature.',
+        'send' => 'Envoyer la relance',
+        'sent' => 'Relance envoyée à :email.',
+        'failed' => 'La relance n’a pas pu être envoyée. Veuillez réessayer.',
+    ],
+
     'entity_type' => [
         'physique' => 'Personne physique',
         'morale' => 'Personne morale',

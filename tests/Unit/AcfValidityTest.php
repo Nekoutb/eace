@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Acf\AcfAuthenticityStatus;
+use App\Domain\Acf\AcfExpiryAlert;
 use App\Domain\Acf\AcfStatus;
 use App\Domain\Acf\AcfValidity;
 use Carbon\CarbonImmutable;
@@ -85,5 +86,28 @@ describe('settlement reuse', function () {
 
     it('blocks reuse when authenticity is unverified', function () {
         expect(AcfValidity::isReusableForSettlement(AcfStatus::Valid, AcfAuthenticityStatus::Unverified))->toBeFalse();
+    });
+});
+
+describe('expiry countdown + reminder alert', function () {
+    $expires = CarbonImmutable::parse('2026-06-30');
+
+    it('counts whole days to expiry, signed (future positive, past negative)', function () use ($expires) {
+        expect(AcfValidity::daysToExpiry($expires, CarbonImmutable::parse('2026-06-20')))->toBe(10)
+            ->and(AcfValidity::daysToExpiry($expires, CarbonImmutable::parse('2026-06-30')))->toBe(0)
+            ->and(AcfValidity::daysToExpiry($expires, CarbonImmutable::parse('2026-07-03')))->toBe(-3);
+    });
+
+    it('maps days-to-expiry to the dot level at the 20/10 thresholds', function () {
+        $alert = fn (int $days): AcfExpiryAlert => AcfValidity::expiryAlert($days, 20, 10);
+
+        expect($alert(25))->toBe(AcfExpiryAlert::None)      // plenty of time
+            ->and($alert(21))->toBe(AcfExpiryAlert::None)
+            ->and($alert(20))->toBe(AcfExpiryAlert::Orange) // hits orange at 20
+            ->and($alert(11))->toBe(AcfExpiryAlert::Orange)
+            ->and($alert(10))->toBe(AcfExpiryAlert::Red)     // hits red at 10
+            ->and($alert(1))->toBe(AcfExpiryAlert::Red)
+            ->and($alert(0))->toBe(AcfExpiryAlert::Red)      // expiry day
+            ->and($alert(-1))->toBe(AcfExpiryAlert::Expired);
     });
 });
