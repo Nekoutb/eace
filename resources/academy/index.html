@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Elite Advisors Academy — Compliance Engine</title>
+<style>
+  :root{
+    --red:#E2382B; --red-d:#B62015; --ink:#111111; --ink-soft:#3a3a38; --muted:#6B6B6B;
+    --paper:#F6F6F4; --white:#FFFFFF; --line:#e7e6e1;
+    --green:#16A34A; --green-d:#15803d; --green-50:#f0fdf4; --green-100:#dcfce7;
+    --amber:#b45309; --r:14px;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+
+  /* ---- top bar ---- */
+  header.bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;
+    padding:14px 26px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand svg{width:34px;height:27px;flex:none}
+  .brand .nm{font-weight:800;letter-spacing:.16em;font-size:15px;color:var(--ink)}
+  .brand .nm .ad{color:var(--red)}
+  .brand .ac{margin-left:10px;padding-left:12px;border-left:1px solid var(--line);font-weight:700;letter-spacing:.28em;font-size:11px;color:var(--muted);text-transform:uppercase}
+  .spacer{flex:1}
+  .langtoggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;font-size:12px;font-weight:700}
+  .langtoggle button{border:0;background:var(--white);color:var(--muted);padding:6px 13px;cursor:pointer;letter-spacing:.04em}
+  .langtoggle button.on{background:var(--ink);color:#fff}
+  .pbar{height:5px;background:var(--line);border-radius:999px;width:150px;overflow:hidden}
+  .pbar i{display:block;height:100%;background:var(--red);width:0;transition:width .4s}
+
+  /* ---- shell ---- */
+  .shell{display:grid;grid-template-columns:280px 1fr;gap:0;max-width:1180px;margin:0 auto;min-height:calc(100vh - 56px)}
+  nav.side{padding:26px 16px;border-right:1px solid var(--line);background:var(--white)}
+  nav.side .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 10px 12px;font-weight:700}
+  .mlink{display:flex;align-items:flex-start;gap:11px;padding:10px 11px;border-radius:11px;cursor:pointer;color:var(--ink-soft);margin-bottom:2px;border:1px solid transparent}
+  .mlink:hover{background:var(--paper)}
+  .mlink.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .mlink.on .n{background:#fff;color:var(--ink)}
+  .mlink .n{flex:none;width:23px;height:23px;border-radius:50%;background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:1px solid var(--line)}
+  .mlink.done .n{background:var(--green);color:#fff;border-color:var(--green)}
+  .mlink .tt{font-size:13.5px;font-weight:600;line-height:1.3}
+  .mlink .tk{font-size:11px;color:inherit;opacity:.7}
+
+  main{padding:34px 46px 90px}
+  .step{display:none;animation:fade .35s ease}
+  .step.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .kick{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:10px}
+  h1{font-size:33px;line-height:1.12;margin:.1em 0 .35em;letter-spacing:-.01em}
+  h2{font-size:21px;margin:1.7em 0 .5em;letter-spacing:-.01em}
+  h3{font-size:16px;margin:1.3em 0 .4em}
+  p{margin:.6em 0;color:var(--ink-soft);font-size:15.5px}
+  .lead{font-size:18px;color:var(--ink);max-width:60ch}
+  strong{color:var(--ink)}
+  .pill{display:inline-block;background:var(--green-100);color:var(--green-d);font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px}
+
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:920px){.shell{grid-template-columns:1fr}nav.side{display:none}.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .card .ic{width:38px;height:38px;border-radius:10px;background:var(--green-50);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;margin-bottom:10px}
+  .card h3{margin:.1em 0 .3em}
+  .card p{font-size:13.5px;margin:.2em 0}
+  .stat{background:var(--ink);color:#fff;border-radius:var(--r);padding:20px 22px}
+  .stat .big{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .stat .lb{font-size:12.5px;opacity:.75;text-transform:uppercase;letter-spacing:.08em}
+  .stat.red{background:var(--red)}
+  .stat.green{background:var(--green)}
+
+  figure{margin:18px 0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--white)}
+  figure img{width:100%}
+  figcaption{font-size:12.5px;color:var(--muted);padding:9px 14px;border-top:1px solid var(--line);background:var(--paper)}
+  figcaption b{color:var(--ink)}
+
+  .callout{border-left:4px solid var(--red);background:#fff;padding:14px 18px;border-radius:0 12px 12px 0;margin:18px 0}
+  .callout.g{border-color:var(--green)}
+  .callout .h{font-weight:800;font-size:13px;letter-spacing:.02em;margin-bottom:3px}
+  ul.clean{list-style:none;padding:0;margin:.6em 0}
+  ul.clean li{position:relative;padding:7px 0 7px 28px;border-bottom:1px solid var(--line);font-size:14.5px;color:var(--ink-soft)}
+  ul.clean li:before{content:"";position:absolute;left:4px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--red)}
+  ul.clean.g li:before{background:var(--green)}
+
+  .script{background:#1b1b1a;color:#f3f3f0;border-radius:var(--r);padding:18px 20px;font-size:14.5px;margin:14px 0}
+  .script .who{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffb3ad;font-weight:800;margin-top:12px}
+  .script .who:first-child{margin-top:0}
+  .script p{color:#e7e7e3;margin:3px 0 0}
+
+  .obj{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:#fff;overflow:hidden}
+  .obj .q{padding:13px 16px;font-weight:700;font-size:14.5px;cursor:pointer;display:flex;justify-content:space-between;gap:10px}
+  .obj .q:after{content:"+";color:var(--red);font-weight:800}
+  .obj.open .q:after{content:"\2013"}
+  .obj .a{display:none;padding:0 16px 15px;font-size:14px;color:var(--ink-soft)}
+  .obj.open .a{display:block}
+
+  .navrow{display:flex;justify-content:space-between;margin-top:40px;padding-top:22px;border-top:1px solid var(--line)}
+  .btn{border:0;border-radius:11px;padding:12px 22px;font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit}
+  .btn.primary{background:var(--red);color:#fff}
+  .btn.primary:hover{background:var(--red-d)}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn:disabled{opacity:.4;cursor:default}
+
+  /* quiz */
+  .quiz{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin:16px 0}
+  .quiz .qn{font-weight:700;font-size:15.5px;margin-bottom:10px}
+  .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 14px;margin:7px 0;cursor:pointer;font-size:14.5px;font-family:inherit;color:var(--ink-soft)}
+  .opt:hover{border-color:var(--ink)}
+  .opt.good{border-color:var(--green);background:var(--green-50);color:var(--green-d);font-weight:700}
+  .opt.bad{border-color:var(--red);background:#fdeceb;color:var(--red-d)}
+  .qfb{font-size:13.5px;margin-top:8px;display:none}
+  .tagline{font-size:13px;color:var(--muted);font-style:italic}
+</style>
+</head>
+<body class="lang-fr">
+
+<header class="bar">
+  <div class="brand">
+    <svg viewBox="0 0 40 32" aria-label="Elite Advisors"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg>
+    <span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span>
+    <span class="ac">Academy</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="pbar" title="Progression"><i id="pbar"></i></div>
+  <div class="langtoggle">
+    <button id="bfr" class="on" onclick="setLang('fr')">FR</button>
+    <button id="ben" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="side" id="side">
+    <p class="eyebrow" data-fr="Programme commercial" data-en="Sales program"></p>
+  </nav>
+
+  <main id="main">
+
+    <!-- 0 WELCOME -->
+    <section class="step on" data-tk="6 min">
+      <span class="kick" data-fr="La mission" data-en="The mission"></span>
+      <h1 data-fr="Vendez le Compliance Engine avec la conviction du fondateur." data-en="Sell the Compliance Engine with the founder's conviction."></h1>
+      <p class="lead" data-fr="Ce programme vous transforme en ambassadeur d'Elite Advisors. À la fin, vous comprendrez le produit, le risque qu'il supprime, et vous saurez le présenter, le démontrer et le vendre — avec la même passion que si vous l'aviez construit." data-en="This program turns you into an Elite Advisors ambassador. By the end you'll understand the product, the risk it removes, and how to pitch it, demo it and sell it — with the same passion as if you'd built it yourself."></p>
+
+      <div class="callout g">
+        <div class="h" data-fr="Notre conviction" data-en="Our conviction"></div>
+        <p data-fr="Une entreprise camerounaise ne devrait jamais perdre la déductibilité d'une charge ou de sa TVA parce qu'elle a payé un fournisseur non conforme sans le savoir. Nous rendons cette vérification automatique, traçable et opposable." data-en="A Cameroonian business should never lose deductibility of a cost or its VAT because it unknowingly paid a non-compliant supplier. We make that check automatic, traceable and defensible."></p>
+      </div>
+
+      <h2 data-fr="Ce que vous saurez faire" data-en="What you'll be able to do"></h2>
+      <div class="grid g3">
+        <div class="card"><div class="ic">1</div><h3 data-fr="Expliquer le risque" data-en="Explain the risk"></h3><p data-fr="Chiffrer en FCFA ce qu'un fournisseur non conforme coûte au client." data-en="Quantify in FCFA what a non-compliant supplier costs the client."></p></div>
+        <div class="card"><div class="ic">2</div><h3 data-fr="Démontrer le produit" data-en="Demo the product"></h3><p data-fr="Dérouler les 4 contrôles × 2 étapes en direct, sans hésiter." data-en="Run the 4 checks × 2 stages live, without hesitation."></p></div>
+        <div class="card"><div class="ic">3</div><h3 data-fr="Conclure la vente" data-en="Close the sale"></h3><p data-fr="Répondre aux objections et amener le client à l'essai." data-en="Handle objections and move the client to a trial."></p></div>
+      </div>
+      <p class="tagline" data-fr="Elite Advisors — l'optimisation des processus grâce à l'IA de pointe." data-en="Elite Advisors — process optimization with best-in-class AI."></p>
+    </section>
+
+    <!-- 1 THE PROBLEM -->
+    <section class="step" data-tk="8 min">
+      <span class="kick" data-fr="Le problème qui vaut de l'argent" data-en="The problem worth money"></span>
+      <h1 data-fr="Payer le mauvais fournisseur coûte cher — très cher." data-en="Paying the wrong supplier is expensive — very expensive."></h1>
+      <p class="lead" data-fr="Au Cameroun, le CGI 2025 conditionne la déductibilité de vos charges et de votre TVA à la conformité fiscale du fournisseur. Si le fournisseur est introuvable, suspendu ou radié, l'administration peut rejeter la charge et la TVA — et ajouter pénalités et intérêts." data-en="In Cameroon, the 2025 CGI ties the deductibility of your costs and VAT to the supplier's fiscal compliance. If the supplier is unknown, suspended or struck off, the tax authority can reject the cost and the VAT — and add penalties and interest."></p>
+
+      <div class="grid g3" style="margin-top:18px">
+        <div class="stat red"><div class="big">19,25%</div><div class="lb" data-fr="TVA potentiellement rejetée" data-en="VAT potentially rejected"></div></div>
+        <div class="stat"><div class="big">+33%</div><div class="lb" data-fr="Charge réintégrée à l'IS" data-en="Cost added back to tax"></div></div>
+        <div class="stat"><div class="big">+ pénalités</div><div class="lb" data-fr="Intérêts & amendes" data-en="Interest &amp; fines"></div></div>
+      </div>
+
+      <h2 data-fr="L'histoire vraie que vous raconterez" data-en="The true story you'll tell"></h2>
+      <p data-fr="Un client paie une facture de 10 000 000 FCFA à un fournisseur qu'il croit en règle. Six mois plus tard, contrôle fiscal : le fournisseur était radié. La TVA (1,6 M) est rejetée, la charge (10 M) réintégrée, plus pénalités. Une facture devient une perte de plusieurs millions — évitable en 30 secondes de vérification." data-en="A client pays a 10,000,000 FCFA invoice to a supplier they believe is compliant. Six months later, a tax audit: the supplier was struck off. The VAT (1.6M) is rejected, the cost (10M) added back, plus penalties. One invoice becomes a multi-million loss — avoidable with 30 seconds of verification."></p>
+
+      <div class="callout">
+        <div class="h" data-fr="Le déclic commercial" data-en="The sales hook"></div>
+        <p data-fr="« Vous ne payez pas pour un logiciel. Vous achetez une preuve opposable que votre diligence a été faite — celle qui fait la différence le jour du contrôle. »" data-en="&ldquo;You're not paying for software. You're buying defensible proof that your due diligence was done — the kind that matters on audit day.&rdquo;"></p>
+      </div>
+    </section>
+
+    <!-- 2 WHAT IT IS -->
+    <section class="step" data-tk="10 min">
+      <span class="kick" data-fr="La solution" data-en="The solution"></span>
+      <h1 data-fr="Le Compliance Engine : 4 contrôles, 2 étapes." data-en="The Compliance Engine: 4 checks, 2 stages."></h1>
+      <p class="lead" data-fr="En une phrase : Elite Advisors vérifie automatiquement que chaque fournisseur que vous payez est fiscalement en règle, et conserve la preuve. Le moteur exécute quatre contrôles, à deux moments clés du cycle de paiement." data-en="In one sentence: Elite Advisors automatically checks that every supplier you pay is fiscally compliant, and keeps the proof. The engine runs four checks, at two key moments of the payment cycle."></p>
+
+      <h2 data-fr="Les 4 contrôles" data-en="The 4 checks"></h2>
+      <div class="grid g2">
+        <div class="card"><div class="ic">①</div><h3 data-fr="Authenticité de l'ACF" data-en="ACF authenticity"></h3><p data-fr="L'Attestation de Conformité Fiscale est-elle authentique ? Vérifiée via le portail Harmony2 de la DGI, avec capture de preuve." data-en="Is the fiscal compliance certificate genuine? Verified via the DGI Harmony2 portal, with an evidence snapshot."></p></div>
+        <div class="card"><div class="ic">②</div><h3 data-fr="Statut du NIU" data-en="NIU status"></h3><p data-fr="Le contribuable est-il actif ? Lecture du statut officiel sur le portail Fiscalis de la DGI." data-en="Is the taxpayer active? Reads the official status on the DGI Fiscalis portal."></p></div>
+        <div class="card"><div class="ic">③</div><h3 data-fr="Existence au fichier" data-en="Register existence"></h3><p data-fr="Le NIU figure-t-il au fichier national des contribuables (≈579 000), téléchargé automatiquement chaque nuit à minuit ?" data-en="Is the NIU in the national taxpayer register (≈579,000), downloaded automatically every night at midnight?"></p></div>
+        <div class="card"><div class="ic">④</div><h3 data-fr="Validité de l'ACF" data-en="ACF validity"></h3><p data-fr="L'attestation est-elle encore valable (émission + 3 mois) ? Avec alerte avant expiration." data-en="Is the certificate still in force (issue + 3 months)? With pre-expiry alerting."></p></div>
+      </div>
+
+      <div class="callout"><div class="h" data-fr="Le fichier national, à jour chaque nuit" data-en="The national register, refreshed nightly"></div><p data-fr="Le contrôle d'existence (③) s'appuie sur le fichier officiel des contribuables de la DGI — environ 579 000 NIU — que la plateforme télécharge automatiquement chaque nuit à minuit. Vos vérifications s'appuient toujours sur la liste la plus récente, sans aucune action de votre part." data-en="The existence check (③) relies on the DGI's official taxpayer register — about 579,000 NIUs — which the platform downloads automatically every night at midnight. Your checks always run against the freshest list, with no action on your part."></p></div>
+
+      <h2 data-fr="Les 2 étapes" data-en="The 2 stages"></h2>
+      <div class="grid g2">
+        <div class="card" style="border-top:3px solid var(--green)"><h3 data-fr="Enregistrement" data-en="Recording"></h3><p data-fr="À la réception de la facture : on scanne l'ACF et on contrôle le fournisseur avant de comptabiliser." data-en="When the invoice arrives: scan the ACF and check the supplier before booking it."></p></div>
+        <div class="card" style="border-top:3px solid var(--ink)"><h3 data-fr="Règlement" data-en="Settlement"></h3><p data-fr="Au moment de payer : on revérifie. Une ACF expirée ou un NIU devenu inactif bloque le paiement." data-en="At payment time: re-check. An expired ACF or a now-inactive NIU blocks the payment."></p></div>
+      </div>
+      <div class="callout g"><div class="h" data-fr="Pourquoi deux étapes ?" data-en="Why two stages?"></div><p data-fr="Parce que la conformité change avec le temps. Un fournisseur en règle à la commande peut ne plus l'être au paiement. Le client est protégé aux deux moments." data-en="Because compliance changes over time. A supplier compliant at order time may not be at payment time. The client is protected at both moments."></p></div>
+    </section>
+
+    <!-- 3 GUIDED TOUR -->
+    <section class="step" data-tk="12 min">
+      <span class="kick" data-fr="Visite guidée" data-en="Guided tour"></span>
+      <h1 data-fr="Le produit, écran par écran." data-en="The product, screen by screen."></h1>
+      <p class="lead" data-fr="Voici exactement ce que voit votre client. Apprenez ces écrans : ce sont eux que vous montrerez en démo." data-en="Here is exactly what your client sees. Learn these screens — they're what you'll show in the demo."></p>
+
+      <h2 data-fr="Le tableau de bord" data-en="The dashboard"></h2>
+      <p data-fr="La photo de la conformité en un coup d'œil : factures traitées, conformes, rejetées, et surtout les économies potentielles en FCFA — l'argent que le moteur a protégé." data-en="The compliance picture at a glance: invoices processed, compliant, rejected, and above all the potential savings in FCFA — the money the engine protected."></p>
+      <figure><img src="assets/screens/app-dashboard.png" alt="Tableau de bord" /><figcaption><b>Tableau de bord</b> — <span data-fr="9 indicateurs, dont « Économies potentielles » et le stockage des preuves." data-en="9 indicators, including “Potential savings” and evidence storage."></span></figcaption></figure>
+
+      <h2 data-fr="Le Moteur de Conformité" data-en="The Compliance Engine"></h2>
+      <p data-fr="Le cœur du produit. On choisit l'étape (Enregistrement / Règlement), on dépose l'ACF et la facture, on lance — les 4 contrôles s'affichent avec leur verdict." data-en="The heart of the product. Pick the stage (Recording / Settlement), drop the ACF and invoice, run it — the 4 checks appear with their verdict."></p>
+      <figure><img src="assets/screens/app-moteur-de-conformit.png" alt="Moteur de conformité" /><figcaption><b>Moteur de conformité</b> — <span data-fr="bascule d'étape, dépôt ACF + facture, bouton « Lancer les contrôles »." data-en="stage toggle, ACF + invoice upload, “Run the checks” button."></span></figcaption></figure>
+
+      <h2 data-fr="Les attestations & l'alerte d'expiration" data-en="Certificates & the expiry alert"></h2>
+      <p data-fr="Chaque ACF est suivie dans le temps. Un compte à rebours et une pastille clignotante préviennent avant l'expiration — orange à 20 jours, rouge à 10 — et un bouton permet de relancer le contribuable par e-mail." data-en="Every ACF is tracked over time. A countdown and a flashing dot warn before expiry — orange at 20 days, red at 10 — and a button lets you remind the taxpayer by email."></p>
+      <figure><img src="assets/screens/app-attestations-de-conformit.png" alt="Attestations de conformité" /><figcaption><b>Attestations de Conformité</b> — <span data-fr="« expirée depuis 5 jours » (rouge) vs « dans 92 jours » (vert)." data-en="“expired 5 days ago” (red) vs “in 92 days” (green)."></span></figcaption></figure>
+
+      <h2 data-fr="Audit & preuves" data-en="Audit &amp; evidence"></h2>
+      <p data-fr="Tout est conservé : capture horodatée de chaque contrôle, empreinte SHA-256, référence d'extraction du fichier. C'est la preuve opposable, archivée de façon immuable." data-en="Everything is kept: a timestamped snapshot of each check, a SHA-256 fingerprint, the register extraction reference. This is the defensible proof, stored immutably."></p>
+      <figure><img src="assets/screens/app-audit-preuves.png" alt="Audit et preuves" /><figcaption><b>Audit &amp; preuves</b> — <span data-fr="journal par facture : statut, preuve, empreinte." data-en="per-invoice journal: status, evidence, fingerprint."></span></figcaption></figure>
+    </section>
+
+    <!-- 4 VALUE / ROI -->
+    <section class="step" data-tk="7 min">
+      <span class="kick" data-fr="Valeur & ROI" data-en="Value &amp; ROI"></span>
+      <h1 data-fr="Trois bénéfices qui se vendent seuls." data-en="Three benefits that sell themselves."></h1>
+      <div class="grid g3" style="margin:18px 0">
+        <div class="card"><div class="ic" style="font-size:12px;letter-spacing:.02em">FCFA</div><h3 data-fr="Déductibilité protégée" data-en="Deductibility protected"></h3><p data-fr="On sécurise la TVA et la charge avant de payer — pas après le redressement." data-en="Secure the VAT and the cost before paying — not after the reassessment."></p></div>
+        <div class="card"><div class="ic">✓</div><h3 data-fr="Preuve opposable" data-en="Defensible proof"></h3><p data-fr="Une diligence horodatée et archivée, à présenter le jour du contrôle." data-en="Timestamped, archived due diligence to present on audit day."></p></div>
+        <div class="card"><div class="ic">⏱</div><h3 data-fr="30 secondes / facture" data-en="30 seconds / invoice"></h3><p data-fr="Ce qui prenait des appels et des PDF devient un contrôle instantané." data-en="What took calls and PDFs becomes an instant check."></p></div>
+      </div>
+      <div class="callout"><div class="h" data-fr="La phrase ROI" data-en="The ROI line"></div><p data-fr="« Une seule facture rejetée lors d'un contrôle coûte plus cher qu'une année d'abonnement. Le moteur doit éviter un seul rejet pour être rentable. »" data-en="&ldquo;A single invoice rejected on audit costs more than a year of subscription. The engine only has to prevent one rejection to pay for itself.&rdquo;"></p></div>
+      <h2 data-fr="Vendre la confiance" data-en="Selling trust"></h2>
+      <ul class="clean g">
+        <li data-fr="Conformité Loi N° 2024/017 sur la protection des données — avis de confidentialité et consentement intégrés." data-en="Compliant with Data Protection Law 2024/017 — built-in privacy notice and consent."></li>
+        <li data-fr="Preuves archivées de façon immuable (verrou objet), horodatées." data-en="Evidence stored immutably (object lock), timestamped."></li>
+        <li data-fr="Bilingue FR / EN, pensé pour le contexte camerounais." data-en="Bilingual FR / EN, built for the Cameroonian context."></li>
+      </ul>
+    </section>
+
+    <!-- 5 SALES PLAYBOOK -->
+    <section class="step" data-tk="10 min">
+      <span class="kick" data-fr="Le manuel de vente" data-en="The sales playbook"></span>
+      <h1 data-fr="À qui parler, quoi dire, comment répondre." data-en="Who to talk to, what to say, how to respond."></h1>
+
+      <h2 data-fr="Le client idéal" data-en="The ideal client"></h2>
+      <ul class="clean">
+        <li data-fr="Entreprises au régime réel avec de nombreux fournisseurs (BTP, négoce, distribution, services)." data-en="Real-regime businesses with many suppliers (construction, trading, distribution, services)."></li>
+        <li data-fr="Directions financières, comptables et fiscales soucieuses du risque de contrôle." data-en="Finance, accounting and tax leaders worried about audit risk."></li>
+        <li data-fr="Cabinets comptables qui veulent protéger leurs clients à grande échelle." data-en="Accounting firms wanting to protect their clients at scale."></li>
+      </ul>
+
+      <h2 data-fr="3 questions de découverte" data-en="3 discovery questions"></h2>
+      <ul class="clean">
+        <li data-fr="« Comment vérifiez-vous aujourd'hui qu'un fournisseur est en règle avant de le payer ? »" data-en="“How do you check today that a supplier is compliant before paying them?”"></li>
+        <li data-fr="« Que se passe-t-il si un contrôle révèle un fournisseur radié sur une facture déjà payée ? »" data-en="“What happens if an audit finds a struck-off supplier on an invoice you already paid?”"></li>
+        <li data-fr="« Quelle preuve de diligence pourriez-vous présenter à l'inspecteur aujourd'hui ? »" data-en="“What proof of due diligence could you show the inspector today?”"></li>
+      </ul>
+
+      <h2 data-fr="Le pitch en 30 secondes" data-en="The 30-second pitch"></h2>
+      <div class="script">
+        <div class="who" data-fr="Vous" data-en="You"></div>
+        <p data-fr="« Elite Advisors vérifie automatiquement chaque fournisseur que vous payez — authenticité de l'ACF, statut du NIU, validité — et conserve la preuve horodatée. Si un fournisseur n'est pas en règle, vous le savez avant de payer, pas au contrôle. Résultat : votre TVA et vos charges restent déductibles, et vous avez une preuve opposable. Je vous montre en 5 minutes ? »" data-en="“Elite Advisors automatically checks every supplier you pay — ACF authenticity, NIU status, validity — and keeps timestamped proof. If a supplier isn't compliant, you know before you pay, not at the audit. The result: your VAT and costs stay deductible, and you hold defensible proof. Can I show you in 5 minutes?”"></p>
+      </div>
+
+      <h2 data-fr="Traiter les objections" data-en="Handling objections"></h2>
+      <div class="obj"><div class="q" data-fr="« On le fait déjà manuellement. »" data-en="“We already do it manually.”"></div><div class="a" data-fr="Très bien — combien de temps par facture, et où est la preuve six mois plus tard ? Le moteur fait la même chose en 30 secondes et archive la preuve automatiquement. Vous ne remplacez pas vos équipes, vous leur donnez un filet de sécurité." data-en="Great — how long per invoice, and where's the proof six months later? The engine does the same in 30 seconds and archives the proof automatically. You're not replacing your team, you're giving them a safety net."></div></div>
+      <div class="obj"><div class="q" data-fr="« C'est trop cher. »" data-en="“It's too expensive.”"></div><div class="a" data-fr="Comparons au coût d'un seul rejet en contrôle : TVA + charge réintégrée + pénalités sur une facture de 10 M, c'est plusieurs millions. L'abonnement coûte une fraction de ce risque. Le moteur doit éviter un seul rejet pour être rentable." data-en="Compare it to the cost of one rejection on audit: VAT + reinstated cost + penalties on a 10M invoice is several million. The subscription is a fraction of that risk. The engine only needs to prevent one rejection to pay for itself."></div></div>
+      <div class="obj"><div class="q" data-fr="« Les portails de la DGI suffisent. »" data-en="“The DGI portals are enough.”"></div><div class="a" data-fr="Les portails donnent une réponse à un instant T, sans preuve conservée ni alerte d'expiration ni vérification au paiement. Le moteur orchestre les quatre contrôles, aux deux étapes, et garde la preuve opposable. C'est la différence entre vérifier et pouvoir le prouver." data-en="The portals give an answer at a point in time, with no stored proof, no expiry alert, no re-check at payment. The engine orchestrates all four checks, at both stages, and keeps defensible proof. That's the difference between checking and being able to prove it."></div></div>
+      <div class="obj"><div class="q" data-fr="« Nos données sont-elles en sécurité ? »" data-en="“Is our data safe?”"></div><div class="a" data-fr="Oui — conformité Loi 2024/017, avis de confidentialité et consentement intégrés, preuves chiffrées et archivées de façon immuable. Chaque espace client est isolé dans sa propre base." data-en="Yes — compliant with Law 2024/017, built-in privacy notice and consent, evidence encrypted and stored immutably. Each client workspace is isolated in its own database."></div></div>
+    </section>
+
+    <!-- 6 DEMO MASTERY -->
+    <section class="step" data-tk="8 min">
+      <span class="kick" data-fr="Maîtriser la démo" data-en="Demo mastery"></span>
+      <h1 data-fr="Une démo que vous pouvez refaire les yeux fermés." data-en="A demo you can run in your sleep."></h1>
+      <p class="lead" data-fr="Suivez toujours le même fil. Une démo nette vaut mille arguments." data-en="Always follow the same thread. A clean demo is worth a thousand arguments."></p>
+      <h2 data-fr="Le script de démo en 5 temps" data-en="The 5-beat demo script"></h2>
+      <ul class="clean">
+        <li data-fr="1. Le tableau de bord — « voici la conformité de toute votre activité en un écran »." data-en="1. The dashboard — “here's the compliance of your whole activity on one screen.”"></li>
+        <li data-fr="2. Le Moteur — déposer une ACF + une facture, choisir « Enregistrement », lancer." data-en="2. The Engine — drop an ACF + invoice, pick “Recording”, run it."></li>
+        <li data-fr="3. Les 4 verdicts — commenter chaque contrôle et la capture de preuve." data-en="3. The 4 verdicts — narrate each check and the evidence snapshot."></li>
+        <li data-fr="4. Les attestations — montrer le compte à rebours et l'alerte d'expiration." data-en="4. Certificates — show the countdown and the expiry alert."></li>
+        <li data-fr="5. Audit & preuves — « et voici ce que vous présentez à l'inspecteur »." data-en="5. Audit &amp; evidence — “and here's what you show the inspector.”"></li>
+      </ul>
+      <div class="callout g"><div class="h" data-fr="Règle d'or" data-en="Golden rule"></div><p data-fr="Terminez toujours sur la preuve. Le produit ne vend pas une vérification — il vend la tranquillité le jour du contrôle." data-en="Always end on the proof. The product doesn't sell a check — it sells peace of mind on audit day."></p></div>
+      <figure><img src="assets/screens/app-login.png" alt="Écran de connexion" /><figcaption><b>Espace client</b> — <span data-fr="connexion bilingue, marque Elite Advisors, accès à l'essai." data-en="bilingual sign-in, Elite Advisors brand, trial access."></span></figcaption></figure>
+    </section>
+
+    <!-- 7 SECURITY -->
+    <section class="step" data-tk="6 min">
+      <span class="kick" data-fr="Sécurité des données" data-en="Data security"></span>
+      <h1 data-fr="La sécurité n'est pas une option — c'est un argument de vente." data-en="Security isn't optional — it's a selling point."></h1>
+      <p class="lead" data-fr="Vos clients confient des données fiscales sensibles à la plateforme. Voici comment elles sont protégées — et comment vous en faites un atout face à la concurrence." data-en="Your clients trust the platform with sensitive fiscal data. Here's how it's protected — and how you turn that into an advantage over the competition."></p>
+
+      <div class="grid g3" style="margin:18px 0">
+        <div class="card"><div class="ic">🛡</div><h3 data-fr="Isolation par espace" data-en="Workspace isolation"></h3><p data-fr="Chaque client possède sa propre base de données. Aucune donnée n'est partagée entre clients." data-en="Each client has its own database. No data is shared between clients."></p></div>
+        <div class="card"><div class="ic">🔒</div><h3 data-fr="Preuves immuables" data-en="Immutable evidence"></h3><p data-fr="Captures verrouillées (Object Lock), horodatées, avec empreinte SHA-256 infalsifiable." data-en="Object-lock storage, timestamped, with a tamper-proof SHA-256 fingerprint."></p></div>
+        <div class="card"><div class="ic">🔐</div><h3 data-fr="Chiffrement" data-en="Encryption"></h3><p data-fr="Données chiffrées en transit (HTTPS/TLS) et au repos." data-en="Data encrypted in transit (HTTPS/TLS) and at rest."></p></div>
+      </div>
+
+      <h2 data-fr="Contrôles d'accès" data-en="Access controls"></h2>
+      <ul class="clean g">
+        <li data-fr="Double authentification (2FA) obligatoire à la connexion." data-en="Mandatory two-factor authentication (2FA) at sign-in."></li>
+        <li data-fr="Mots de passe hachés à sens unique — jamais stockés en clair, illisibles même par nos équipes." data-en="One-way hashed passwords — never stored in clear, unreadable even by our team."></li>
+        <li data-fr="Journal d'accès : chaque consultation ou export de données personnelles est tracé." data-en="Access log: every view or export of personal data is recorded."></li>
+        <li data-fr="Rôles distincts (administration, enregistrement, règlement) pour limiter qui voit quoi." data-en="Distinct roles (admin, recording, settlement) to limit who sees what."></li>
+      </ul>
+
+      <div class="callout"><div class="h" data-fr="Conformité Loi N° 2024/017" data-en="Compliant with Law 2024/017"></div><p data-fr="Avis de confidentialité et consentement intégrés, droit d'accès et de suppression (DSAR), registre des traitements, registre des violations. La protection des données personnelles est intégrée au produit, pas ajoutée après coup." data-en="Built-in privacy notice and consent, right of access and erasure (DSAR), record of processing, breach register. Personal-data protection is built into the product, not bolted on."></p></div>
+
+      <div class="callout g"><div class="h" data-fr="La phrase qui rassure" data-en="The reassurance line"></div><p data-fr="« Vos données fiscales sont isolées dans votre propre base, chiffrées, et chaque preuve est verrouillée et horodatée. Personne — pas même nous — ne peut les altérer après coup. »" data-en="&ldquo;Your fiscal data sits in your own isolated database, encrypted, and every piece of evidence is locked and timestamped. No one — not even us — can alter it after the fact.&rdquo;"></p></div>
+    </section>
+
+    <!-- 8 CERTIFY -->
+    <section class="step" data-tk="6 min">
+      <span class="kick" data-fr="Certification" data-en="Certification"></span>
+      <h1 data-fr="Validez vos acquis." data-en="Prove what you've learned."></h1>
+      <p class="lead" data-fr="Quatre questions. Visez 4/4 — c'est le niveau d'un ambassadeur Elite Advisors." data-en="Four questions. Aim for 4/4 — that's the level of an Elite Advisors ambassador."></p>
+      <div id="quiz"></div>
+      <div id="quizdone" style="display:none">
+        <div class="callout g"><div class="h" data-fr="Bravo." data-en="Well done."></div><p data-fr="Vous portez maintenant le message Elite Advisors. Prochaine étape : la démo en direct avec un collègue, puis votre premier rendez-vous client." data-en="You now carry the Elite Advisors message. Next step: a live demo with a colleague, then your first client meeting."></p></div>
+      </div>
+    </section>
+
+    <div class="navrow">
+      <button class="btn ghost" id="prev" onclick="go(-1)" data-fr="← Précédent" data-en="← Previous"></button>
+      <button class="btn primary" id="next" onclick="go(1)" data-fr="Suivant →" data-en="Next →"></button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const MOD = [
+  {fr:"La mission",en:"The mission",tk:"6 min",ic:"ti"},
+  {fr:"Le problème",en:"The problem",tk:"8 min"},
+  {fr:"La solution",en:"The solution",tk:"10 min"},
+  {fr:"Visite guidée",en:"Guided tour",tk:"12 min"},
+  {fr:"Valeur & ROI",en:"Value & ROI",tk:"7 min"},
+  {fr:"Manuel de vente",en:"Sales playbook",tk:"10 min"},
+  {fr:"Maîtriser la démo",en:"Demo mastery",tk:"8 min"},
+  {fr:"Sécurité des données",en:"Data security",tk:"6 min"},
+  {fr:"Certification",en:"Certification",tk:"6 min"},
+];
+const QUIZ=[
+ {fr:"Pourquoi la conformité d'un fournisseur compte-t-elle ?",en:"Why does a supplier's compliance matter?",
+  o:[{fr:"Elle conditionne la déductibilité de la charge et de la TVA",en:"It governs deductibility of the cost and VAT,",ok:1},
+     {fr:"C'est une obligation purement administrative",en:"It's a purely administrative formality",ok:0},
+     {fr:"Cela accélère le paiement",en:"It speeds up payment",ok:0}]},
+ {fr:"Combien de contrôles et d'étapes ?",en:"How many checks and stages?",
+  o:[{fr:"2 contrôles, 4 étapes",en:"2 checks, 4 stages",ok:0},
+     {fr:"4 contrôles, 2 étapes (enregistrement & règlement)",en:"4 checks, 2 stages (recording & settlement)",ok:1},
+     {fr:"1 contrôle unique",en:"A single check",ok:0}]},
+ {fr:"Que vend-on vraiment au client ?",en:"What are we really selling?",
+  o:[{fr:"Un logiciel de vérification",en:"A verification tool",ok:0},
+     {fr:"Une preuve opposable et la tranquillité au contrôle",en:"Defensible proof and peace of mind on audit",ok:1},
+     {fr:"Un accès aux portails de la DGI",en:"Access to DGI portals",ok:0}]},
+ {fr:"L'alerte d'expiration des ACF se déclenche…",en:"The ACF expiry alert triggers…",
+  o:[{fr:"Orange à 20 jours, rouge à 10 jours",en:"Orange at 20 days, red at 10 days",ok:1},
+     {fr:"Seulement une fois expirée",en:"Only once expired",ok:0},
+     {fr:"Jamais — c'est manuel",en:"Never — it's manual",ok:0}]},
+ {fr:"Le fichier national des contribuables est…",en:"The national taxpayer register is…",
+  o:[{fr:"Téléchargé automatiquement chaque nuit à minuit",en:"Downloaded automatically every night at midnight",ok:1},
+     {fr:"Saisi à la main par le client",en:"Entered by hand by the client",ok:0},
+     {fr:"Mis à jour une fois par an",en:"Updated once a year",ok:0}]},
+];
+
+let cur=0, lang='fr', done=new Set();
+const steps=[...document.querySelectorAll('.step')];
+
+function applyLang(){
+  document.querySelectorAll('[data-fr]').forEach(el=>{
+    const t=el.getAttribute('data-'+lang);
+    if(t!==null) el.textContent=t;
+  });
+}
+function setLang(l){
+  lang=l; document.documentElement.lang=l;
+  bfr.classList.toggle('on',l==='fr'); ben.classList.toggle('on',l==='en');
+  render();
+}
+function buildSide(){
+  const s=document.getElementById('side');
+  s.innerHTML='<p class="eyebrow">'+(lang==='fr'?'Programme commercial':'Sales program')+'</p>';
+  MOD.forEach((m,i)=>{
+    const d=document.createElement('div');
+    d.className='mlink'+(i===cur?' on':'')+(done.has(i)?' done':'');
+    d.onclick=()=>{cur=i;render()};
+    d.innerHTML='<span class="n">'+(done.has(i)?'✓':(i+1))+'</span><span><span class="tt">'+m[lang]+'</span><br><span class="tk">'+m.tk+'</span></span>';
+    s.appendChild(d);
+  });
+}
+function render(){
+  steps.forEach((s,i)=>s.classList.toggle('on',i===cur));
+  document.getElementById('prev').disabled=cur===0;
+  const nx=document.getElementById('next');
+  nx.setAttribute('data-fr', cur===steps.length-1?'Terminer ✓':'Suivant →');
+  nx.setAttribute('data-en', cur===steps.length-1?'Finish ✓':'Next →');
+  document.getElementById('pbar').style.width=Math.round((done.size)/MOD.length*100)+'%';
+  if(cur===8) buildQuiz();
+  buildSide();
+  applyLang();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function go(d){
+  done.add(cur);
+  if(d>0 && cur===steps.length-1){ done.add(cur); render(); return; }
+  cur=Math.max(0,Math.min(steps.length-1,cur+d));
+  render();
+}
+function buildQuiz(){
+  const wrap=document.getElementById('quiz'); if(wrap.dataset.built) return; wrap.dataset.built=1;
+  QUIZ.forEach((q,qi)=>{
+    const box=document.createElement('div'); box.className='quiz';
+    const h=document.createElement('div'); h.className='qn'; h.textContent=(qi+1)+'. '+q[lang]; h.dataset.fr=q.fr; h.dataset.en=q.en; box.appendChild(h);
+    q.o.forEach((o,oi)=>{
+      const b=document.createElement('button'); b.className='opt'; b.textContent=o[lang]; b.dataset.fr=o.fr; b.dataset.en=o.en;
+      b.onclick=()=>{
+        if(box.dataset.answered) return; box.dataset.answered=1;
+        b.classList.add(o.ok?'good':'bad');
+        if(!o.ok){[...box.querySelectorAll('.opt')].forEach((x,xi)=>{if(q.o[xi].ok)x.classList.add('good')});}
+        checkDone();
+      };
+      box.appendChild(b);
+    });
+    wrap.appendChild(box);
+  });
+}
+function checkDone(){
+  const all=[...document.querySelectorAll('#quiz .quiz')];
+  if(all.length && all.every(b=>b.dataset.answered)){ document.getElementById('quizdone').style.display='block'; done.add(8); render(); }
+}
+render();
+</script>
+</body>
+</html>

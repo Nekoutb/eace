@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AcademyUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // The Elite Advisors Academy (sales training) sign-in — a separate,
+        // session-based guard so academy staff reach ONLY /academy, never the
+        // admin console or a workspace. No two-factor on this guard.
+        'academy' => [
+            'driver' => 'session',
+            'provider' => 'academy_users',
+        ],
     ],
 
     /*
@@ -67,10 +76,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'academy_users' => [
+            'driver' => 'eloquent',
+            'model' => AcademyUser::class,
+        ],
     ],
 
     /*

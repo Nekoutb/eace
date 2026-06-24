@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\AcademyController;
 use App\Http\Controllers\HelpChatController;
 use App\Http\Controllers\SignUpController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Middleware\AcademyAuthenticate;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -75,6 +77,24 @@ Route::middleware(SetLocale::class)->group(function (): void {
     Route::post('/register/resend', [SignUpController::class, 'resend'])->middleware('throttle:4,1')->name('signup.resend');
     Route::get('/onboarding/verify/{token}', [SignUpController::class, 'verify'])->name('signup.verify');
     Route::get('/onboarding/done', [SignUpController::class, 'done'])->name('signup.done');
+});
+
+/*
+ * Elite Advisors Academy — the internal sales-training platform at /academy.
+ * Gated by the `academy` guard (email + password, NO two-factor); accounts are
+ * created by the operator from the admin console (Academy access). The module is
+ * served from resources/academy (outside the public root) so only a signed-in
+ * staff member can reach it. The POST sign-in is throttled.
+ */
+Route::middleware(SetLocale::class)->prefix('academy')->group(function (): void {
+    Route::get('/login', [AcademyController::class, 'showLogin'])->name('academy.login');
+    Route::post('/login', [AcademyController::class, 'login'])->middleware('throttle:8,1')->name('academy.login.attempt');
+    Route::post('/logout', [AcademyController::class, 'logout'])->name('academy.logout');
+
+    Route::middleware(AcademyAuthenticate::class)->group(function (): void {
+        Route::get('/', [AcademyController::class, 'index'])->name('academy.index');
+        Route::get('/assets/{path}', [AcademyController::class, 'asset'])->where('path', '.*')->name('academy.asset');
+    });
 });
 
 /*
