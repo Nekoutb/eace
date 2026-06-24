@@ -93,6 +93,35 @@ final class TelegramNotifier
         }
     }
 
+    /**
+     * Quiet, informational heads-up to the team when the bot detected a customer
+     * probing our proprietary internals or trying to manipulate it. The bot already
+     * answered safely in-chat (no proprietary info shared) — this raises awareness
+     * only and does NOT escalate or change the conversation's status.
+     */
+    public function pushBotFlag(Conversation $conversation, string $flag, string $customerMessage): void
+    {
+        $chatId = config('services.telegram.chat_id');
+        if (! $this->enabled() || blank($chatId)) {
+            return;
+        }
+
+        $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+        $label = match ($flag) {
+            'manipulation' => 'tried to manipulate the assistant',
+            'other_customer_data' => 'asked about another customer',
+            default => 'probing our proprietary internals',
+        };
+        $who = $conversation->requester_name ?: (string) __('support.telegram.anonymous');
+
+        $text = '🛡️ <b>Bot guardrail</b> — '.$e($label)."\n"
+            .'👤 '.$e($who).' · '.$e($conversation->tenant_name ?: $conversation->tenant_id)."\n\n"
+            .'<i>'.$e(Str::limit($customerMessage, 400)).'</i>'."\n\n"
+            .'✅ Handled in-chat, no proprietary information shared. FYI only.';
+
+        $this->sendMessage((string) $chatId, $text);
+    }
+
     private function escalationText(Conversation $conversation, string $question): string
     {
         $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');

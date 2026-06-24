@@ -86,9 +86,33 @@ final class SupportKnowledge
     /** @return list<string> */
     public static function escalationTopics(): array
     {
-        return array_values(array_map(
-            static fn ($t): string => trim((string) $t),
-            (array) config('support_kb.escalate', []),
+        return self::stringList('support_kb.escalate');
+    }
+
+    /** Proprietary internals the bot must never disclose (bot-internal, English). */
+    /** @return list<string> */
+    public static function confidentialTopics(): array
+    {
+        return self::stringList('support_kb.confidential');
+    }
+
+    /** Hard behavioural limits the bot must respect (bot-internal, English). */
+    /** @return list<string> */
+    public static function botLimits(): array
+    {
+        return self::stringList('support_kb.limits');
+    }
+
+    /**
+     * A flat, trimmed, non-empty list of strings from a config key.
+     *
+     * @return list<string>
+     */
+    private static function stringList(string $configKey): array
+    {
+        return array_values(array_filter(
+            array_map(static fn ($t): string => trim((string) $t), (array) config($configKey, [])),
+            static fn (string $s): bool => $s !== '',
         ));
     }
 

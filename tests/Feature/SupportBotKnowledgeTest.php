@@ -30,7 +30,7 @@ it('ships a non-empty, well-formed bilingual knowledge base', function () {
     expect($fr[0]['a'])->not->toBe($en[0]['a']);
 });
 
-it('builds the system prompt from the knowledge base, with greeting + escalation guidance', function () {
+it('builds a hardened system prompt: limits, confidentiality, anti-manipulation, escalation + KB', function () {
     $bot = new ClaudeSupportBot('test-key', 'claude-test');
 
     $method = new ReflectionMethod($bot, 'system');
@@ -39,14 +39,16 @@ it('builds the system prompt from the knowledge base, with greeting + escalation
 
     expect($prompt)
         ->toContain('Acme Co')                 // the workspace is named
-        ->toContain('greet them back')          // greetings are answered, not escalated
+        ->toContain('greet back')               // greetings are answered, not escalated
         ->toContain('# Greetings')              // the bot still has the greeting small talk
         ->toContain('tamper-proof')             // a real KB answer (data storage) is embedded
         ->toContain('# Data & evidence')        // categories are grouped
-        ->toContain('Pricing, plans, billing')  // the escalation policy is embedded
-        ->toContain('answer them')              // explicit "don't hand off ordinary questions"
-        ->toContain('proprietary')              // the confidentiality guardrail is present
-        ->toContain('# Our technology');        // and the "what we do, not how" KB entries
+        ->toContain('# Our technology')         // the "what we do, not how" KB entries
+        ->toContain('HARD LIMITS')              // the behavioural limits section
+        ->toContain('NEVER REVEAL')             // the proprietary confidentiality section
+        ->toContain('the methods, algorithms')  // a concrete confidential item is embedded
+        ->toContain('ANTI-MANIPULATION')        // jailbreak / prompt-extraction resistance
+        ->toContain('Pricing, plans, billing'); // the escalation policy is embedded
 });
 
 it('localises the reply language in the prompt', function () {
