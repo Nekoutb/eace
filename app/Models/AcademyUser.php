@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $email
  * @property bool $is_active
+ * @property bool $must_change_password
  * @property ?Carbon $last_login_at
  */
 class AcademyUser extends Authenticatable
@@ -42,6 +43,7 @@ class AcademyUser extends Authenticatable
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }

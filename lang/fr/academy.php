@@ -38,5 +38,22 @@ return [
     'cred_email' => 'E-mail',
     'cred_password' => 'Mot de passe',
     'cred_once' => 'Communiquez-le au collaborateur — affiché une seule fois.',
+    'cred_emailed' => 'Également envoyé par e-mail.',
+    'cred_not_emailed' => "L'e-mail n'a pas pu être envoyé — communiquez le mot de passe manuellement.",
     'pw_reset_title' => 'Nouveau mot de passe défini',
+    'col_pending' => 'Doit définir le mot de passe',
+
+    // Changement de mot de passe à la première connexion
+    'pw_change_title' => 'Définissez votre mot de passe',
+    'pw_change_sub' => 'Choisissez un nouveau mot de passe pour finaliser votre accès.',
+    'pw_new' => 'Nouveau mot de passe',
+    'pw_confirm' => 'Confirmez le mot de passe',
+    'pw_save' => 'Enregistrer et continuer',
+
+    // E-mail d'intégration
+    'mail_subject' => 'Votre accès Elite Advisors Academy',
+    'mail_greeting' => 'Bonjour :name,',
+    'mail_intro' => "Vous avez reçu un accès à l'Elite Advisors Academy — notre plateforme de formation commerciale. Connectez-vous avec les informations ci-dessous ; il vous sera demandé de définir votre propre mot de passe à la première connexion.",
+    'mail_cta' => "Ouvrir l'Academy",
+    'mail_note' => 'Pour votre sécurité, ce mot de passe à usage unique doit être changé lors de votre première connexion.',
 ];

@@ -38,5 +38,22 @@ return [
     'cred_email' => 'Email',
     'cred_password' => 'Password',
     'cred_once' => 'Share this with the staff member — it is shown once.',
+    'cred_emailed' => 'Also emailed to them.',
+    'cred_not_emailed' => "Email couldn't be sent — share the password manually.",
     'pw_reset_title' => 'New password set',
+    'col_pending' => 'Must set password',
+
+    // First-login password change
+    'pw_change_title' => 'Set your password',
+    'pw_change_sub' => 'Choose a new password to finish setting up your access.',
+    'pw_new' => 'New password',
+    'pw_confirm' => 'Confirm password',
+    'pw_save' => 'Save and continue',
+
+    // Onboarding email
+    'mail_subject' => 'Your Elite Advisors Academy access',
+    'mail_greeting' => 'Hello :name,',
+    'mail_intro' => "You've been given access to the Elite Advisors Academy — our sales-training platform. Sign in with the details below; you'll be asked to set your own password on first sign-in.",
+    'mail_cta' => 'Open the Academy',
+    'mail_note' => 'For your security, this one-time password must be changed the first time you sign in.',
 ];

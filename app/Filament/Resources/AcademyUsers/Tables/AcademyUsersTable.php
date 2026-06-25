@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AcademyUsers\Tables;
 
+use App\Mail\AcademyCredentialsMail;
 use App\Models\AcademyUser;
 use App\Support\TempPassword;
 use Filament\Actions\Action;
@@ -11,7 +12,9 @@ use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
+use Throwable;
 
 class AcademyUsersTable
 {
@@ -35,6 +38,14 @@ class AcademyUsersTable
                     ->label(__('academy.col_active'))
                     ->boolean()
                     ->sortable(),
+                IconColumn::make('must_change_password')
+                    ->label(__('academy.col_pending'))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-clock')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('warning')
+                    ->falseColor('success')
+                    ->sortable(),
                 TextColumn::make('last_login_at')
                     ->label(__('academy.col_last_login'))
                     ->dateTime('d/m/Y H:i')
@@ -50,17 +61,34 @@ class AcademyUsersTable
             ]);
     }
 
-    /** Show the sign-in URL + email + a one-time password in a persistent toast. */
-    public static function credentials(string $title, string $email, string $password): void
+    /**
+     * Email the member their sign-in URL + one-time password (best-effort) and show
+     * the same details once to the operator, noting whether the email went out.
+     */
+    public static function issueCredentials(AcademyUser $user, string $password, string $title): void
     {
+        $emailed = false;
+        try {
+            Mail::to($user->email)->locale(app()->getLocale())->send(new AcademyCredentialsMail(
+                name: $user->name,
+                email: $user->email,
+                temporaryPassword: $password,
+                loginUrl: route('academy.login'),
+            ));
+            $emailed = true;
+        } catch (Throwable $e) {
+            report($e);
+        }
+
         Notification::make()
             ->title($title)
             ->body(new HtmlString(
                 '<div style="line-height:1.7">'
                 .e(__('academy.cred_url')).' <strong>'.e(url('/academy')).'</strong><br>'
-                .e(__('academy.cred_email')).': <code>'.e($email).'</code><br>'
+                .e(__('academy.cred_email')).': <code>'.e($user->email).'</code><br>'
                 .e(__('academy.cred_password')).': <code>'.e($password).'</code><br>'
-                .'<em>'.e(__('academy.cred_once')).'</em>'
+                .'<em>'.e(__('academy.cred_once')).'</em><br>'
+                .e($emailed ? __('academy.cred_emailed') : __('academy.cred_not_emailed'))
                 .'</div>'
             ))
             ->success()
@@ -78,8 +106,9 @@ class AcademyUsersTable
             ->modalDescription(__('academy.reset_desc'))
             ->action(function (AcademyUser $record): void {
                 $password = TempPassword::generate();
-                $record->update(['password' => $password]); // 'hashed' cast hashes it
-                self::credentials((string) __('academy.pw_reset_title'), (string) $record->email, $password);
+                // 'hashed' cast hashes it; force a change again on next sign-in.
+                $record->update(['password' => $password, 'must_change_password' => true]);
+                self::issueCredentials($record, $password, (string) __('academy.pw_reset_title'));
             });
     }
 

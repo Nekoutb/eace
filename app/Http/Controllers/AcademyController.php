@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademyUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -66,6 +67,28 @@ final class AcademyController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('academy.login');
+    }
+
+    public function showChangePassword(): Response
+    {
+        return response()->view('academy.password');
+    }
+
+    public function changePassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = Auth::guard('academy')->user();
+        if ($user instanceof AcademyUser) {
+            $user->update([
+                'password' => (string) $request->input('password'), // 'hashed' cast hashes it
+                'must_change_password' => false,
+            ]);
+        }
+
+        return redirect()->route('academy.index');
     }
 
     public function index(): Response

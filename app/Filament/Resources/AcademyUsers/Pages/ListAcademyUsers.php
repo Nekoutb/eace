@@ -55,14 +55,15 @@ class ListAcademyUsers extends ListRecords
                         ? (string) $data['password']
                         : TempPassword::generate();
 
-                    AcademyUser::query()->create([
+                    $user = AcademyUser::query()->create([
                         'name' => (string) $data['name'],
                         'email' => $email,
                         'password' => $password, // 'hashed' cast hashes it
                         'is_active' => true,
+                        'must_change_password' => true,
                     ]);
 
-                    AcademyUsersTable::credentials((string) __('academy.added_title'), $email, $password);
+                    AcademyUsersTable::issueCredentials($user, $password, (string) __('academy.added_title'));
                 }),
         ];
     }

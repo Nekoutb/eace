@@ -6,6 +6,7 @@ use App\Http\Controllers\SignUpController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Middleware\AcademyAuthenticate;
+use App\Http\Middleware\ForceAcademyPasswordChange;
 use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -92,8 +93,14 @@ Route::middleware(SetLocale::class)->prefix('academy')->group(function (): void 
     Route::post('/logout', [AcademyController::class, 'logout'])->name('academy.logout');
 
     Route::middleware(AcademyAuthenticate::class)->group(function (): void {
-        Route::get('/', [AcademyController::class, 'index'])->name('academy.index');
-        Route::get('/assets/{path}', [AcademyController::class, 'asset'])->where('path', '.*')->name('academy.asset');
+        // Reachable even while a one-time password is pending, so the member can comply.
+        Route::get('/password', [AcademyController::class, 'showChangePassword'])->name('academy.password');
+        Route::post('/password', [AcademyController::class, 'changePassword'])->name('academy.password.update');
+
+        Route::middleware(ForceAcademyPasswordChange::class)->group(function (): void {
+            Route::get('/', [AcademyController::class, 'index'])->name('academy.index');
+            Route::get('/assets/{path}', [AcademyController::class, 'asset'])->where('path', '.*')->name('academy.asset');
+        });
     });
 });
 
