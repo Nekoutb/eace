@@ -10,26 +10,35 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const page = await browser.newPage();
   await page.setViewport({ width: 1280, height: 880, deviceScaleFactor: 2 });
   await page.goto(FILE, { waitUntil: 'networkidle2', timeout: 30000 });
-  await sleep(800);
+  await sleep(700);
 
-  const next = async (n) => { for (let i = 0; i < n; i++) { await page.evaluate(() => window.go(1)); await sleep(380); } };
+  const next = async (n) => { for (let i = 0; i < n; i++) { await page.evaluate(() => window.go(1)); await sleep(300); } };
 
-  await next(2);
-  await page.screenshot({ path: OUT + 'academy-02-solution.png', fullPage: true });
-  console.log('shot solution');
+  await next(1);
+  await page.screenshot({ path: OUT + 'academy2-01-problem.png', fullPage: true });
+  console.log('shot problem');
 
-  await next(2);
-  await page.screenshot({ path: OUT + 'academy-04-value.png', fullPage: true });
-  console.log('shot value');
+  await next(4);
+  await page.evaluate(() => document.querySelectorAll('.obj').forEach((o) => o.classList.add('open')));
+  await sleep(300);
+  await page.screenshot({ path: OUT + 'academy2-05-sales.png', fullPage: true });
+  console.log('shot sales');
 
   await next(3);
-  await page.screenshot({ path: OUT + 'academy-07-security.png', fullPage: true });
-  console.log('shot security');
+  await sleep(400);
+  await page.screenshot({ path: OUT + 'academy2-08-quiz.png', fullPage: true });
+  console.log('shot quiz');
 
-  await page.evaluate(() => window.setLang('en'));
-  await sleep(500);
-  await page.screenshot({ path: OUT + 'academy-07-security-en.png', fullPage: true });
-  console.log('shot security-en');
+  const checks = await page.evaluate(() => {
+    const attrs = [...document.querySelectorAll('[data-fr]')].map((e) => (e.getAttribute('data-fr') || '') + (e.getAttribute('data-en') || '')).join(' ');
+    return {
+      quizCount: document.querySelectorAll('#quiz .quiz').length,
+      leakTipMarkup: [...document.querySelectorAll('.obj .a')].some((e) => e.textContent.includes('<span')),
+      engineFullName: attrs.includes('Elite Advisors Compliance Engine'),
+      has579: attrs.includes('579'),
+    };
+  });
+  console.log('checks', JSON.stringify(checks));
 
   await browser.close();
   console.log('DONE');

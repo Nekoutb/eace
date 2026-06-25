@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Elite Advisors Academy — Compliance Engine</title>
+<title>Elite Advisors Academy — Elite Advisors Compliance Engine</title>
 <style>
   :root{
     --red:#E2382B; --red-d:#B62015; --ink:#111111; --ink-soft:#3a3a38; --muted:#6B6B6B;
@@ -54,7 +54,7 @@
   h2{font-size:21px;margin:1.7em 0 .5em;letter-spacing:-.01em}
   h3{font-size:16px;margin:1.3em 0 .4em}
   p{margin:.6em 0;color:var(--ink-soft);font-size:15.5px}
-  .lead{font-size:18px;color:var(--ink);max-width:60ch}
+  .lead{font-size:18px;color:var(--ink);max-width:62ch}
   strong{color:var(--ink)}
   .pill{display:inline-block;background:var(--green-100);color:var(--green-d);font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px}
 
@@ -85,6 +85,12 @@
   ul.clean li:before{content:"";position:absolute;left:4px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--red)}
   ul.clean.g li:before{background:var(--green)}
 
+  table.tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  table.tbl th,table.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+  table.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  table.tbl td{color:var(--ink-soft)}
+  table.tbl td strong{color:var(--ink)}
+
   .script{background:#1b1b1a;color:#f3f3f0;border-radius:var(--r);padding:18px 20px;font-size:14.5px;margin:14px 0}
   .script .who{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#ffb3ad;font-weight:800;margin-top:12px}
   .script .who:first-child{margin-top:0}
@@ -96,6 +102,7 @@
   .obj.open .q:after{content:"\2013"}
   .obj .a{display:none;padding:0 16px 15px;font-size:14px;color:var(--ink-soft)}
   .obj.open .a{display:block}
+  .obj .a .tip{display:block;margin-top:8px;font-size:12.5px;color:var(--green-d);font-weight:700;letter-spacing:.02em;text-transform:uppercase}
 
   .navrow{display:flex;justify-content:space-between;margin-top:40px;padding-top:22px;border-top:1px solid var(--line)}
   .btn{border:0;border-radius:11px;padding:12px 22px;font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit}
@@ -105,13 +112,13 @@
   .btn:disabled{opacity:.4;cursor:default}
 
   /* quiz */
-  .quiz{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin:16px 0}
-  .quiz .qn{font-weight:700;font-size:15.5px;margin-bottom:10px}
-  .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 14px;margin:7px 0;cursor:pointer;font-size:14.5px;font-family:inherit;color:var(--ink-soft)}
+  .quiz{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin:14px 0}
+  .quiz .qn{font-weight:700;font-size:15px;margin-bottom:10px}
+  .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 14px;margin:7px 0;cursor:pointer;font-size:14px;font-family:inherit;color:var(--ink-soft)}
   .opt:hover{border-color:var(--ink)}
   .opt.good{border-color:var(--green);background:var(--green-50);color:var(--green-d);font-weight:700}
   .opt.bad{border-color:var(--red);background:#fdeceb;color:var(--red-d)}
-  .qfb{font-size:13.5px;margin-top:8px;display:none}
+  .scorebar{position:sticky;top:56px;z-index:5;background:var(--paper);padding:8px 0 4px;font-size:13px;color:var(--muted);font-weight:700}
   .tagline{font-size:13px;color:var(--muted);font-style:italic}
 </style>
 </head>
@@ -139,39 +146,53 @@
   <main id="main">
 
     <!-- 0 WELCOME -->
-    <section class="step on" data-tk="6 min">
+    <section class="step on">
       <span class="kick" data-fr="La mission" data-en="The mission"></span>
-      <h1 data-fr="Vendez le Compliance Engine avec la conviction du fondateur." data-en="Sell the Compliance Engine with the founder's conviction."></h1>
-      <p class="lead" data-fr="Ce programme vous transforme en ambassadeur d'Elite Advisors. À la fin, vous comprendrez le produit, le risque qu'il supprime, et vous saurez le présenter, le démontrer et le vendre — avec la même passion que si vous l'aviez construit." data-en="This program turns you into an Elite Advisors ambassador. By the end you'll understand the product, the risk it removes, and how to pitch it, demo it and sell it — with the same passion as if you'd built it yourself."></p>
+      <h1 data-fr="Vendez l'Elite Advisors Compliance Engine avec la conviction du fondateur." data-en="Sell the Elite Advisors Compliance Engine with the founder's conviction."></h1>
+      <p class="lead" data-fr="Ce programme vous transforme en ambassadeur d'Elite Advisors. À la fin, vous comprendrez le produit en profondeur, vous saurez chiffrer le risque qu'il supprime, et vous pourrez le présenter, le démontrer et le vendre — avec la même passion que si vous l'aviez construit." data-en="This program turns you into an Elite Advisors ambassador. By the end you'll understand the product in depth, you'll be able to quantify the risk it removes, and you'll pitch it, demo it and sell it — with the same passion as if you'd built it yourself."></p>
 
       <div class="callout g">
         <div class="h" data-fr="Notre conviction" data-en="Our conviction"></div>
-        <p data-fr="Une entreprise camerounaise ne devrait jamais perdre la déductibilité d'une charge ou de sa TVA parce qu'elle a payé un fournisseur non conforme sans le savoir. Nous rendons cette vérification automatique, traçable et opposable." data-en="A Cameroonian business should never lose deductibility of a cost or its VAT because it unknowingly paid a non-compliant supplier. We make that check automatic, traceable and defensible."></p>
+        <p data-fr="Une entreprise camerounaise ne devrait jamais perdre la déductibilité d'une charge ou de sa TVA parce qu'elle a payé un fournisseur non conforme sans le savoir. L'Elite Advisors Compliance Engine rend cette vérification automatique, traçable et opposable." data-en="A Cameroonian business should never lose deductibility of a cost or its VAT because it unknowingly paid a non-compliant supplier. The Elite Advisors Compliance Engine makes that check automatic, traceable and defensible."></p>
       </div>
 
       <h2 data-fr="Ce que vous saurez faire" data-en="What you'll be able to do"></h2>
-      <div class="grid g3">
-        <div class="card"><div class="ic">1</div><h3 data-fr="Expliquer le risque" data-en="Explain the risk"></h3><p data-fr="Chiffrer en FCFA ce qu'un fournisseur non conforme coûte au client." data-en="Quantify in FCFA what a non-compliant supplier costs the client."></p></div>
-        <div class="card"><div class="ic">2</div><h3 data-fr="Démontrer le produit" data-en="Demo the product"></h3><p data-fr="Dérouler les 4 contrôles × 2 étapes en direct, sans hésiter." data-en="Run the 4 checks × 2 stages live, without hesitation."></p></div>
-        <div class="card"><div class="ic">3</div><h3 data-fr="Conclure la vente" data-en="Close the sale"></h3><p data-fr="Répondre aux objections et amener le client à l'essai." data-en="Handle objections and move the client to a trial."></p></div>
+      <div class="grid g2">
+        <div class="card"><div class="ic">1</div><h3 data-fr="Chiffrer le risque" data-en="Quantify the risk"></h3><p data-fr="Mettre un chiffre en FCFA sur ce qu'un seul fournisseur non conforme coûte au client — jusqu'à 49,5 % de la facture." data-en="Put an FCFA number on what a single non-compliant supplier costs the client — up to 49.5% of the invoice."></p></div>
+        <div class="card"><div class="ic">2</div><h3 data-fr="Démontrer le produit" data-en="Demo the product"></h3><p data-fr="Dérouler les 4 contrôles × 2 étapes en direct, sans hésiter, et terminer sur la preuve." data-en="Run the 4 checks × 2 stages live, without hesitating, and end on the proof."></p></div>
+        <div class="card"><div class="ic">3</div><h3 data-fr="Traiter les objections" data-en="Handle objections"></h3><p data-fr="Répondre avec aplomb à « c'est trop cher », « on le fait déjà », « les portails suffisent »." data-en="Confidently answer “it's too expensive”, “we already do it”, “the portals are enough”."></p></div>
+        <div class="card"><div class="ic">4</div><h3 data-fr="Conclure" data-en="Close"></h3><p data-fr="Amener le client à l'essai et au premier contrôle réalisé sur ses propres factures." data-en="Move the client to a trial and a first check run on their own invoices."></p></div>
       </div>
+
+      <h2 data-fr="Comment se déroule le programme" data-en="How the program runs"></h2>
+      <p data-fr="Neuf modules, environ une heure. Travaillez-le seul, puis rejouez la démo avec un collègue. Le module final est une certification de 25 questions : visez au moins 20/25 — c'est le niveau d'un ambassadeur Elite Advisors." data-en="Nine modules, about an hour. Work through it alone, then replay the demo with a colleague. The final module is a 25-question certification: aim for at least 20/25 — that's the level of an Elite Advisors ambassador."></p>
       <p class="tagline" data-fr="Elite Advisors — l'optimisation des processus grâce à l'IA de pointe." data-en="Elite Advisors — process optimization with best-in-class AI."></p>
     </section>
 
     <!-- 1 THE PROBLEM -->
-    <section class="step" data-tk="8 min">
+    <section class="step">
       <span class="kick" data-fr="Le problème qui vaut de l'argent" data-en="The problem worth money"></span>
-      <h1 data-fr="Payer le mauvais fournisseur coûte cher — très cher." data-en="Paying the wrong supplier is expensive — very expensive."></h1>
-      <p class="lead" data-fr="Au Cameroun, le CGI 2025 conditionne la déductibilité de vos charges et de votre TVA à la conformité fiscale du fournisseur. Si le fournisseur est introuvable, suspendu ou radié, l'administration peut rejeter la charge et la TVA — et ajouter pénalités et intérêts." data-en="In Cameroon, the 2025 CGI ties the deductibility of your costs and VAT to the supplier's fiscal compliance. If the supplier is unknown, suspended or struck off, the tax authority can reject the cost and the VAT — and add penalties and interest."></p>
+      <h1 data-fr="Payer le mauvais fournisseur coûte cher — jusqu'à la moitié de la facture." data-en="Paying the wrong supplier is expensive — up to half the invoice."></h1>
+      <p class="lead" data-fr="Au Cameroun, le Code Général des Impôts conditionne la déductibilité de vos charges et de votre TVA à la conformité fiscale du fournisseur. Si le fournisseur est introuvable, suspendu ou radié — ou si son ACF est fausse ou périmée — l'administration peut rejeter la charge et la TVA, puis aller plus loin." data-en="In Cameroon, the General Tax Code ties the deductibility of your costs and VAT to the supplier's fiscal compliance. If the supplier is unknown, suspended or struck off — or its ACF is fake or expired — the tax authority can reject the cost and the VAT, then go further."></p>
 
-      <div class="grid g3" style="margin-top:18px">
-        <div class="stat red"><div class="big">19,25%</div><div class="lb" data-fr="TVA potentiellement rejetée" data-en="VAT potentially rejected"></div></div>
-        <div class="stat"><div class="big">+33%</div><div class="lb" data-fr="Charge réintégrée à l'IS" data-en="Cost added back to tax"></div></div>
-        <div class="stat"><div class="big">+ pénalités</div><div class="lb" data-fr="Intérêts & amendes" data-en="Interest &amp; fines"></div></div>
+      <h2 data-fr="Le vrai coût de la non-conformité : jusqu'à 49,5 %" data-en="The real cost of non-compliance: up to 49.5%"></h2>
+      <div class="grid g3" style="margin:6px 0 4px">
+        <div class="stat"><div class="big">33%</div><div class="lb" data-fr="IS sur la charge réintégrée (non déductible)" data-en="Corporate tax on the reinstated cost (non-deductible)"></div></div>
+        <div class="stat red"><div class="big">+16,5%</div><div class="lb" data-fr="IRCM sur distribution réputée occulte" data-en="IRCM on deemed hidden distribution"></div></div>
+        <div class="stat" style="background:var(--red-d)"><div class="big">= 49,5%</div><div class="lb" data-fr="du montant, avant pénalités & intérêts" data-en="of the amount, before penalties &amp; interest"></div></div>
       </div>
+      <p data-fr="Une charge rejetée n'est pas seulement « non déductible ». Elle peut être requalifiée en distribution occulte de revenus et frappée d'IRCM. Cumulé, le redressement atteint près de la moitié de la facture — auquel s'ajoutent la TVA rejetée (19,25 %), les pénalités et les intérêts de retard." data-en="A rejected cost isn't merely “non-deductible”. It can be recharacterised as a hidden distribution of income and hit with IRCM. Combined, the reassessment approaches half the invoice — on top of the rejected VAT (19.25%), penalties and late interest."></p>
 
       <h2 data-fr="L'histoire vraie que vous raconterez" data-en="The true story you'll tell"></h2>
-      <p data-fr="Un client paie une facture de 10 000 000 FCFA à un fournisseur qu'il croit en règle. Six mois plus tard, contrôle fiscal : le fournisseur était radié. La TVA (1,6 M) est rejetée, la charge (10 M) réintégrée, plus pénalités. Une facture devient une perte de plusieurs millions — évitable en 30 secondes de vérification." data-en="A client pays a 10,000,000 FCFA invoice to a supplier they believe is compliant. Six months later, a tax audit: the supplier was struck off. The VAT (1.6M) is rejected, the cost (10M) added back, plus penalties. One invoice becomes a multi-million loss — avoidable with 30 seconds of verification."></p>
+      <p data-fr="Un client paie une facture de 10 000 000 FCFA à un fournisseur qu'il croit en règle. Six mois plus tard, contrôle fiscal : le fournisseur était radié. La charge de 10 M est réintégrée (≈ 3,3 M d'IS), requalifiée en distribution occulte (≈ 1,65 M d'IRCM), la TVA de 1,6 M rejetée — soit près de 6,5 M, avant pénalités. Une facture devient une perte de plusieurs millions — évitable en 30 secondes de vérification." data-en="A client pays a 10,000,000 FCFA invoice to a supplier they believe is compliant. Six months later, a tax audit: the supplier was struck off. The 10M cost is reinstated (≈3.3M corporate tax), recharacterised as a hidden distribution (≈1.65M IRCM), and the 1.6M VAT rejected — nearly 6.5M before penalties. One invoice becomes a multi-million loss — avoidable with 30 seconds of verification."></p>
+
+      <h2 data-fr="Pourquoi personne n'est à l'abri" data-en="Why no one is safe"></h2>
+      <ul class="clean">
+        <li data-fr="Un fournisseur en règle aujourd'hui peut être suspendu ou radié demain, sans vous prévenir." data-en="A supplier compliant today can be suspended or struck off tomorrow, without telling you."></li>
+        <li data-fr="Les fausses ACF circulent : un document peut sembler parfait et n'avoir jamais été émis par la DGI." data-en="Fake ACFs circulate: a document can look perfect yet never have been issued by the DGI."></li>
+        <li data-fr="Une ACF n'est valable que 3 mois — beaucoup paient sur une attestation périmée sans le voir." data-en="An ACF is valid for only 3 months — many pay on an expired certificate without noticing."></li>
+        <li data-fr="Le contrôle porte sur le passé : la preuve doit exister au moment du paiement, pas être reconstituée après." data-en="An audit looks at the past: proof must exist at payment time, not be reconstructed afterward."></li>
+      </ul>
 
       <div class="callout">
         <div class="h" data-fr="Le déclic commercial" data-en="The sales hook"></div>
@@ -180,124 +201,169 @@
     </section>
 
     <!-- 2 WHAT IT IS -->
-    <section class="step" data-tk="10 min">
+    <section class="step">
       <span class="kick" data-fr="La solution" data-en="The solution"></span>
-      <h1 data-fr="Le Compliance Engine : 4 contrôles, 2 étapes." data-en="The Compliance Engine: 4 checks, 2 stages."></h1>
-      <p class="lead" data-fr="En une phrase : Elite Advisors vérifie automatiquement que chaque fournisseur que vous payez est fiscalement en règle, et conserve la preuve. Le moteur exécute quatre contrôles, à deux moments clés du cycle de paiement." data-en="In one sentence: Elite Advisors automatically checks that every supplier you pay is fiscally compliant, and keeps the proof. The engine runs four checks, at two key moments of the payment cycle."></p>
+      <h1 data-fr="L'Elite Advisors Compliance Engine : 4 contrôles, 2 étapes." data-en="The Elite Advisors Compliance Engine: 4 checks, 2 stages."></h1>
+      <p class="lead" data-fr="En une phrase : l'Elite Advisors Compliance Engine vérifie automatiquement que chaque fournisseur que vous payez est fiscalement en règle, et conserve la preuve. Il exécute quatre contrôles, à deux moments clés du cycle de paiement, et rend un verdict clair (conforme / non conforme) avec ses preuves." data-en="In one sentence: the Elite Advisors Compliance Engine automatically checks that every supplier you pay is fiscally compliant, and keeps the proof. It runs four checks, at two key moments of the payment cycle, and returns a clear verdict (compliant / not compliant) with its evidence."></p>
 
       <h2 data-fr="Les 4 contrôles" data-en="The 4 checks"></h2>
       <div class="grid g2">
-        <div class="card"><div class="ic">①</div><h3 data-fr="Authenticité de l'ACF" data-en="ACF authenticity"></h3><p data-fr="L'Attestation de Conformité Fiscale est-elle authentique ? Vérifiée via le portail Harmony2 de la DGI, avec capture de preuve." data-en="Is the fiscal compliance certificate genuine? Verified via the DGI Harmony2 portal, with an evidence snapshot."></p></div>
-        <div class="card"><div class="ic">②</div><h3 data-fr="Statut du NIU" data-en="NIU status"></h3><p data-fr="Le contribuable est-il actif ? Lecture du statut officiel sur le portail Fiscalis de la DGI." data-en="Is the taxpayer active? Reads the official status on the DGI Fiscalis portal."></p></div>
-        <div class="card"><div class="ic">③</div><h3 data-fr="Existence au fichier" data-en="Register existence"></h3><p data-fr="Le NIU figure-t-il au fichier national des contribuables (≈579 000), téléchargé automatiquement chaque nuit à minuit ?" data-en="Is the NIU in the national taxpayer register (≈579,000), downloaded automatically every night at midnight?"></p></div>
-        <div class="card"><div class="ic">④</div><h3 data-fr="Validité de l'ACF" data-en="ACF validity"></h3><p data-fr="L'attestation est-elle encore valable (émission + 3 mois) ? Avec alerte avant expiration." data-en="Is the certificate still in force (issue + 3 months)? With pre-expiry alerting."></p></div>
+        <div class="card"><div class="ic">①</div><h3 data-fr="Authenticité de l'ACF" data-en="ACF authenticity"></h3><p data-fr="L'Attestation de Conformité Fiscale est-elle authentique ? Vérifiée en direct sur le portail Harmony2 de la DGI, avec capture d'écran horodatée comme preuve. Démasque les fausses attestations." data-en="Is the Fiscal Compliance Certificate genuine? Verified live on the DGI's Harmony2 portal, with a timestamped screenshot as proof. Exposes forged certificates."></p></div>
+        <div class="card"><div class="ic">②</div><h3 data-fr="Statut du NIU" data-en="NIU status"></h3><p data-fr="Le contribuable est-il actif ? Lecture du statut officiel (actif / suspendu / radié) sur le portail Fiscalis de la DGI, capturée comme preuve." data-en="Is the taxpayer active? Reads the official status (active / suspended / struck off) on the DGI's Fiscalis portal, captured as proof."></p></div>
+        <div class="card"><div class="ic">③</div><h3 data-fr="Existence au fichier" data-en="Register existence"></h3><p data-fr="Le NIU figure-t-il au fichier national des contribuables de la DGI, téléchargé et archivé automatiquement chaque nuit à minuit ?" data-en="Is the NIU in the DGI's national taxpayer register, downloaded and stored automatically every night at midnight?"></p></div>
+        <div class="card"><div class="ic">④</div><h3 data-fr="Validité de l'ACF" data-en="ACF validity"></h3><p data-fr="L'attestation est-elle encore en cours de validité (émission + 3 mois, art. L 94) ? Avec compte à rebours et alerte avant expiration." data-en="Is the certificate still in force (issue + 3 months, art. L 94)? With a countdown and a pre-expiry alert."></p></div>
       </div>
 
-      <div class="callout"><div class="h" data-fr="Le fichier national, à jour chaque nuit" data-en="The national register, refreshed nightly"></div><p data-fr="Le contrôle d'existence (③) s'appuie sur le fichier officiel des contribuables de la DGI — environ 579 000 NIU — que la plateforme télécharge automatiquement chaque nuit à minuit. Vos vérifications s'appuient toujours sur la liste la plus récente, sans aucune action de votre part." data-en="The existence check (③) relies on the DGI's official taxpayer register — about 579,000 NIUs — which the platform downloads automatically every night at midnight. Your checks always run against the freshest list, with no action on your part."></p></div>
+      <div class="callout"><div class="h" data-fr="Le fichier national, à jour chaque nuit" data-en="The national register, refreshed nightly"></div><p data-fr="Le contrôle d'existence (③) s'appuie sur le fichier officiel des contribuables de la DGI, que la plateforme télécharge et archive automatiquement chaque nuit à minuit. Vos vérifications s'appuient toujours sur la liste la plus récente, sans aucune action de votre part." data-en="The existence check (③) relies on the DGI's official taxpayer register, which the platform downloads and stores automatically every night at midnight. Your checks always run against the freshest list, with no action on your part."></p></div>
 
       <h2 data-fr="Les 2 étapes" data-en="The 2 stages"></h2>
       <div class="grid g2">
-        <div class="card" style="border-top:3px solid var(--green)"><h3 data-fr="Enregistrement" data-en="Recording"></h3><p data-fr="À la réception de la facture : on scanne l'ACF et on contrôle le fournisseur avant de comptabiliser." data-en="When the invoice arrives: scan the ACF and check the supplier before booking it."></p></div>
-        <div class="card" style="border-top:3px solid var(--ink)"><h3 data-fr="Règlement" data-en="Settlement"></h3><p data-fr="Au moment de payer : on revérifie. Une ACF expirée ou un NIU devenu inactif bloque le paiement." data-en="At payment time: re-check. An expired ACF or a now-inactive NIU blocks the payment."></p></div>
+        <div class="card" style="border-top:3px solid var(--green)"><h3 data-fr="Enregistrement" data-en="Recording"></h3><p data-fr="À la réception de la facture : on scanne l'ACF, on lit la facture (OCR) et on contrôle le fournisseur avant de comptabiliser. La preuve est capturée à cet instant." data-en="When the invoice arrives: scan the ACF, read the invoice (OCR) and check the supplier before booking it. The proof is captured at that moment."></p></div>
+        <div class="card" style="border-top:3px solid var(--ink)"><h3 data-fr="Règlement" data-en="Settlement"></h3><p data-fr="Au moment de payer : on revérifie (par lots si besoin). Une ACF expirée ou un NIU devenu inactif bloque le paiement — avant que l'argent ne sorte." data-en="At payment time: re-check (in batches if needed). An expired ACF or a now-inactive NIU blocks the payment — before the money leaves."></p></div>
       </div>
-      <div class="callout g"><div class="h" data-fr="Pourquoi deux étapes ?" data-en="Why two stages?"></div><p data-fr="Parce que la conformité change avec le temps. Un fournisseur en règle à la commande peut ne plus l'être au paiement. Le client est protégé aux deux moments." data-en="Because compliance changes over time. A supplier compliant at order time may not be at payment time. The client is protected at both moments."></p></div>
+      <div class="callout g"><div class="h" data-fr="Pourquoi deux étapes ?" data-en="Why two stages?"></div><p data-fr="Parce que la conformité change avec le temps. Un fournisseur en règle à la commande peut ne plus l'être au paiement, parfois plusieurs semaines plus tard. Le client est protégé aux deux moments — c'est ce que les portails de la DGI, utilisés à la main, ne font pas." data-en="Because compliance changes over time. A supplier compliant at order time may not be at payment, sometimes weeks later. The client is protected at both moments — which the DGI portals, used by hand, do not do."></p></div>
+
+      <h2 data-fr="Et la conformité de la facture elle-même" data-en="And the invoice's own compliance"></h2>
+      <p data-fr="Au-delà du fournisseur, le moteur lit la facture et vérifie ses conditions de forme et de fond alignées sur le CGI (art. 150) : mentions obligatoires, identité du client, montants. Un résultat clair, avec les preuves à l'appui, vous dit exactement pourquoi une facture passe ou échoue." data-en="Beyond the supplier, the engine reads the invoice and checks its form and substance conditions aligned with the Tax Code (art. 150): mandatory mentions, client identity, amounts. A clear result, with supporting evidence, tells you exactly why an invoice passes or fails."></p>
     </section>
 
     <!-- 3 GUIDED TOUR -->
-    <section class="step" data-tk="12 min">
+    <section class="step">
       <span class="kick" data-fr="Visite guidée" data-en="Guided tour"></span>
       <h1 data-fr="Le produit, écran par écran." data-en="The product, screen by screen."></h1>
-      <p class="lead" data-fr="Voici exactement ce que voit votre client. Apprenez ces écrans : ce sont eux que vous montrerez en démo." data-en="Here is exactly what your client sees. Learn these screens — they're what you'll show in the demo."></p>
+      <p class="lead" data-fr="Voici exactement ce que voit votre client. Apprenez ces écrans : ce sont eux que vous montrerez en démo, et chacun porte un message de vente." data-en="Here is exactly what your client sees. Learn these screens — they're what you'll show in the demo, and each carries a selling message."></p>
 
       <h2 data-fr="Le tableau de bord" data-en="The dashboard"></h2>
-      <p data-fr="La photo de la conformité en un coup d'œil : factures traitées, conformes, rejetées, et surtout les économies potentielles en FCFA — l'argent que le moteur a protégé." data-en="The compliance picture at a glance: invoices processed, compliant, rejected, and above all the potential savings in FCFA — the money the engine protected."></p>
-      <figure><img src="assets/screens/app-dashboard.png" alt="Tableau de bord" /><figcaption><b>Tableau de bord</b> — <span data-fr="9 indicateurs, dont « Économies potentielles » et le stockage des preuves." data-en="9 indicators, including “Potential savings” and evidence storage."></span></figcaption></figure>
+      <p data-fr="La photo de la conformité en un coup d'œil : factures traitées, conformes, rejetées, et surtout les économies potentielles en FCFA — l'argent que le moteur a protégé. C'est l'écran qui parle au dirigeant : « voilà ce que vous avez évité de perdre »." data-en="The compliance picture at a glance: invoices processed, compliant, rejected, and above all the potential savings in FCFA — the money the engine protected. This is the screen that speaks to the owner: “here's what you avoided losing”."></p>
+      <figure><img src="assets/screens/app-dashboard.png" alt="Tableau de bord" /><figcaption><b>Tableau de bord</b> — <span data-fr="indicateurs de conformité, « Économies potentielles » et stockage des preuves." data-en="compliance indicators, “Potential savings” and evidence storage."></span></figcaption></figure>
 
-      <h2 data-fr="Le Moteur de Conformité" data-en="The Compliance Engine"></h2>
-      <p data-fr="Le cœur du produit. On choisit l'étape (Enregistrement / Règlement), on dépose l'ACF et la facture, on lance — les 4 contrôles s'affichent avec leur verdict." data-en="The heart of the product. Pick the stage (Recording / Settlement), drop the ACF and invoice, run it — the 4 checks appear with their verdict."></p>
-      <figure><img src="assets/screens/app-moteur-de-conformit.png" alt="Moteur de conformité" /><figcaption><b>Moteur de conformité</b> — <span data-fr="bascule d'étape, dépôt ACF + facture, bouton « Lancer les contrôles »." data-en="stage toggle, ACF + invoice upload, “Run the checks” button."></span></figcaption></figure>
+      <h2 data-fr="L'Elite Advisors Compliance Engine" data-en="The Elite Advisors Compliance Engine"></h2>
+      <p data-fr="Le cœur du produit (écran « Moteur de conformité »). On choisit l'étape (Enregistrement / Règlement), on dépose l'ACF et la facture, on lance — les 4 contrôles s'affichent avec leur verdict et leurs preuves. C'est ici que la magie opère en démo." data-en="The heart of the product (the “Compliance Engine” screen). Pick the stage (Recording / Settlement), drop the ACF and invoice, run it — the 4 checks appear with their verdict and evidence. This is where the magic happens in a demo."></p>
+      <figure><img src="assets/screens/app-moteur-de-conformit.png" alt="Elite Advisors Compliance Engine" /><figcaption><b>Moteur de conformité</b> — <span data-fr="bascule d'étape, dépôt ACF + facture, bouton « Lancer les contrôles »." data-en="stage toggle, ACF + invoice upload, “Run the checks” button."></span></figcaption></figure>
 
       <h2 data-fr="Les attestations & l'alerte d'expiration" data-en="Certificates & the expiry alert"></h2>
-      <p data-fr="Chaque ACF est suivie dans le temps. Un compte à rebours et une pastille clignotante préviennent avant l'expiration — orange à 20 jours, rouge à 10 — et un bouton permet de relancer le contribuable par e-mail." data-en="Every ACF is tracked over time. A countdown and a flashing dot warn before expiry — orange at 20 days, red at 10 — and a button lets you remind the taxpayer by email."></p>
+      <p data-fr="Chaque ACF est suivie dans le temps. Un compte à rebours et une pastille clignotante préviennent avant l'expiration — orange à 20 jours, rouge à 10 — et un bouton permet de relancer le contribuable par e-mail. Le client ne paie plus jamais sur une attestation périmée." data-en="Every ACF is tracked over time. A countdown and a flashing dot warn before expiry — orange at 20 days, red at 10 — and a button lets you remind the taxpayer by email. The client never again pays on an expired certificate."></p>
       <figure><img src="assets/screens/app-attestations-de-conformit.png" alt="Attestations de conformité" /><figcaption><b>Attestations de Conformité</b> — <span data-fr="« expirée depuis 5 jours » (rouge) vs « dans 92 jours » (vert)." data-en="“expired 5 days ago” (red) vs “in 92 days” (green)."></span></figcaption></figure>
 
       <h2 data-fr="Audit & preuves" data-en="Audit &amp; evidence"></h2>
-      <p data-fr="Tout est conservé : capture horodatée de chaque contrôle, empreinte SHA-256, référence d'extraction du fichier. C'est la preuve opposable, archivée de façon immuable." data-en="Everything is kept: a timestamped snapshot of each check, a SHA-256 fingerprint, the register extraction reference. This is the defensible proof, stored immutably."></p>
+      <p data-fr="Tout est conservé : capture horodatée de chaque contrôle, empreinte SHA-256, référence d'extraction du fichier. C'est la preuve opposable, archivée de façon immuable — l'écran à montrer en disant « et voici ce que vous présentez à l'inspecteur »." data-en="Everything is kept: a timestamped snapshot of each check, a SHA-256 fingerprint, the register extraction reference. This is the defensible proof, stored immutably — the screen to show while saying “and here's what you present to the inspector”."></p>
       <figure><img src="assets/screens/app-audit-preuves.png" alt="Audit et preuves" /><figcaption><b>Audit &amp; preuves</b> — <span data-fr="journal par facture : statut, preuve, empreinte." data-en="per-invoice journal: status, evidence, fingerprint."></span></figcaption></figure>
     </section>
 
     <!-- 4 VALUE / ROI -->
-    <section class="step" data-tk="7 min">
+    <section class="step">
       <span class="kick" data-fr="Valeur & ROI" data-en="Value &amp; ROI"></span>
-      <h1 data-fr="Trois bénéfices qui se vendent seuls." data-en="Three benefits that sell themselves."></h1>
-      <div class="grid g3" style="margin:18px 0">
+      <h1 data-fr="Le calcul qui ferme la vente." data-en="The math that closes the sale."></h1>
+      <p class="lead" data-fr="Le client n'achète pas un logiciel ; il achète l'évitement d'un redressement qui peut atteindre 49,5 % de chaque facture. Votre travail : rendre ce calcul évident." data-en="The client isn't buying software; they're buying the avoidance of a reassessment that can reach 49.5% of every invoice. Your job: make that math obvious."></p>
+
+      <table class="tbl">
+        <tr><th data-fr="Sur une facture de 10 M FCFA" data-en="On a 10M FCFA invoice"></th><th data-fr="Coût du risque" data-en="Cost of the risk"></th></tr>
+        <tr><td data-fr="IS sur charge réintégrée (33 %)" data-en="Corporate tax on reinstated cost (33%)"></td><td><strong>3 300 000</strong></td></tr>
+        <tr><td data-fr="IRCM, distribution réputée occulte (16,5 %)" data-en="IRCM, deemed hidden distribution (16.5%)"></td><td><strong>1 650 000</strong></td></tr>
+        <tr><td data-fr="TVA rejetée (19,25 %)" data-en="VAT rejected (19.25%)"></td><td><strong>1 925 000</strong></td></tr>
+        <tr><td data-fr="Total avant pénalités & intérêts" data-en="Total before penalties &amp; interest"></td><td><strong>≈ 6 875 000 FCFA</strong></td></tr>
+      </table>
+      <p data-fr="Une seule facture mal payée peut coûter près de 7 millions. L'abonnement annuel en coûte une fraction. Le moteur n'a qu'à éviter un seul rejet pour être rentable — et il protège chaque facture, toute l'année." data-en="A single badly-paid invoice can cost nearly 7 million. The annual subscription costs a fraction of that. The engine only has to prevent one rejection to pay for itself — and it protects every invoice, all year."></p>
+
+      <h2 data-fr="Trois bénéfices qui se vendent seuls" data-en="Three benefits that sell themselves"></h2>
+      <div class="grid g3" style="margin:6px 0">
         <div class="card"><div class="ic" style="font-size:12px;letter-spacing:.02em">FCFA</div><h3 data-fr="Déductibilité protégée" data-en="Deductibility protected"></h3><p data-fr="On sécurise la TVA et la charge avant de payer — pas après le redressement." data-en="Secure the VAT and the cost before paying — not after the reassessment."></p></div>
         <div class="card"><div class="ic">✓</div><h3 data-fr="Preuve opposable" data-en="Defensible proof"></h3><p data-fr="Une diligence horodatée et archivée, à présenter le jour du contrôle." data-en="Timestamped, archived due diligence to present on audit day."></p></div>
-        <div class="card"><div class="ic">⏱</div><h3 data-fr="30 secondes / facture" data-en="30 seconds / invoice"></h3><p data-fr="Ce qui prenait des appels et des PDF devient un contrôle instantané." data-en="What took calls and PDFs becomes an instant check."></p></div>
+        <div class="card"><div class="ic">⏱</div><h3 data-fr="30 secondes / facture" data-en="30 seconds / invoice"></h3><p data-fr="Ce qui prenait des appels et des PDF devient un contrôle instantané et tracé." data-en="What took calls and PDFs becomes an instant, recorded check."></p></div>
       </div>
-      <div class="callout"><div class="h" data-fr="La phrase ROI" data-en="The ROI line"></div><p data-fr="« Une seule facture rejetée lors d'un contrôle coûte plus cher qu'une année d'abonnement. Le moteur doit éviter un seul rejet pour être rentable. »" data-en="&ldquo;A single invoice rejected on audit costs more than a year of subscription. The engine only has to prevent one rejection to pay for itself.&rdquo;"></p></div>
-      <h2 data-fr="Vendre la confiance" data-en="Selling trust"></h2>
+
+      <h2 data-fr="Au-delà du redressement évité" data-en="Beyond the avoided reassessment"></h2>
       <ul class="clean g">
-        <li data-fr="Conformité Loi N° 2024/017 sur la protection des données — avis de confidentialité et consentement intégrés." data-en="Compliant with Data Protection Law 2024/017 — built-in privacy notice and consent."></li>
-        <li data-fr="Preuves archivées de façon immuable (verrou objet), horodatées." data-en="Evidence stored immutably (object lock), timestamped."></li>
-        <li data-fr="Bilingue FR / EN, pensé pour le contexte camerounais." data-en="Bilingual FR / EN, built for the Cameroonian context."></li>
+        <li data-fr="Continuité d'exploitation : pas de blocage ni de mauvaise surprise fiscale qui paralyse l'activité." data-en="Operational continuity: no freeze or fiscal surprise that paralyses the business."></li>
+        <li data-fr="Trésorerie maîtrisée : on ne paie pas un fournisseur qui transformera la dépense en perte sèche." data-en="Controlled cashflow: you don't pay a supplier who'll turn the spend into a dead loss."></li>
+        <li data-fr="Planification fiable de la performance : des charges réellement déductibles, des résultats prévisibles." data-en="Reliable performance planning: genuinely deductible costs, predictable results."></li>
+        <li data-fr="Sérénité du dirigeant : une preuve prête, à tout moment, pour l'auditeur ou le banquier." data-en="Peace of mind for the owner: proof ready, any time, for the auditor or the bank."></li>
       </ul>
+
+      <div class="callout"><div class="h" data-fr="La phrase ROI" data-en="The ROI line"></div><p data-fr="« Comparez le prix de l'outil non pas à zéro, mais au coût d'un seul rejet : jusqu'à 49,5 % de la facture. La question n'est pas “est-ce trop cher ?” mais “pouvez-vous vous permettre un seul redressement ?” »" data-en="&ldquo;Compare the tool's price not to zero, but to the cost of one rejection: up to 49.5% of the invoice. The question isn't ‘is it too expensive?’ but ‘can you afford a single reassessment?’&rdquo;"></p></div>
     </section>
 
     <!-- 5 SALES PLAYBOOK -->
-    <section class="step" data-tk="10 min">
+    <section class="step">
       <span class="kick" data-fr="Le manuel de vente" data-en="The sales playbook"></span>
       <h1 data-fr="À qui parler, quoi dire, comment répondre." data-en="Who to talk to, what to say, how to respond."></h1>
 
       <h2 data-fr="Le client idéal" data-en="The ideal client"></h2>
       <ul class="clean">
-        <li data-fr="Entreprises au régime réel avec de nombreux fournisseurs (BTP, négoce, distribution, services)." data-en="Real-regime businesses with many suppliers (construction, trading, distribution, services)."></li>
-        <li data-fr="Directions financières, comptables et fiscales soucieuses du risque de contrôle." data-en="Finance, accounting and tax leaders worried about audit risk."></li>
-        <li data-fr="Cabinets comptables qui veulent protéger leurs clients à grande échelle." data-en="Accounting firms wanting to protect their clients at scale."></li>
+        <li data-fr="Entreprises au régime réel avec de nombreux fournisseurs (BTP, négoce, distribution, industrie, services)." data-en="Real-regime businesses with many suppliers (construction, trading, distribution, industry, services)."></li>
+        <li data-fr="Directions financières, comptables et fiscales déjà conscientes du risque de contrôle." data-en="Finance, accounting and tax leaders already aware of audit risk."></li>
+        <li data-fr="Entreprises qui ont déjà subi un redressement — la douleur est fraîche, la vente est courte." data-en="Businesses that have already faced a reassessment — the pain is fresh, the sale is short."></li>
+        <li data-fr="Cabinets comptables et d'audit qui veulent protéger leurs clients à grande échelle." data-en="Accounting and audit firms wanting to protect their clients at scale."></li>
       </ul>
 
-      <h2 data-fr="3 questions de découverte" data-en="3 discovery questions"></h2>
+      <h2 data-fr="Questions de découverte" data-en="Discovery questions"></h2>
       <ul class="clean">
         <li data-fr="« Comment vérifiez-vous aujourd'hui qu'un fournisseur est en règle avant de le payer ? »" data-en="“How do you check today that a supplier is compliant before paying them?”"></li>
-        <li data-fr="« Que se passe-t-il si un contrôle révèle un fournisseur radié sur une facture déjà payée ? »" data-en="“What happens if an audit finds a struck-off supplier on an invoice you already paid?”"></li>
-        <li data-fr="« Quelle preuve de diligence pourriez-vous présenter à l'inspecteur aujourd'hui ? »" data-en="“What proof of due diligence could you show the inspector today?”"></li>
+        <li data-fr="« Combien de fournisseurs réglez-vous par mois ? Qui s'en occupe, et en combien de temps ? »" data-en="“How many suppliers do you pay per month? Who handles it, and how long does it take?”"></li>
+        <li data-fr="« Avez-vous déjà eu un rejet de charge ou de TVA lors d'un contrôle ? »" data-en="“Have you ever had a cost or VAT rejected during an audit?”"></li>
+        <li data-fr="« Quelle preuve de diligence pourriez-vous présenter à l'inspecteur aujourd'hui, pour une facture d'il y a six mois ? »" data-en="“What proof of due diligence could you show the inspector today, for an invoice from six months ago?”"></li>
       </ul>
 
       <h2 data-fr="Le pitch en 30 secondes" data-en="The 30-second pitch"></h2>
       <div class="script">
         <div class="who" data-fr="Vous" data-en="You"></div>
-        <p data-fr="« Elite Advisors vérifie automatiquement chaque fournisseur que vous payez — authenticité de l'ACF, statut du NIU, validité — et conserve la preuve horodatée. Si un fournisseur n'est pas en règle, vous le savez avant de payer, pas au contrôle. Résultat : votre TVA et vos charges restent déductibles, et vous avez une preuve opposable. Je vous montre en 5 minutes ? »" data-en="“Elite Advisors automatically checks every supplier you pay — ACF authenticity, NIU status, validity — and keeps timestamped proof. If a supplier isn't compliant, you know before you pay, not at the audit. The result: your VAT and costs stay deductible, and you hold defensible proof. Can I show you in 5 minutes?”"></p>
+        <p data-fr="« L'Elite Advisors Compliance Engine vérifie automatiquement chaque fournisseur que vous payez — authenticité de l'ACF, statut du NIU, existence au fichier, validité — et conserve la preuve horodatée. Si un fournisseur n'est pas en règle, vous le savez avant de payer, pas au contrôle. Résultat : votre TVA et vos charges restent déductibles, et vous détenez une preuve opposable. Je vous le montre en 5 minutes sur l'une de vos factures ? »" data-en="“The Elite Advisors Compliance Engine automatically checks every supplier you pay — ACF authenticity, NIU status, register existence, validity — and keeps timestamped proof. If a supplier isn't compliant, you know before you pay, not at the audit. The result: your VAT and costs stay deductible, and you hold defensible proof. Can I show you in 5 minutes on one of your invoices?”"></p>
       </div>
 
-      <h2 data-fr="Traiter les objections" data-en="Handling objections"></h2>
-      <div class="obj"><div class="q" data-fr="« On le fait déjà manuellement. »" data-en="“We already do it manually.”"></div><div class="a" data-fr="Très bien — combien de temps par facture, et où est la preuve six mois plus tard ? Le moteur fait la même chose en 30 secondes et archive la preuve automatiquement. Vous ne remplacez pas vos équipes, vous leur donnez un filet de sécurité." data-en="Great — how long per invoice, and where's the proof six months later? The engine does the same in 30 seconds and archives the proof automatically. You're not replacing your team, you're giving them a safety net."></div></div>
-      <div class="obj"><div class="q" data-fr="« C'est trop cher. »" data-en="“It's too expensive.”"></div><div class="a" data-fr="Comparons au coût d'un seul rejet en contrôle : TVA + charge réintégrée + pénalités sur une facture de 10 M, c'est plusieurs millions. L'abonnement coûte une fraction de ce risque. Le moteur doit éviter un seul rejet pour être rentable." data-en="Compare it to the cost of one rejection on audit: VAT + reinstated cost + penalties on a 10M invoice is several million. The subscription is a fraction of that risk. The engine only needs to prevent one rejection to pay for itself."></div></div>
-      <div class="obj"><div class="q" data-fr="« Les portails de la DGI suffisent. »" data-en="“The DGI portals are enough.”"></div><div class="a" data-fr="Les portails donnent une réponse à un instant T, sans preuve conservée ni alerte d'expiration ni vérification au paiement. Le moteur orchestre les quatre contrôles, aux deux étapes, et garde la preuve opposable. C'est la différence entre vérifier et pouvoir le prouver." data-en="The portals give an answer at a point in time, with no stored proof, no expiry alert, no re-check at payment. The engine orchestrates all four checks, at both stages, and keeps defensible proof. That's the difference between checking and being able to prove it."></div></div>
-      <div class="obj"><div class="q" data-fr="« Nos données sont-elles en sécurité ? »" data-en="“Is our data safe?”"></div><div class="a" data-fr="Oui — conformité Loi 2024/017, avis de confidentialité et consentement intégrés, preuves chiffrées et archivées de façon immuable. Chaque espace client est isolé dans sa propre base." data-en="Yes — compliant with Law 2024/017, built-in privacy notice and consent, evidence encrypted and stored immutably. Each client workspace is isolated in its own database."></div></div>
+      <h2 data-fr="Traiter les objections — avec la bonne réplique" data-en="Handling objections — with the right reply"></h2>
+      <div class="obj"><div class="q" data-fr="« On le fait déjà manuellement. »" data-en="“We already do it manually.”"></div><div class="a"><span data-fr="Reconnaissez, puis chiffrez le coût caché. Demandez : combien de factures par mois, à combien de minutes l'unité ? À 5 minutes pour 100 factures, c'est plus de 8 heures perdues chaque mois — et six mois plus tard, où est la preuve ? Le manuel ne laisse aucune trace opposable, aucune alerte d'expiration, aucune revérification au paiement. Vous ne remplacez pas vos équipes : vous leur donnez un filet de sécurité et une preuve archivée automatiquement." data-en="Acknowledge, then quantify the hidden cost. Ask: how many invoices a month, at how many minutes each? At 5 minutes for 100 invoices, that's over 8 hours lost every month — and six months later, where's the proof? Manual leaves no defensible trail, no expiry alert, no re-check at payment. You're not replacing your team: you're giving them a safety net and proof archived automatically."></span><span class="tip" data-fr="Astuce : faites-lui dire son volume — le calcul des heures perdues se fait tout seul." data-en="Tip: get them to state their volume — the lost-hours math does itself."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« C'est trop cher. »" data-en="“It's too expensive.”"></div><div class="a"><span data-fr="Ne défendez pas le prix — recadrez-le face au coût de la non-conformité, qui peut atteindre 49,5 % de la facture : 33 % d'IS sur la charge réintégrée (non déductible) + 16,5 % d'IRCM sur la distribution réputée occulte de revenus. Sur une facture de 10 M, c'est près de 5 M de redressement, sans compter la TVA, les pénalités et les intérêts. L'abonnement est une fraction de ce risque. Et au-delà du redressement évité, la conformité assure la continuité d'exploitation, une trésorerie maîtrisée et une planification fiable de la performance. « Le moteur n'a qu'à éviter un seul rejet pour être rentable. »" data-en="Don't defend the price — reframe it against the cost of non-compliance, which can reach 49.5% of the invoice: 33% corporate tax on the reinstated (non-deductible) cost + 16.5% IRCM on the deemed hidden distribution of income. On a 10M invoice that's nearly 5M of reassessment, before VAT, penalties and interest. The subscription is a fraction of that risk. And beyond the avoided reassessment, compliance secures operational continuity, controlled cashflow and reliable performance planning. “The engine only has to prevent one rejection to pay for itself.”"></span><span class="tip" data-fr="Astuce : comparez au coût d'UN rejet, jamais à zéro." data-en="Tip: compare to the cost of ONE rejection, never to zero."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« Les portails de la DGI suffisent. »" data-en="“The DGI portals are enough.”"></div><div class="a"><span data-fr="Les portails donnent une réponse à un instant T, à la main, un fournisseur à la fois — sans preuve conservée, sans alerte d'expiration, sans revérification au paiement, sans centralisation. Le jour du contrôle, une capture d'écran non horodatée ne vaut rien. Le moteur orchestre les 4 contrôles, aux 2 étapes, et archive une preuve opposable et horodatée. « C'est la différence entre vérifier… et pouvoir le prouver six mois plus tard. »" data-en="The portals give an answer at a point in time, by hand, one supplier at a time — with no stored proof, no expiry alert, no re-check at payment, no central record. On audit day, an un-timestamped screenshot is worthless. The engine orchestrates all 4 checks, at both stages, and archives defensible, timestamped proof. “That's the difference between checking… and being able to prove it six months later.”"></span><span class="tip" data-fr="Astuce : insistez sur la PREUVE et la revérification au paiement — ce que le portail ne fait pas." data-en="Tip: stress the PROOF and the re-check at payment — what the portal cannot do."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« Nous faisons confiance à nos fournisseurs. »" data-en="“We trust our suppliers.”"></div><div class="a"><span data-fr="La confiance n'est pas opposable à l'administration. Un fournisseur de longue date peut être radié ou suspendu sans vous prévenir — et c'est VOUS qui perdez la déductibilité, pas lui. Le moteur ne remet pas en cause la relation : il la documente. « Vous gardez vos fournisseurs ; vous y ajoutez simplement une preuve. »" data-en="Trust isn't defensible before the tax authority. A long-standing supplier can be struck off or suspended without warning you — and it's YOU who loses deductibility, not them. The engine doesn't question the relationship: it documents it. “You keep your suppliers; you just add proof.”"></span><span class="tip" data-fr="Astuce : dissociez la relation humaine du risque fiscal — ce sont deux sujets." data-en="Tip: separate the human relationship from the fiscal risk — two different topics."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« On verra ça après le prochain contrôle. »" data-en="“We'll deal with it after the next audit.”"></div><div class="a"><span data-fr="Trop tard : le redressement porte sur le passé. La preuve doit exister AU MOMENT de la transaction — elle ne se reconstitue pas après coup. Chaque mois sans le moteur est un mois de factures non protégées. « Commencer aujourd'hui protège tout ce que vous payez à partir de maintenant. »" data-en="Too late: a reassessment looks at the past. Proof must exist AT the moment of the transaction — it can't be reconstructed afterward. Every month without the engine is a month of unprotected invoices. “Starting today protects everything you pay from now on.”"></span><span class="tip" data-fr="Astuce : créez l'urgence — le risque court déjà sur les factures de ce mois." data-en="Tip: create urgency — the risk already runs on this month's invoices."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« Notre comptable s'en occupe. »" data-en="“Our accountant handles it.”"></div><div class="a"><span data-fr="Le comptable enregistre ; il n'a ni le temps ni l'outil pour vérifier l'authenticité de chaque ACF et le statut de chaque NIU à deux moments. Le moteur lui donne précisément cet outil — et une preuve qu'il pourra présenter. C'est un allié du comptable, pas un remplaçant. Proposez même de le présenter ensemble." data-en="The accountant records; they have neither the time nor the tool to verify every ACF's authenticity and every NIU's status at two moments. The engine gives them exactly that tool — and proof they can present. It's the accountant's ally, not a replacement. Offer to present it to them together."></span><span class="tip" data-fr="Astuce : faites du comptable un champion interne, pas un obstacle." data-en="Tip: turn the accountant into an internal champion, not a blocker."></span></div></div>
+
+      <div class="obj"><div class="q" data-fr="« Nos données sont-elles en sécurité ? »" data-en="“Is our data safe?”"></div><div class="a"><span data-fr="Oui — isolation par espace (chaque client dans sa propre base), chiffrement en transit et au repos, preuves immuables (Object Lock) horodatées, 2FA obligatoire, conformité à la Loi N° 2024/017. Personne — pas même nous — ne peut altérer une preuve après coup. « Vos données fiscales sont plus en sécurité chez nous que dans un classeur ou une boîte mail. »" data-en="Yes — workspace isolation (each client in its own database), encryption in transit and at rest, immutable (object-lock) timestamped evidence, mandatory 2FA, compliance with Law 2024/017. No one — not even us — can alter a piece of evidence after the fact. “Your fiscal data is safer with us than in a binder or an inbox.”"></span><span class="tip" data-fr="Astuce : transformez la sécurité en argument de vente, pas en simple réassurance." data-en="Tip: turn security into a selling point, not just reassurance."></span></div></div>
     </section>
 
     <!-- 6 DEMO MASTERY -->
-    <section class="step" data-tk="8 min">
+    <section class="step">
       <span class="kick" data-fr="Maîtriser la démo" data-en="Demo mastery"></span>
       <h1 data-fr="Une démo que vous pouvez refaire les yeux fermés." data-en="A demo you can run in your sleep."></h1>
-      <p class="lead" data-fr="Suivez toujours le même fil. Une démo nette vaut mille arguments." data-en="Always follow the same thread. A clean demo is worth a thousand arguments."></p>
+      <p class="lead" data-fr="Suivez toujours le même fil. Une démo nette vaut mille arguments — surtout quand elle tourne sur une vraie facture du client." data-en="Always follow the same thread. A clean demo is worth a thousand arguments — especially when it runs on the client's own invoice."></p>
+
+      <h2 data-fr="Avant la démo" data-en="Before the demo"></h2>
+      <ul class="clean">
+        <li data-fr="Demandez une vraie ACF + facture du client (ou préparez un exemple parlant)." data-en="Ask for a real client ACF + invoice (or prepare a compelling example)."></li>
+        <li data-fr="Vérifiez votre connexion : les contrôles interrogent les portails de la DGI en direct." data-en="Check your connection: the checks query the DGI portals live."></li>
+        <li data-fr="Ouvrez le tableau de bord d'avance — on commence toujours par la vue d'ensemble." data-en="Open the dashboard beforehand — always start with the big picture."></li>
+      </ul>
+
       <h2 data-fr="Le script de démo en 5 temps" data-en="The 5-beat demo script"></h2>
       <ul class="clean">
-        <li data-fr="1. Le tableau de bord — « voici la conformité de toute votre activité en un écran »." data-en="1. The dashboard — “here's the compliance of your whole activity on one screen.”"></li>
-        <li data-fr="2. Le Moteur — déposer une ACF + une facture, choisir « Enregistrement », lancer." data-en="2. The Engine — drop an ACF + invoice, pick “Recording”, run it."></li>
-        <li data-fr="3. Les 4 verdicts — commenter chaque contrôle et la capture de preuve." data-en="3. The 4 verdicts — narrate each check and the evidence snapshot."></li>
-        <li data-fr="4. Les attestations — montrer le compte à rebours et l'alerte d'expiration." data-en="4. Certificates — show the countdown and the expiry alert."></li>
-        <li data-fr="5. Audit & preuves — « et voici ce que vous présentez à l'inspecteur »." data-en="5. Audit &amp; evidence — “and here's what you show the inspector.”"></li>
+        <li data-fr="1. Le tableau de bord — « voici la conformité de toute votre activité en un écran, et l'argent protégé »." data-en="1. The dashboard — “here's the compliance of your whole activity on one screen, and the money protected.”"></li>
+        <li data-fr="2. L'Elite Advisors Compliance Engine — déposer une ACF + une facture, choisir « Enregistrement », lancer." data-en="2. The Elite Advisors Compliance Engine — drop an ACF + invoice, pick “Recording”, run it."></li>
+        <li data-fr="3. Les 4 verdicts — commenter chaque contrôle et montrer la capture de preuve qui s'attache." data-en="3. The 4 verdicts — narrate each check and show the evidence snapshot being attached."></li>
+        <li data-fr="4. Les attestations — montrer le compte à rebours et l'alerte d'expiration (orange/rouge)." data-en="4. Certificates — show the countdown and the expiry alert (orange/red)."></li>
+        <li data-fr="5. Audit & preuves — « et voici exactement ce que vous présentez à l'inspecteur »." data-en="5. Audit &amp; evidence — “and here's exactly what you present to the inspector.”"></li>
       </ul>
+
+      <h2 data-fr="À éviter" data-en="Avoid"></h2>
+      <ul class="clean">
+        <li data-fr="Ne parlez pas de la technique (comment ça marche « sous le capot ») — parlez du résultat pour le client." data-en="Don't talk about the internals (how it works “under the hood”) — talk about the result for the client."></li>
+        <li data-fr="Ne promettez pas de prix ou de délais sur le pouce — notez et revenez avec une offre." data-en="Don't promise prices or timelines off the cuff — note it and come back with an offer."></li>
+        <li data-fr="Ne survolez pas la preuve : c'est le moment le plus fort, prenez-y le temps." data-en="Don't rush the proof: it's the strongest moment, take your time there."></li>
+      </ul>
+
       <div class="callout g"><div class="h" data-fr="Règle d'or" data-en="Golden rule"></div><p data-fr="Terminez toujours sur la preuve. Le produit ne vend pas une vérification — il vend la tranquillité le jour du contrôle." data-en="Always end on the proof. The product doesn't sell a check — it sells peace of mind on audit day."></p></div>
       <figure><img src="assets/screens/app-login.png" alt="Écran de connexion" /><figcaption><b>Espace client</b> — <span data-fr="connexion bilingue, marque Elite Advisors, accès à l'essai." data-en="bilingual sign-in, Elite Advisors brand, trial access."></span></figcaption></figure>
     </section>
 
     <!-- 7 SECURITY -->
-    <section class="step" data-tk="6 min">
+    <section class="step">
       <span class="kick" data-fr="Sécurité des données" data-en="Data security"></span>
       <h1 data-fr="La sécurité n'est pas une option — c'est un argument de vente." data-en="Security isn't optional — it's a selling point."></h1>
-      <p class="lead" data-fr="Vos clients confient des données fiscales sensibles à la plateforme. Voici comment elles sont protégées — et comment vous en faites un atout face à la concurrence." data-en="Your clients trust the platform with sensitive fiscal data. Here's how it's protected — and how you turn that into an advantage over the competition."></p>
+      <p class="lead" data-fr="Vos clients confient des données fiscales sensibles à la plateforme. Voici comment elles sont protégées — et comment vous en faites un atout face à la concurrence et au DSI du client." data-en="Your clients trust the platform with sensitive fiscal data. Here's how it's protected — and how you turn that into an advantage over competitors and the client's IT lead."></p>
 
       <div class="grid g3" style="margin:18px 0">
         <div class="card"><div class="ic">🛡</div><h3 data-fr="Isolation par espace" data-en="Workspace isolation"></h3><p data-fr="Chaque client possède sa propre base de données. Aucune donnée n'est partagée entre clients." data-en="Each client has its own database. No data is shared between clients."></p></div>
@@ -319,10 +385,11 @@
     </section>
 
     <!-- 8 CERTIFY -->
-    <section class="step" data-tk="6 min">
+    <section class="step">
       <span class="kick" data-fr="Certification" data-en="Certification"></span>
       <h1 data-fr="Validez vos acquis." data-en="Prove what you've learned."></h1>
-      <p class="lead" data-fr="Quatre questions. Visez 4/4 — c'est le niveau d'un ambassadeur Elite Advisors." data-en="Four questions. Aim for 4/4 — that's the level of an Elite Advisors ambassador."></p>
+      <p class="lead" data-fr="25 questions sur tout le programme. Visez au moins 20/25 — c'est le niveau d'un ambassadeur Elite Advisors. Répondez à chaque question pour débloquer la fin." data-en="25 questions across the whole program. Aim for at least 20/25 — that's the level of an Elite Advisors ambassador. Answer every question to unlock the finish."></p>
+      <div class="scorebar"><span id="score" data-fr="0 / 25 répondues" data-en="0 / 25 answered"></span></div>
       <div id="quiz"></div>
       <div id="quizdone" style="display:none">
         <div class="callout g"><div class="h" data-fr="Bravo." data-en="Well done."></div><p data-fr="Vous portez maintenant le message Elite Advisors. Prochaine étape : la démo en direct avec un collègue, puis votre premier rendez-vous client." data-en="You now carry the Elite Advisors message. Next step: a live demo with a colleague, then your first client meeting."></p></div>
@@ -339,41 +406,122 @@
 
 <script>
 const MOD = [
-  {fr:"La mission",en:"The mission",tk:"6 min",ic:"ti"},
-  {fr:"Le problème",en:"The problem",tk:"8 min"},
-  {fr:"La solution",en:"The solution",tk:"10 min"},
+  {fr:"La mission",en:"The mission",tk:"6 min"},
+  {fr:"Le problème",en:"The problem",tk:"9 min"},
+  {fr:"La solution",en:"The solution",tk:"11 min"},
   {fr:"Visite guidée",en:"Guided tour",tk:"12 min"},
-  {fr:"Valeur & ROI",en:"Value & ROI",tk:"7 min"},
-  {fr:"Manuel de vente",en:"Sales playbook",tk:"10 min"},
+  {fr:"Valeur & ROI",en:"Value & ROI",tk:"9 min"},
+  {fr:"Manuel de vente",en:"Sales playbook",tk:"12 min"},
   {fr:"Maîtriser la démo",en:"Demo mastery",tk:"8 min"},
   {fr:"Sécurité des données",en:"Data security",tk:"6 min"},
-  {fr:"Certification",en:"Certification",tk:"6 min"},
+  {fr:"Certification",en:"Certification",tk:"10 min"},
 ];
 const QUIZ=[
  {fr:"Pourquoi la conformité d'un fournisseur compte-t-elle ?",en:"Why does a supplier's compliance matter?",
-  o:[{fr:"Elle conditionne la déductibilité de la charge et de la TVA",en:"It governs deductibility of the cost and VAT,",ok:1},
-     {fr:"C'est une obligation purement administrative",en:"It's a purely administrative formality",ok:0},
+  o:[{fr:"Elle conditionne la déductibilité de la charge et de la TVA",en:"It governs deductibility of the cost and the VAT",ok:1},
+     {fr:"C'est une simple formalité administrative",en:"It's a mere administrative formality",ok:0},
      {fr:"Cela accélère le paiement",en:"It speeds up payment",ok:0}]},
+ {fr:"Le coût de la non-conformité peut atteindre…",en:"The cost of non-compliance can reach…",
+  o:[{fr:"environ 49,5 % de la facture",en:"about 49.5% of the invoice",ok:1},
+     {fr:"environ 19,25 % de la facture",en:"about 19.25% of the invoice",ok:0},
+     {fr:"un montant fixe et symbolique",en:"a small fixed amount",ok:0}]},
+ {fr:"Ces 49,5 % se décomposent en…",en:"That 49.5% breaks down into…",
+  o:[{fr:"33 % d'IS + 16,5 % d'IRCM",en:"33% corporate tax + 16.5% IRCM",ok:1},
+     {fr:"19,25 % de TVA + 30 % de pénalité",en:"19.25% VAT + 30% penalty",ok:0},
+     {fr:"49,5 % de TVA",en:"49.5% VAT",ok:0}]},
+ {fr:"L'IRCM s'applique ici au titre de…",en:"IRCM applies here on account of…",
+  o:[{fr:"la distribution réputée occulte de revenus",en:"the deemed hidden distribution of income",ok:1},
+     {fr:"un impôt sur les salaires",en:"a payroll tax",ok:0},
+     {fr:"une taxe foncière",en:"a property tax",ok:0}]},
  {fr:"Combien de contrôles et d'étapes ?",en:"How many checks and stages?",
-  o:[{fr:"2 contrôles, 4 étapes",en:"2 checks, 4 stages",ok:0},
-     {fr:"4 contrôles, 2 étapes (enregistrement & règlement)",en:"4 checks, 2 stages (recording & settlement)",ok:1},
-     {fr:"1 contrôle unique",en:"A single check",ok:0}]},
- {fr:"Que vend-on vraiment au client ?",en:"What are we really selling?",
-  o:[{fr:"Un logiciel de vérification",en:"A verification tool",ok:0},
-     {fr:"Une preuve opposable et la tranquillité au contrôle",en:"Defensible proof and peace of mind on audit",ok:1},
-     {fr:"Un accès aux portails de la DGI",en:"Access to DGI portals",ok:0}]},
- {fr:"L'alerte d'expiration des ACF se déclenche…",en:"The ACF expiry alert triggers…",
-  o:[{fr:"Orange à 20 jours, rouge à 10 jours",en:"Orange at 20 days, red at 10 days",ok:1},
-     {fr:"Seulement une fois expirée",en:"Only once expired",ok:0},
-     {fr:"Jamais — c'est manuel",en:"Never — it's manual",ok:0}]},
+  o:[{fr:"4 contrôles, 2 étapes (enregistrement & règlement)",en:"4 checks, 2 stages (recording & settlement)",ok:1},
+     {fr:"2 contrôles, 4 étapes",en:"2 checks, 4 stages",ok:0},
+     {fr:"1 contrôle unique",en:"a single check",ok:0}]},
+ {fr:"Le nom complet du produit est…",en:"The product's full name is…",
+  o:[{fr:"l'Elite Advisors Compliance Engine",en:"the Elite Advisors Compliance Engine",ok:1},
+     {fr:"le Vérificateur NIU",en:"the NIU Checker",ok:0},
+     {fr:"le portail DGI Pro",en:"the DGI Pro portal",ok:0}]},
+ {fr:"Le contrôle d'authenticité de l'ACF (①) utilise…",en:"The ACF authenticity check (①) uses…",
+  o:[{fr:"le portail Harmony2 de la DGI",en:"the DGI's Harmony2 portal",ok:1},
+     {fr:"un appel téléphonique au fournisseur",en:"a phone call to the supplier",ok:0},
+     {fr:"une base interne d'Elite Advisors",en:"an internal Elite Advisors database",ok:0}]},
+ {fr:"Le contrôle du statut du NIU (②) lit…",en:"The NIU status check (②) reads…",
+  o:[{fr:"le statut officiel sur le portail Fiscalis de la DGI",en:"the official status on the DGI's Fiscalis portal",ok:1},
+     {fr:"la déclaration du fournisseur",en:"the supplier's own declaration",ok:0},
+     {fr:"le registre du commerce uniquement",en:"the trade register only",ok:0}]},
  {fr:"Le fichier national des contribuables est…",en:"The national taxpayer register is…",
-  o:[{fr:"Téléchargé automatiquement chaque nuit à minuit",en:"Downloaded automatically every night at midnight",ok:1},
-     {fr:"Saisi à la main par le client",en:"Entered by hand by the client",ok:0},
-     {fr:"Mis à jour une fois par an",en:"Updated once a year",ok:0}]},
+  o:[{fr:"téléchargé et archivé automatiquement chaque nuit à minuit",en:"downloaded and stored automatically every night at midnight",ok:1},
+     {fr:"saisi à la main par le client",en:"entered by hand by the client",ok:0},
+     {fr:"mis à jour une fois par an",en:"updated once a year",ok:0}]},
+ {fr:"Une ACF est valable…",en:"An ACF is valid for…",
+  o:[{fr:"3 mois à compter de son émission",en:"3 months from its issue",ok:1},
+     {fr:"12 mois",en:"12 months",ok:0},
+     {fr:"indéfiniment",en:"indefinitely",ok:0}]},
+ {fr:"L'alerte d'expiration des ACF se déclenche…",en:"The ACF expiry alert triggers…",
+  o:[{fr:"orange à 20 jours, rouge à 10 jours",en:"orange at 20 days, red at 10 days",ok:1},
+     {fr:"seulement une fois expirée",en:"only once expired",ok:0},
+     {fr:"jamais — c'est manuel",en:"never — it's manual",ok:0}]},
+ {fr:"Pourquoi deux étapes (enregistrement & règlement) ?",en:"Why two stages (recording & settlement)?",
+  o:[{fr:"parce que la conformité change avec le temps",en:"because compliance changes over time",ok:1},
+     {fr:"pour facturer deux fois le contrôle",en:"to bill the check twice",ok:0},
+     {fr:"par obligation légale d'Elite Advisors",en:"by an Elite Advisors legal obligation",ok:0}]},
+ {fr:"Au règlement, une ACF expirée…",en:"At settlement, an expired ACF…",
+  o:[{fr:"bloque le paiement avant que l'argent ne sorte",en:"blocks the payment before the money leaves",ok:1},
+     {fr:"est ignorée",en:"is ignored",ok:0},
+     {fr:"déclenche un paiement automatique",en:"triggers an automatic payment",ok:0}]},
+ {fr:"La conformité de la facture elle-même est alignée sur…",en:"The invoice's own compliance is aligned with…",
+  o:[{fr:"le CGI, art. 150 (conditions de forme et de fond)",en:"the Tax Code, art. 150 (form and substance conditions)",ok:1},
+     {fr:"le code du travail",en:"the labour code",ok:0},
+     {fr:"une norme purement interne",en:"a purely internal standard",ok:0}]},
+ {fr:"Que vend-on vraiment au client ?",en:"What are we really selling?",
+  o:[{fr:"une preuve opposable et la tranquillité au contrôle",en:"defensible proof and peace of mind on audit",ok:1},
+     {fr:"un simple logiciel de vérification",en:"just a verification tool",ok:0},
+     {fr:"un accès aux portails de la DGI",en:"access to the DGI portals",ok:0}]},
+ {fr:"La preuve d'un contrôle est archivée…",en:"A check's evidence is stored…",
+  o:[{fr:"de façon immuable (Object Lock) et horodatée",en:"immutably (object lock) and timestamped",ok:1},
+     {fr:"dans un fichier modifiable",en:"in an editable file",ok:0},
+     {fr:"seulement 24 heures",en:"for only 24 hours",ok:0}]},
+ {fr:"L'empreinte qui garantit l'intégrité d'une preuve est…",en:"The fingerprint guaranteeing a piece of evidence is…",
+  o:[{fr:"une empreinte SHA-256",en:"a SHA-256 fingerprint",ok:1},
+     {fr:"un simple numéro de série",en:"a plain serial number",ok:0},
+     {fr:"la date seule",en:"the date alone",ok:0}]},
+ {fr:"Le client idéal est…",en:"The ideal client is…",
+  o:[{fr:"une entreprise au régime réel avec de nombreux fournisseurs",en:"a real-regime business with many suppliers",ok:1},
+     {fr:"un particulier sans activité",en:"a private individual with no business",ok:0},
+     {fr:"une entreprise sans aucun fournisseur",en:"a business with no suppliers at all",ok:0}]},
+ {fr:"Face à « c'est trop cher », vous…",en:"Faced with “it's too expensive”, you…",
+  o:[{fr:"comparez au coût d'un seul rejet (jusqu'à 49,5 %)",en:"compare to the cost of one rejection (up to 49.5%)",ok:1},
+     {fr:"baissez immédiatement le prix",en:"immediately drop the price",ok:0},
+     {fr:"changez de sujet",en:"change the subject",ok:0}]},
+ {fr:"Face à « les portails de la DGI suffisent », l'argument clé est…",en:"For “the DGI portals are enough”, the key argument is…",
+  o:[{fr:"pas de preuve conservée, ni alerte, ni revérification au paiement",en:"no stored proof, no alert, no re-check at payment",ok:1},
+     {fr:"les portails sont payants",en:"the portals are paid",ok:0},
+     {fr:"les portails sont illégaux",en:"the portals are illegal",ok:0}]},
+ {fr:"Face à « on verra après le contrôle », vous rappelez que…",en:"For “we'll deal with it after the audit”, you remind that…",
+  o:[{fr:"la preuve doit exister au moment de la transaction",en:"proof must exist at the moment of the transaction",ok:1},
+     {fr:"le contrôle ne porte que sur l'avenir",en:"an audit only looks at the future",ok:0},
+     {fr:"on peut reconstituer la preuve après",en:"proof can be reconstructed afterward",ok:0}]},
+ {fr:"Chaque espace client est…",en:"Each client workspace is…",
+  o:[{fr:"isolé dans sa propre base de données",en:"isolated in its own database",ok:1},
+     {fr:"partagé entre tous les clients",en:"shared across all clients",ok:0},
+     {fr:"stocké sur le poste du client",en:"stored on the client's computer",ok:0}]},
+ {fr:"La connexion à la plateforme exige…",en:"Signing in to the platform requires…",
+  o:[{fr:"une double authentification (2FA) obligatoire",en:"mandatory two-factor authentication (2FA)",ok:1},
+     {fr:"un simple mot de passe à 4 chiffres",en:"a simple 4-digit password",ok:0},
+     {fr:"aucune authentification",en:"no authentication",ok:0}]},
+ {fr:"La protection des données personnelles suit…",en:"Personal-data protection follows…",
+  o:[{fr:"la Loi camerounaise N° 2024/017",en:"Cameroon's Law N° 2024/017",ok:1},
+     {fr:"aucune réglementation",en:"no regulation",ok:0},
+     {fr:"une norme européenne uniquement",en:"a European standard only",ok:0}]},
+ {fr:"La règle d'or de la démo est…",en:"The golden rule of the demo is…",
+  o:[{fr:"toujours terminer sur la preuve",en:"always end on the proof",ok:1},
+     {fr:"commencer par le prix",en:"start with the price",ok:0},
+     {fr:"montrer le code technique",en:"show the technical code",ok:0}]},
 ];
 
 let cur=0, lang='fr', done=new Set();
 const steps=[...document.querySelectorAll('.step')];
+const QI = steps.length-1;
 
 function applyLang(){
   document.querySelectorAll('[data-fr]').forEach(el=>{
@@ -404,7 +552,7 @@ function render(){
   nx.setAttribute('data-fr', cur===steps.length-1?'Terminer ✓':'Suivant →');
   nx.setAttribute('data-en', cur===steps.length-1?'Finish ✓':'Next →');
   document.getElementById('pbar').style.width=Math.round((done.size)/MOD.length*100)+'%';
-  if(cur===8) buildQuiz();
+  if(cur===QI) buildQuiz();
   buildSide();
   applyLang();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -415,28 +563,40 @@ function go(d){
   cur=Math.max(0,Math.min(steps.length-1,cur+d));
   render();
 }
+function updateScore(){
+  const ans=document.querySelectorAll('#quiz .quiz[data-answered]').length;
+  const el=document.getElementById('score');
+  el.setAttribute('data-fr', ans+' / '+QUIZ.length+' répondues');
+  el.setAttribute('data-en', ans+' / '+QUIZ.length+' answered');
+  el.textContent = ans+' / '+QUIZ.length+(lang==='fr'?' répondues':' answered');
+}
 function buildQuiz(){
   const wrap=document.getElementById('quiz'); if(wrap.dataset.built) return; wrap.dataset.built=1;
   QUIZ.forEach((q,qi)=>{
     const box=document.createElement('div'); box.className='quiz';
-    const h=document.createElement('div'); h.className='qn'; h.textContent=(qi+1)+'. '+q[lang]; h.dataset.fr=q.fr; h.dataset.en=q.en; box.appendChild(h);
+    const h=document.createElement('div'); h.className='qn'; h.textContent=(qi+1)+'. '+q[lang]; h.dataset.fr=(qi+1)+'. '+q.fr; h.dataset.en=(qi+1)+'. '+q.en; box.appendChild(h);
     q.o.forEach((o,oi)=>{
       const b=document.createElement('button'); b.className='opt'; b.textContent=o[lang]; b.dataset.fr=o.fr; b.dataset.en=o.en;
       b.onclick=()=>{
         if(box.dataset.answered) return; box.dataset.answered=1;
         b.classList.add(o.ok?'good':'bad');
         if(!o.ok){[...box.querySelectorAll('.opt')].forEach((x,xi)=>{if(q.o[xi].ok)x.classList.add('good')});}
-        checkDone();
+        updateScore(); checkDone();
       };
       box.appendChild(b);
     });
     wrap.appendChild(box);
   });
+  updateScore();
 }
 function checkDone(){
   const all=[...document.querySelectorAll('#quiz .quiz')];
-  if(all.length && all.every(b=>b.dataset.answered)){ document.getElementById('quizdone').style.display='block'; done.add(8); render(); }
+  if(all.length && all.every(b=>b.dataset.answered)){ document.getElementById('quizdone').style.display='block'; done.add(QI); render(); }
 }
+document.querySelectorAll('.obj').forEach(o=>{
+  const q=o.querySelector('.q');
+  if(q) q.addEventListener('click',()=>o.classList.toggle('open'));
+});
 render();
 </script>
 </body>
