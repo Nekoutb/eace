@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\Clients\Tables;
 
 use App\Models\Tenant;
+use App\Services\Evidence\EvidenceStorageService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -48,6 +50,7 @@ class ClientsTable
             ->recordActions([
                 ActionGroup::make([
                     self::renameAction(),
+                    self::setQuotaAction(),
                     DeleteAction::make()
                         ->modalHeading(__('app.client.delete'))
                         ->modalDescription(__('app.client.delete_warning')),
@@ -69,5 +72,49 @@ class ClientsTable
                     ->maxLength(255),
             ])
             ->action(fn (Tenant $record, array $data) => $record->update(['name' => $data['name']]));
+    }
+
+    /**
+     * Set a workspace's evidence storage quota to any value. The quota lives in the
+     * stancl `data` column (written through by update), so it takes effect at once —
+     * the dashboard gauge and the Clients column both read allocatedSpaceMb().
+     */
+    private static function setQuotaAction(): Action
+    {
+        return Action::make('setQuota')
+            ->label(__('app.client.set_quota'))
+            ->icon('heroicon-o-circle-stack')
+            ->color('gray')
+            ->modalHeading(__('app.client.set_quota'))
+            ->modalDescription(function (Tenant $record): string {
+                try {
+                    $used = (float) $record->run(fn (): float => app(EvidenceStorageService::class)->usedMb());
+
+                    return (string) __('app.client.quota_usage', [
+                        'used' => number_format($used, 1),
+                        'quota' => number_format($record->allocatedSpaceMb()),
+                    ]);
+                } catch (\Throwable) {
+                    return (string) __('app.client.quota_set_desc');
+                }
+            })
+            ->fillForm(fn (Tenant $record): array => ['allocated_space_mb' => $record->allocatedSpaceMb()])
+            ->schema([
+                TextInput::make('allocated_space_mb')
+                    ->label(__('app.client.allocated_space'))
+                    ->helperText(__('app.client.allocated_space_help'))
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->suffix('MB'),
+            ])
+            ->action(function (Tenant $record, array $data): void {
+                $record->update(['allocated_space_mb' => (int) $data['allocated_space_mb']]);
+
+                Notification::make()
+                    ->title(__('app.client.quota_updated'))
+                    ->success()
+                    ->send();
+            });
     }
 }
