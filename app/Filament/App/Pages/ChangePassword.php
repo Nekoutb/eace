@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Pages;
 
+use App\Support\Impersonation;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -35,6 +36,8 @@ class ChangePassword extends Page
 
     public function save(): void
     {
+        Impersonation::denyIfReadOnly();
+
         $this->validate([
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);

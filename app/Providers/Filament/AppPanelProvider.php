@@ -9,10 +9,12 @@ use App\Filament\Auth\Login;
 use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\EnforceImpersonationReadOnly;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\InitializeTenancyFromSession;
 use App\Http\Middleware\SetLocale;
 use App\Support\BrandColors;
+use App\Support\Impersonation;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -66,6 +68,15 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.app.support-chat-mount')->render(),
             )
+            // Read-only impersonation banner: when an admin has badged into this
+            // workspace, a persistent bar at the top of every page makes the
+            // read-only state obvious and offers a one-click exit.
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Impersonation::isActive()
+                    ? view('filament.app.impersonation-banner')->render()
+                    : '',
+            )
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\Filament\App\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\Filament\App\Pages')
             ->pages([
@@ -93,6 +104,7 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnforceImpersonationReadOnly::class,
                 ForcePasswordChange::class,
             ]);
     }

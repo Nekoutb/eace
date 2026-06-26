@@ -24,6 +24,7 @@ use App\Services\Invoice\InvoiceNoticeService;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
+use App\Support\Impersonation;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -173,6 +174,8 @@ class ComplianceEngine extends Page
      */
     public function updatedAcfUpload(): void
     {
+        Impersonation::denyIfReadOnly();
+
         if (! $this->acfUpload instanceof TemporaryUploadedFile) {
             return;
         }
@@ -252,6 +255,8 @@ class ComplianceEngine extends Page
      */
     public function updatedInvoiceUploads(): void
     {
+        Impersonation::denyIfReadOnly();
+
         if ($this->invoiceUploads === []) {
             return;
         }
@@ -422,6 +427,8 @@ class ComplianceEngine extends Page
     /** Run the checks for the current phase and reveal the results inline. */
     public function run(): void
     {
+        Impersonation::denyIfReadOnly();
+
         // Guard: never run a stage outside the user's role.
         if (($this->stage === 'settlement' && ! $this->canSettle()) || ($this->stage !== 'settlement' && ! $this->canRecord())) {
             Notification::make()->title(__('app.ui.notif_stage_forbidden'))->danger()->send();

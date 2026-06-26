@@ -28,11 +28,14 @@ use App\Services\Registry\TaxpayerFileResolver;
 use App\Services\Support\ClaudeSupportBot;
 use App\Services\Support\FakeSupportBot;
 use App\Services\Support\SupportBotConnector;
+use App\Support\Impersonation;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use Stancl\Tenancy\Events\TenancyInitialized;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -173,6 +176,15 @@ class AppServiceProvider extends ServiceProvider
             if ($user instanceof User && array_key_exists('last_login_at', $user->getAttributes())) {
                 $user->forceFill(['last_login_at' => now()])->saveQuietly();
             }
+        });
+
+        // Read-only impersonation: while an admin is badged into a workspace, block
+        // every write to that tenant's database — the hard backstop beneath the
+        // per-action gates. Fires for both page loads and Livewire requests (both
+        // initialise tenancy). Central writes (audit) use a different connection and
+        // are never guarded. No-op when no one is impersonating.
+        Event::listen(TenancyInitialized::class, function (): void {
+            Impersonation::guard(DB::connection());
         });
     }
 }

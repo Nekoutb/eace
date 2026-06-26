@@ -75,6 +75,19 @@ class User extends Authenticatable implements CanResetPassword, FilamentUser, Ha
             && $this->staff_role->canManageStaff();
     }
 
+    /**
+     * May this central user badge into a client workspace (read-only impersonation)?
+     * High privilege — the operator (no staff role) and staff managers only, never a
+     * junior agent, and only once they have enrolled their own 2FA (the badge-in gate
+     * re-verifies a fresh TOTP code).
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->isCentralUser()
+            && filled($this->getAppAuthenticationSecret())
+            && ($this->staff_role === null || $this->staff_role->canManageStaff());
+    }
+
     /** Linked to Telegram (the bot can reach this agent directly) once a chat_id is set. */
     public function hasTelegram(): bool
     {

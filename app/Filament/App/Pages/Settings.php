@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Models\OrganizationProfile;
+use App\Support\Impersonation;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -64,6 +65,8 @@ class Settings extends Page
 
     public function save(): void
     {
+        Impersonation::denyIfReadOnly();
+
         $this->validate([
             'entityName' => ['nullable', 'string', 'max:255'],
             'entityNameAliases' => ['nullable', 'string', 'max:2000'],

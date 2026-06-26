@@ -38,6 +38,12 @@ return [
         'quota_set_desc' => 'Set this workspace’s storage quota to any value you need.',
         'quota_usage' => 'Currently using :used MB of the :quota MB quota.',
         'quota_updated' => 'Storage quota updated.',
+        'badge_in' => 'Badge in · read-only',
+        'badge_in_heading' => 'Badge into :client',
+        'badge_in_desc' => 'You will see this workspace exactly as the client does — but read-only, you cannot change anything. Confirm with your authenticator code.',
+        'badge_in_submit' => 'Verify & badge in',
+        'badge_in_code' => 'Your authenticator code',
+        'badge_in_bad_code' => 'That code is not valid. Try again with a fresh code from your authenticator.',
         'identifier' => 'Identifier',
         'created' => 'Created',
         'open' => 'Open',
@@ -52,6 +58,12 @@ return [
         'cred_password' => 'Temporary password',
         'cred_once' => 'Shown only once — it is not stored and cannot be recovered. The administrator must change it on first sign-in.',
         'cred_emailed' => 'A copy of these details was emailed to the client.',
+    ],
+
+    'impersonation' => [
+        'banner' => 'Viewing :client as a read-only administrator — nothing you do here is saved.',
+        'exit' => 'Exit',
+        'read_only' => 'This workspace is being viewed read-only (administrator). Changes are not allowed.',
     ],
 
     'signup' => [

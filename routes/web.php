@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademyController;
 use App\Http\Controllers\HelpChatController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\SignUpController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
@@ -19,6 +20,15 @@ use Illuminate\Support\Facades\Route;
  * The operator reaches the admin console directly at /admin.
  */
 Route::get('/', fn () => redirect('/app'))->name('home');
+
+/*
+ * Read-only tenant impersonation ("badge in"). The admin console's badge-in action
+ * verifies the admin's own TOTP, stashes a short-lived session grant, and redirects
+ * to `enter`, which performs the auth/tenancy swap in a clean request. `exit` (from
+ * the read-only banner) restores the admin. Session-backed — no token in the URL.
+ */
+Route::get('/impersonation/enter', [ImpersonationController::class, 'enter'])->name('impersonation.enter');
+Route::post('/impersonation/exit', [ImpersonationController::class, 'exit'])->name('impersonation.exit');
 
 /*
  * Public "how we protect your data" security showcase — the certified stack

@@ -83,6 +83,27 @@ return [
     'two_factor_required' => (bool) env('NIU_TWO_FACTOR_REQUIRED', true),
 
     /*
+     * Operations monitoring: the subscription/infrastructure register (hosting,
+     * domain, storage, email, API, SSL) behind the websites, with renewal reminders
+     * and a lightweight uptime ping. Reminders always post to the team Telegram (if
+     * configured); they additionally email `alert_email` when one is set. A service
+     * is flagged "due soon" within `due_soon_days` of its renewal date.
+     */
+    'monitoring' => [
+        'due_soon_days' => (int) env('NIU_MONITORING_DUE_SOON_DAYS', 14),
+        'alert_email' => env('NIU_MONITORING_ALERT_EMAIL'),
+    ],
+
+    /*
+     * Read-only tenant impersonation ("badge in"): how long a session lasts before it
+     * auto-exits and the admin is restored to /admin. Every badge-in re-verifies the
+     * acting admin's own TOTP code.
+     */
+    'impersonation' => [
+        'lifetime_minutes' => (int) env('NIU_IMPERSONATION_LIFETIME_MIN', 30),
+    ],
+
+    /*
      * The shared DGI taxpayer register (FICHIER … .xlsx). Downloaded for everyone
      * twice a week (Mon + Thu) into the central database and used by every
      * workspace for NIU controls.

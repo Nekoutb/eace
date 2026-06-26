@@ -2,17 +2,22 @@
 
 namespace App\Filament\Resources\Clients\Tables;
 
+use App\Filament\Auth\AppAuthentication;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Services\Evidence\EvidenceStorageService;
+use App\Support\Impersonation;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\OneTimeCodeInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Component;
 
 class ClientsTable
 {
@@ -49,6 +54,7 @@ class ClientsTable
             ->emptyStateIcon('heroicon-o-building-office-2')
             ->recordActions([
                 ActionGroup::make([
+                    self::badgeInAction(),
                     self::renameAction(),
                     self::setQuotaAction(),
                     DeleteAction::make()
@@ -56,6 +62,47 @@ class ClientsTable
                         ->modalDescription(__('app.client.delete_warning')),
                 ])->label(__('app.client.actions')),
             ]);
+    }
+
+    /**
+     * Badge in (read-only): after re-verifying the admin's own TOTP, stash a short-
+     * lived grant and hand off to the impersonation enter-route, which performs the
+     * auth/tenancy swap in a clean request. Only shown to admins who may impersonate.
+     */
+    private static function badgeInAction(): Action
+    {
+        return Action::make('badgeIn')
+            ->label(__('app.client.badge_in'))
+            ->icon('heroicon-o-eye')
+            ->color('warning')
+            ->visible(fn (): bool => Impersonation::canStart(auth()->user()))
+            ->modalHeading(fn (Tenant $record): string => (string) __('app.client.badge_in_heading', ['client' => $record->name ?? $record->id]))
+            ->modalDescription(__('app.client.badge_in_desc'))
+            ->modalSubmitActionLabel(__('app.client.badge_in_submit'))
+            ->schema([
+                OneTimeCodeInput::make('code')
+                    ->label(__('app.client.badge_in_code'))
+                    ->required(),
+            ])
+            ->action(function (Tenant $record, array $data, Component $livewire): void {
+                $user = auth()->user();
+                $secret = $user instanceof User ? $user->getAppAuthenticationSecret() : null;
+
+                if ($secret === null
+                    || ! AppAuthentication::make()->verifyCode((string) ($data['code'] ?? ''), $secret, shouldPreventCodeReuse: true)) {
+                    Notification::make()->title(__('app.client.badge_in_bad_code'))->danger()->send();
+
+                    return;
+                }
+
+                session()->put('impersonation_grant', [
+                    'tenant' => $record->getTenantKey(),
+                    'admin' => auth()->id(),
+                    'expires' => now()->addMinutes(2)->timestamp,
+                ]);
+
+                $livewire->redirect(route('impersonation.enter'), navigate: false);
+            });
     }
 
     private static function renameAction(): Action

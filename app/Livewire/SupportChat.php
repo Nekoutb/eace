@@ -7,6 +7,7 @@ use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
 use App\Jobs\AnswerConversationWithBot;
 use App\Models\Conversation;
+use App\Support\Impersonation;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -60,6 +61,8 @@ class SupportChat extends Component
 
     public function send(): void
     {
+        Impersonation::denyIfReadOnly();
+
         $this->validate(['message' => ['required', 'string', 'max:2000']]);
 
         $body = trim((string) $this->message);
@@ -127,6 +130,8 @@ class SupportChat extends Component
     /** Post-resolution CSAT: the customer rates a resolved conversation 👍/👎 (once). */
     public function rate(int $conversationId, int $score): void
     {
+        Impersonation::denyIfReadOnly();
+
         $conversation = Conversation::query()
             ->whereKey($conversationId)
             ->where('tenant_id', tenant()->getTenantKey())

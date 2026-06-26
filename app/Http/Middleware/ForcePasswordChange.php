@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Support\Impersonation;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
@@ -27,6 +28,13 @@ final class ForcePasswordChange
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // While an admin impersonates a workspace (read-only) never force a password
+        // change — they are only viewing, and the change page is itself read-only,
+        // which would otherwise trap them.
+        if (Impersonation::isActive()) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if ($user === null || ! ($user->must_change_password ?? false)) {

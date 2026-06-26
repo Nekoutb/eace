@@ -38,6 +38,12 @@ return [
         'quota_set_desc' => 'Définissez le quota de stockage de cet espace à la valeur souhaitée.',
         'quota_usage' => 'Utilisation actuelle : :used Mo sur le quota de :quota Mo.',
         'quota_updated' => 'Quota de stockage mis à jour.',
+        'badge_in' => 'Accès délégué · lecture seule',
+        'badge_in_heading' => 'Accéder à :client',
+        'badge_in_desc' => 'Vous verrez cet espace exactement comme le client — mais en lecture seule, vous ne pouvez rien modifier. Confirmez avec votre code d’authentification.',
+        'badge_in_submit' => 'Vérifier et accéder',
+        'badge_in_code' => 'Votre code d’authentification',
+        'badge_in_bad_code' => 'Ce code n’est pas valide. Réessayez avec un nouveau code de votre application d’authentification.',
         'identifier' => 'Identifiant',
         'created' => 'Créé le',
         'open' => 'Ouvrir',
@@ -52,6 +58,12 @@ return [
         'cred_password' => 'Mot de passe temporaire',
         'cred_once' => 'Affiché une seule fois — non stocké et irrécupérable. L’administrateur devra le changer à la première connexion.',
         'cred_emailed' => 'Une copie de ces informations a été envoyée par e-mail au client.',
+    ],
+
+    'impersonation' => [
+        'banner' => 'Consultation de :client en administrateur (lecture seule) — rien n’est enregistré ici.',
+        'exit' => 'Quitter',
+        'read_only' => 'Cet espace est consulté en lecture seule (administrateur). Les modifications ne sont pas autorisées.',
     ],
 
     'signup' => [
