@@ -22,6 +22,16 @@ class AcfCertificateResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'reference';
 
+    /**
+     * Client-portal resource: only a tenant (client) user may reach it. A platform
+     * (central) user is barred here too — defence in depth beyond the /app panel
+     * boundary, and a self-documenting statement of audience.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isCentralUser() === false;
+    }
+
     public static function getNavigationLabel(): string
     {
         return (string) __('app.nav.certificates');

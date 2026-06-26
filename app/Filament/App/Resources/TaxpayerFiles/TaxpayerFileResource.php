@@ -24,6 +24,16 @@ class TaxpayerFileResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    /**
+     * Client-portal resource: only a tenant (client) user may reach it. A platform
+     * (central) user is barred here too — defence in depth beyond the /app panel
+     * boundary, and a self-documenting statement of audience.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isCentralUser() === false;
+    }
+
     /** Reached from the Audit Logs hub, not the top-level sidebar. */
     public static function shouldRegisterNavigation(): bool
     {
