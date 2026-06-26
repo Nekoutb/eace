@@ -318,6 +318,18 @@
         {{-- Inline form --}}
         <form wire:submit="run" class="glass niu-form">
             @if ($isRecording)
+                @if ($stagedAcfs)
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding:10px 12px;background:rgba(226,56,43,.06);border:1px solid rgba(226,56,43,.22);border-radius:11px;">
+                        <span style="font-size:.72rem;font-weight:800;letter-spacing:.02em;color:#111;display:inline-flex;align-items:center;gap:6px;">@svg('heroicon-o-rectangle-stack', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.staged_label', ['count' => count($stagedAcfs)]) }}</span>
+                        @foreach ($stagedAcfs as $i => $s)
+                            <span style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #e7e6e1;border-radius:999px;padding:3px 5px 3px 11px;font-size:.72rem;">
+                                <span class="niu-mono" style="font-weight:700;color:#111;">{{ $s['acfReference'] ?? ($s['rawInput'] ?? '—') }}</span>
+                                <small style="color:#6b6b6b;">{{ __('app.ui.staged_invoices', ['n' => count($s['invoices'] ?? [])]) }}</small>
+                                <button type="button" wire:click="unstageAcf({{ $i }})" title="{{ __('app.ui.staged_remove') }}" style="border:0;background:#f3f3f1;color:#b62015;border-radius:999px;width:19px;height:19px;line-height:1;cursor:pointer;font-weight:800;font-size:.8rem;">&times;</button>
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
                 <div class="niu-grid">
                     <label class="niu-drop niu-field--full">
                         <input type="file" wire:model="acfUpload" accept="application/pdf" class="niu-file">
@@ -395,6 +407,11 @@
             @endif
 
             <div class="niu-form__actions">
+                @if ($isRecording)
+                    <button type="button" class="niu-btn" wire:click="stageCurrentAcf" style="background:#fff;color:#111;border:1.5px solid #e2382b;">
+                        @svg('heroicon-o-plus-circle', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.add_certificate') }}
+                    </button>
+                @endif
                 <button type="submit" class="niu-btn" wire:target="run" wire:loading.attr="disabled">
                     <span class="niu-btn__c" wire:loading.remove wire:target="run">@svg('heroicon-o-shield-check', 'niu-ico', ['aria-hidden' => 'true']){{ __('app.ui.run_checks') }}</span>
                     <span class="niu-btn__c" wire:loading.flex wire:target="run" style="display:none"><span class="niu-spin"></span>{{ __('app.ui.running') }}</span>
@@ -519,6 +536,7 @@
                 <div class="niu-tablewrap">
                     <table class="niu-table">
                         <thead><tr>
+                            <th>{{ __('app.ui.acf_col') }}</th>
                             <th>{{ __('app.ui.invoice_col') }}</th>
                             <th>{{ __('app.ui.niu') }}</th>
                             @foreach ($this->checkColumns() as $col)
@@ -531,6 +549,7 @@
                         <tbody>
                         @foreach ($recordingBatch['rows'] as $row)
                             <tr>
+                                <td class="niu-mono" data-label="{{ __('app.ui.acf_col') }}">{{ $row['acf_reference'] ?? '—' }}</td>
                                 <td class="niu-td-strong" data-label="{{ __('app.ui.invoice_col') }}">{{ $row['invoice_label'] ?? '—' }}</td>
                                 <td class="niu-mono niu-td-strong" data-label="{{ __('app.ui.niu') }}">{{ $row['niu'] ?? $row['raw_input'] }}</td>
                                 @foreach ($this->checkColumns() as $col)

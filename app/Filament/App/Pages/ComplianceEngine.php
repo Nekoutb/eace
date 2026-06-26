@@ -85,6 +85,16 @@ class ComplianceEngine extends Page
      */
     public array $invoices = [];
 
+    /**
+     * Certificates queued via "Add another certificate", to be controlled together
+     * in one run. Each entry is a full snapshot of one certificate group — its ACF
+     * reference, NIU, scanned invoices and staged captures — controlled independently
+     * (its own verification rows + audit lines) when run() fires.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $stagedAcfs = [];
+
     // Live evidence captured automatically as the documents are read (no manual
     // action): the Harmony2 authenticity verdict lives on the certificate; the
     // DGI Fiscalis snapshot is stashed here and attached to the verification on run.
@@ -450,22 +460,157 @@ class ComplianceEngine extends Page
             : $this->runRecording();
     }
 
-    private function runRecording(): void
+    /**
+     * Queue the certificate currently loaded in the form so several can be controlled
+     * together, then clear the inputs for the next one. Each queued certificate is
+     * controlled independently when Run fires — its own verification rows + audit lines.
+     */
+    public function stageCurrentAcf(): void
     {
-        $rawInput = filled($this->rawInput) ? trim((string) $this->rawInput) : null;
+        Impersonation::denyIfReadOnly();
 
-        if (blank($rawInput)) {
-            Notification::make()
-                ->title(__('app.ui.notif_niu_missing'))
-                ->body(__('app.ui.notif_niu_missing_body'))
-                ->warning()
-                ->send();
+        if (blank($this->acfReference) && blank($this->rawInput) && $this->invoices === []) {
+            Notification::make()->title(__('app.ui.notif_stage_empty'))->warning()->send();
 
             return;
         }
 
+        $this->stagedAcfs[] = $this->currentGroupSnapshot();
+
+        $this->reset([
+            'acfUpload', 'acfReference', 'rawInput', 'invoiceUploads', 'invoices',
+            'invoiceAmount', 'invoiceName', 'fiscalisSnapshotPath', 'fiscalisPresence',
+            'fiscalisCheckedAt', 'acfAuthLabel',
+        ]);
+
+        Notification::make()->title(__('app.ui.notif_acf_staged', ['count' => count($this->stagedAcfs)]))->success()->send();
+    }
+
+    /** Remove a queued certificate, cleaning up its staged evidence files. */
+    public function unstageAcf(int $index): void
+    {
+        Impersonation::denyIfReadOnly();
+
+        if (! isset($this->stagedAcfs[$index])) {
+            return;
+        }
+
+        $group = $this->stagedAcfs[$index];
+        $store = app(EvidenceStore::class);
+
+        if (is_string($group['fiscalisSnapshotPath'] ?? null)) {
+            $store->delete($group['fiscalisSnapshotPath']);
+        }
+        foreach ((is_array($group['invoices'] ?? null) ? $group['invoices'] : []) as $invoice) {
+            if (is_string($invoice['path'] ?? null)) {
+                $store->delete($invoice['path']);
+            }
+        }
+
+        array_splice($this->stagedAcfs, $index, 1);
+    }
+
+    private function runRecording(): void
+    {
+        $groups = $this->recordingGroups();
+
+        if ($groups === []) {
+            $this->notifyNiuMissing();
+
+            return;
+        }
+
+        // Control each queued certificate independently — its own verification rows
+        // (one per invoice, or a single ACF-only line), each its own audit entry.
+        $verifications = [];
+        foreach ($groups as $group) {
+            $verifications = array_merge($verifications, $this->recordGroup($group));
+        }
+
+        if ($verifications === []) {
+            $this->notifyNiuMissing();
+
+            return;
+        }
+
+        $this->stagedAcfs = []; // consumed by this run
+        $this->presentRecording($verifications);
+    }
+
+    private function notifyNiuMissing(): void
+    {
+        Notification::make()
+            ->title(__('app.ui.notif_niu_missing'))
+            ->body(__('app.ui.notif_niu_missing_body'))
+            ->warning()
+            ->send();
+    }
+
+    /**
+     * Every certificate to control in this run: those explicitly queued via
+     * stageCurrentAcf(), plus the one currently loaded in the form (if any).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function recordingGroups(): array
+    {
+        $groups = array_values($this->stagedAcfs);
+
+        if (filled($this->acfReference) || filled($this->rawInput) || $this->invoices !== []) {
+            $groups[] = $this->currentGroupSnapshot();
+        }
+
+        return $groups;
+    }
+
+    /**
+     * A snapshot of the certificate currently loaded in the form, so it can be
+     * controlled like any queued one.
+     *
+     * @return array<string, mixed>
+     */
+    private function currentGroupSnapshot(): array
+    {
+        return [
+            'acfReference' => $this->acfReference,
+            'rawInput' => $this->rawInput,
+            'invoiceAmount' => $this->invoiceAmount,
+            'invoiceName' => $this->invoiceName,
+            'invoices' => $this->invoices,
+            'fiscalisSnapshotPath' => $this->fiscalisSnapshotPath,
+            'fiscalisPresence' => $this->fiscalisPresence,
+            'fiscalisCheckedAt' => $this->fiscalisCheckedAt,
+            'acfAuthLabel' => $this->acfAuthLabel,
+        ];
+    }
+
+    /**
+     * Control ONE certificate group: verify each of its invoices (or a single
+     * ACF-only line) against that certificate, committing each one's evidence.
+     * Returns the verification entries, each tagged with its certificate reference.
+     *
+     * @param  array<string, mixed>  $group
+     * @return array<int, array{verification: Verification, label: ?string, acf: ?string}>
+     */
+    private function recordGroup(array $group): array
+    {
+        // Load this group's context into the fields the loop + commitEvidence read.
+        $this->acfReference = is_string($group['acfReference'] ?? null) ? $group['acfReference'] : null;
+        $this->rawInput = is_string($group['rawInput'] ?? null) ? $group['rawInput'] : null;
+        $this->invoiceAmount = is_string($group['invoiceAmount'] ?? null) ? $group['invoiceAmount'] : null;
+        $this->invoiceName = is_string($group['invoiceName'] ?? null) ? $group['invoiceName'] : null;
+        $this->invoices = is_array($group['invoices'] ?? null) ? $group['invoices'] : [];
+        $this->fiscalisSnapshotPath = is_string($group['fiscalisSnapshotPath'] ?? null) ? $group['fiscalisSnapshotPath'] : null;
+        $this->fiscalisPresence = is_string($group['fiscalisPresence'] ?? null) ? $group['fiscalisPresence'] : null;
+        $this->fiscalisCheckedAt = is_string($group['fiscalisCheckedAt'] ?? null) ? $group['fiscalisCheckedAt'] : null;
+
+        $rawInput = filled($this->rawInput) ? trim((string) $this->rawInput) : null;
+        if (blank($rawInput)) {
+            return [];
+        }
+
         // No invoice loaded → an ACF-only recording (a single verification).
-        // One or more invoices → verify each against the one loaded ACF.
+        // One or more invoices → verify each against this certificate.
         $invoices = $this->invoices !== []
             ? $this->invoices
             : [['name' => null, 'path' => null, 'data' => null]];
@@ -497,16 +642,16 @@ class ComplianceEngine extends Page
                 app(FiscalisStatusService::class)->capture($verification);
             }
 
-            $verifications[] = ['verification' => $verification, 'label' => $invoice['name'] ?? null];
+            $verifications[] = ['verification' => $verification, 'label' => $invoice['name'] ?? null, 'acf' => $this->acfReference];
         }
 
-        // Every invoice has committed its own copy of the shared snapshot; drop the stage.
+        // Every invoice has committed its own copy of this certificate's snapshot.
         if ($this->fiscalisSnapshotPath !== null) {
             app(EvidenceStore::class)->delete($this->fiscalisSnapshotPath);
             $this->fiscalisSnapshotPath = null;
         }
 
-        $this->presentRecording($verifications);
+        return $verifications;
     }
 
     /** The TTC amount fed to the risk rules — per-invoice, or the manual field for a lone recording. */
@@ -534,7 +679,7 @@ class ComplianceEngine extends Page
      * several invoices recorded against the one ACF show a per-invoice table with
      * the combined discrepancies underneath, each tagged with its invoice.
      *
-     * @param  array<int, array{verification: Verification, label: ?string}>  $verifications
+     * @param  array<int, array{verification: Verification, label: ?string, acf?: ?string}>  $verifications
      */
     private function presentRecording(array $verifications): void
     {
@@ -568,7 +713,10 @@ class ComplianceEngine extends Page
             $verification = $entry['verification'];
             $verification->approval === ApprovalDecision::Accepted ? $accepted++ : $rejected++;
             $exposure += (int) $verification->exposure_xaf;
-            $rows[] = $this->present($verification) + ['invoice_label' => $entry['label']];
+            $rows[] = $this->present($verification) + [
+                'invoice_label' => $entry['label'],
+                'acf_reference' => is_string($entry['acf'] ?? null) ? $entry['acf'] : null,
+            ];
         }
 
         $this->recordingBatch = [
