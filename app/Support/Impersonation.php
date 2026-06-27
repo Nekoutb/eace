@@ -113,6 +113,7 @@ final class Impersonation
         }
 
         Auth::guard('web')->login($viewer);
+        self::refreshSessionPasswordHash($viewer);
 
         session()->put('tenant_id', $tenant->getTenantKey());
         session()->put(self::SESSION_KEY, [
@@ -143,10 +144,22 @@ final class Impersonation
         $admin = User::query()->find($ctx['admin_id']);
         if ($admin instanceof User) {
             Auth::guard('web')->login($admin);
+            self::refreshSessionPasswordHash($admin);
             DataAccessLog::record('impersonate_end', 'tenant:'.$ctx['tenant'], 'admin '.$admin->email);
         } else {
             Auth::guard('web')->logout();
         }
+    }
+
+    /**
+     * Point the session's auth password-hash at the user we just logged in as.
+     * AuthenticateSession compares this hash against the current user on every
+     * request and logs out on a mismatch — after swapping users we must update it,
+     * or the very next request bounces back to the sign-in page.
+     */
+    private static function refreshSessionPasswordHash(User $user): void
+    {
+        session()->put('password_hash_'.Auth::getDefaultDriver(), $user->getAuthPassword());
     }
 
     /**

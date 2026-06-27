@@ -98,6 +98,27 @@ it('audits the start and end of impersonation', function () {
         ->and($actions)->toContain('impersonate_end');
 });
 
+it('moves the session password hash to the impersonated user so the next request is not logged out', function () {
+    $admin = centralAdminWithTotp();
+    $tenant = workspaceWithAdmin('zeta');
+    Auth::login($admin);
+    // The admin's /admin sign-in leaves their hash on the session.
+    session()->put('password_hash_'.Auth::getDefaultDriver(), $admin->getAuthPassword());
+
+    Impersonation::start($tenant);
+
+    // After badge-in the hash matches the impersonated user — so AuthenticateSession
+    // keeps the /app session alive instead of bouncing back to the sign-in page.
+    $viewer = Auth::user();
+    expect($viewer)->not->toBeNull()
+        ->and(session('password_hash_'.Auth::getDefaultDriver()))->toBe($viewer->getAuthPassword());
+
+    Impersonation::stop();
+
+    // Exit restores the admin's hash.
+    expect(session('password_hash_'.Auth::getDefaultDriver()))->toBe($admin->getAuthPassword());
+});
+
 it('blocks every write to the client database while impersonating, but allows reads', function () {
     $admin = centralAdminWithTotp();
     $tenant = workspaceWithAdmin('epsilon');
