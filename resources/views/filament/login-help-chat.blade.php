@@ -1,6 +1,6 @@
 @php($fr = app()->getLocale() === 'fr')
 
-<div id="niu-help" data-url="{{ route('help.ask') }}" data-csrf="{{ csrf_token() }}">
+<div id="niu-help" data-url="{{ route('help.ask') }}" data-poll-url="{{ route('help.poll') }}" data-csrf="{{ csrf_token() }}">
     <style>
         #niu-help{position:fixed;right:1.1rem;bottom:1.1rem;z-index:99999;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
         #niu-help *{box-sizing:border-box}
@@ -27,11 +27,13 @@
         .nh-b{padding:.55rem .75rem;border-radius:12px;font-size:.86rem;line-height:1.45;max-width:88%;white-space:pre-wrap}
         .nh-b--bot{align-self:flex-start;background:#ecfdf3;border:1px solid #bbf7d0;color:#14532d}
         .nh-b--me{align-self:flex-end;background:#15803d;color:#fff}
+        .nh-b--agent{align-self:flex-start;background:#fff;border:1px solid #bbf7d0;color:#0f231a;box-shadow:0 2px 6px rgba(20,83,45,.08)}
         .nh-form{padding:.7rem;border-top:1px solid rgba(21,128,61,.12);display:flex;flex-direction:column;gap:.45rem;background:#fff}
         .nh-form input,.nh-form textarea{width:100%;padding:.55rem .7rem;border:1px solid rgba(21,128,61,.2);border-radius:10px;
             font-size:.86rem;font-family:inherit;outline:none;color:#0f231a}
         .nh-form textarea{resize:none;min-height:2.6rem}
         .nh-form input:focus,.nh-form textarea:focus{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+        .nh-form input.nh-need{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.22)}
         .nh-hint{display:flex;align-items:center;gap:.35rem;margin:0;font-size:.7rem;color:#6b8278}
         .nh-hint kbd{background:#ecfdf3;border:1px solid #bbf7d0;border-radius:5px;padding:0 .3rem;font-size:.66rem;font-family:inherit;color:#15803d}
         @media (prefers-reduced-motion:reduce){#niu-help *{transition:none!important}}
@@ -50,6 +52,7 @@
         <form class="nh-form" id="nh-form" autocomplete="off">
             <textarea id="nh-text" rows="2" placeholder="{{ $fr ? 'Votre message…' : 'Your message…' }}" maxlength="2000"></textarea>
             <input type="email" id="nh-email" placeholder="{{ $fr ? 'E-mail (pour une réponse)' : 'Email (so we can reply)' }}" maxlength="255">
+            <input type="tel" id="nh-phone" placeholder="{{ $fr ? 'Téléphone / WhatsApp (facultatif)' : 'Phone / WhatsApp (optional)' }}" maxlength="40">
             <p class="nh-hint" id="nh-hint"><kbd>{{ $fr ? 'Entrée' : 'Enter' }}</kbd> {{ $fr ? 'pour envoyer · Maj+Entrée = nouvelle ligne' : 'to send · Shift+Enter for a new line' }}</p>
         </form>
     </div>
@@ -63,11 +66,11 @@
 <script>
 (function(){
     var root=document.getElementById('niu-help');if(!root)return;
-    var url=root.dataset.url,csrf=root.dataset.csrf;
+    var url=root.dataset.url,pollUrl=root.dataset.pollUrl,csrf=root.dataset.csrf;
     var launch=document.getElementById('nh-launch'),panel=document.getElementById('nh-panel'),teaser=document.getElementById('nh-teaser'),
         dot=document.getElementById('nh-dot'),msgs=document.getElementById('nh-msgs'),form=document.getElementById('nh-form'),
-        text=document.getElementById('nh-text'),email=document.getElementById('nh-email'),hint=document.getElementById('nh-hint');
-    var opened=false,hintHtml=hint.innerHTML;
+        text=document.getElementById('nh-text'),email=document.getElementById('nh-email'),phone=document.getElementById('nh-phone'),hint=document.getElementById('nh-hint');
+    var opened=false,hintHtml=hint.innerHTML,lastId=0,poller=null;
     function open(){opened=true;panel.classList.add('on');teaser.classList.remove('on');dot.classList.remove('on');text.focus();}
     function close(){opened=false;panel.classList.remove('on');}
     launch.addEventListener('click',function(){opened?close():open();});
@@ -75,6 +78,18 @@
     // Pop a notification teaser shortly after the page settles.
     setTimeout(function(){if(!opened){teaser.classList.add('on');dot.classList.add('on');}},4500);
     function bubble(t,who){var d=document.createElement('div');d.className='nh-b nh-b--'+who;d.textContent=t;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
+    // Clear the "please add contact" highlight as soon as the visitor starts typing it.
+    [email,phone].forEach(function(el){el.addEventListener('input',function(){email.classList.remove('nh-need');phone.classList.remove('nh-need');});});
+    // Once escalated, poll for the team's later replies so a waiting visitor sees them live.
+    function startPolling(){
+        if(poller)return;
+        poller=setInterval(function(){
+            fetch(pollUrl+'?since='+lastId,{headers:{'Accept':'application/json'},credentials:'same-origin'})
+            .then(function(r){return r.ok?r.json():Promise.reject(r);})
+            .then(function(j){(j.messages||[]).forEach(function(msg){bubble(msg.body,'agent');if(msg.id>lastId)lastId=msg.id;if(!opened){dot.classList.add('on');}});})
+            .catch(function(){});
+        },8000);
+    }
     // Enter sends; Shift+Enter inserts a new line.
     text.addEventListener('keydown',function(e){
         if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(text.value.trim())form.requestSubmit();}
@@ -84,10 +99,14 @@
         var m=text.value.trim();if(!m||text.disabled)return;
         bubble(m,'me');text.value='';text.disabled=true;hint.textContent='{{ $fr ? 'Envoi…' : 'Sending…' }}';
         var typing=bubble('…','bot');
-        fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-            body:JSON.stringify({message:m,email:email.value.trim()||null})})
+        fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},credentials:'same-origin',
+            body:JSON.stringify({message:m,email:email.value.trim()||null,phone:phone.value.trim()||null})})
         .then(function(r){return r.ok?r.json():Promise.reject(r);})
-        .then(function(j){typing.textContent=j.reply;text.disabled=false;hint.innerHTML=hintHtml;text.focus();})
+        .then(function(j){
+            typing.textContent=j.reply;text.disabled=false;hint.innerHTML=hintHtml;
+            if(j.needContact){email.classList.add('nh-need');phone.classList.add('nh-need');email.focus();}else{text.focus();}
+            if(j.escalated){startPolling();}
+        })
         .catch(function(){typing.textContent='{{ $fr ? 'Désolé, une erreur est survenue. Réessayez.' : 'Sorry, something went wrong. Please try again.' }}';text.disabled=false;hint.innerHTML=hintHtml;});
     });
 })();

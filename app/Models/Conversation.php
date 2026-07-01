@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Mail;
  * @property ?string $tenant_name
  * @property ?string $requester_name
  * @property ?string $requester_email
+ * @property ?string $requester_phone
  * @property ?string $subject
  * @property ConversationNature $nature
  * @property ConversationStatus $status

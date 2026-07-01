@@ -105,8 +105,15 @@ return [
         'holding' => 'Merci pour votre message — un membre de notre équipe vous répondra sous peu.',
     ],
 
+    'login_chat' => [
+        'need_contact' => 'Pour vous mettre en relation avec notre équipe, ajoutez ci-dessous votre e-mail ou votre numéro de téléphone, puis renvoyez votre message — afin que nous puissions vous recontacter.',
+        'escalated_ack' => 'Merci — un membre de notre équipe vous recontactera par e-mail (ou par appel / WhatsApp) sous peu. Gardez cette fenêtre ouverte pour une réponse en direct, ou fermez-la, nous vous joindrons.',
+    ],
+
     'telegram' => [
         'reply_hint' => 'Répondez à ce message pour répondre au client — tout membre de ce groupe peut répondre.',
+        'reply_emailed' => 'Répondez à ce message → nous transmettons votre réponse au visiteur par e-mail.',
+        'phone_on_file' => 'Un numéro de téléphone est enregistré — ouvrez la console pour appeler ou WhatsApp.',
         'open_console' => 'Ouvrir la console',
         'follow_up' => 'Nouveau message du client',
         'anonymous' => 'Un client',
@@ -117,6 +124,7 @@ return [
         'intro' => 'Bonjour — notre équipe a répondu à votre question :',
         'your_question' => 'Votre question :',
         'signoff' => 'Répondez simplement à cet e-mail si vous avez besoin d’autre chose.',
+        'contact' => 'Vous pouvez aussi nous joindre à contact@cm-ea.com ou sur WhatsApp au +237 675 15 39 53.',
     ],
 
     'survey' => [

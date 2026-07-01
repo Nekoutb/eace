@@ -131,10 +131,21 @@ final class TelegramNotifier
         // console for anyone who needs it.
         $who = $conversation->requester_name ?: (string) __('support.telegram.anonymous');
 
+        // For a login-page (anonymous) visitor a reply reaches them ONLY by the email
+        // we email them; for a signed-in customer it lands in their workspace. Tell
+        // the team which, and flag a phone on file (kept in the console, not here).
+        $isLogin = $conversation->channel === 'login';
+        $replyLine = $isLogin
+            ? (string) __('support.telegram.reply_emailed')
+            : (string) __('support.telegram.reply_hint');
+        $phoneLine = ($isLogin && filled($conversation->requester_phone))
+            ? "\n📞 ".(string) __('support.telegram.phone_on_file')
+            : '';
+
         return '🔺 <b>'.$e($conversation->nature->label()).'</b> — '.$e($conversation->tenant_name ?: $conversation->tenant_id)."\n"
             .'👤 '.$e($who)."\n\n"
             .'<i>'.$e(Str::limit($question, 600)).'</i>'."\n\n"
-            .'↩️ '.(string) __('support.telegram.reply_hint')."\n"
+            .'↩️ '.$replyLine.$phoneLine."\n"
             .'🔗 <a href="'.$e($url).'">'.(string) __('support.telegram.open_console').'</a>';
     }
 

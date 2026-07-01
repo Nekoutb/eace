@@ -10,5 +10,6 @@
         <tr><td style="padding:14px 16px;font-size:14px;line-height:1.6;color:#0f231a;white-space:pre-wrap;">{{ $body }}</td></tr>
     </table>
 
-    <p style="margin:0;font-size:13px;line-height:1.6;color:#46685a;">{{ __('support.reply_mail.signoff') }}</p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#46685a;">{{ __('support.reply_mail.signoff') }}</p>
+    <p style="margin:0;font-size:12px;line-height:1.6;color:#6b8278;">{{ __('support.reply_mail.contact') }}</p>
 </x-mail.layout>

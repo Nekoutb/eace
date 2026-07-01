@@ -74,6 +74,12 @@ Route::post('/help/ask', [HelpChatController::class, 'ask'])
     ->middleware(['throttle:10,1', SetLocale::class])
     ->name('help.ask');
 
+// The login-chat visitor polls for the team's later replies (they have no signed-in
+// view). Session-bound to their own conversation; returns only agent replies.
+Route::get('/help/poll', [HelpChatController::class, 'poll'])
+    ->middleware(['throttle:90,1', SetLocale::class])
+    ->name('help.poll');
+
 /*
  * Public, verify-first self-service onboarding. A prospective customer enters
  * their details, confirms their email, and only then is their isolated workspace

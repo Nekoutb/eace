@@ -105,8 +105,15 @@ return [
         'holding' => 'Thanks for your message — a member of our team will follow up shortly.',
     ],
 
+    'login_chat' => [
+        'need_contact' => 'To connect you with our team, please add your email or phone number below, then send your message again — so we can get back to you.',
+        'escalated_ack' => 'Thanks — a member of our team will get back to you by email (or call / WhatsApp your number) shortly. Keep this window open for a live reply, or close it and we will reach you.',
+    ],
+
     'telegram' => [
         'reply_hint' => 'Reply to this message to answer the customer — anyone in this group can respond.',
+        'reply_emailed' => 'Reply to this message → we email your answer to the visitor.',
+        'phone_on_file' => 'A phone number is on file — open the console to call or WhatsApp.',
         'open_console' => 'Open the console',
         'follow_up' => 'New message from the customer',
         'anonymous' => 'A customer',
@@ -117,6 +124,7 @@ return [
         'intro' => 'Hello — our team has replied to your question:',
         'your_question' => 'Your question:',
         'signoff' => 'Just reply to this email if you need anything else.',
+        'contact' => 'You can also reach us at contact@cm-ea.com or on WhatsApp at +237 675 15 39 53.',
     ],
 
     'survey' => [

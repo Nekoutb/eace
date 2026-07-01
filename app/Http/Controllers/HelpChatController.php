@@ -8,6 +8,7 @@ use App\Domain\Support\ConversationNature;
 use App\Domain\Support\ConversationStatus;
 use App\Domain\Support\MessageAuthor;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Services\Support\SupportBotConnector;
 use App\Services\Support\TelegramNotifier;
 use Illuminate\Http\JsonResponse;
@@ -16,10 +17,11 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * The login-page "Need help?" chat. An UNAUTHENTICATED visitor asks a question;
- * the AI bot answers in the box. Anything it can't resolve becomes a pre-login
- * inquiry (channel = login, no workspace) that the team sees in the console and the
- * Telegram group, with the visitor's email for an email follow-up.
+ * The login-page "Need help?" chat. An UNAUTHENTICATED visitor asks a question; the
+ * AI bot answers in the box. Anything it can't resolve is escalated to the team —
+ * but ONLY once the visitor has left an email or phone, since an anonymous visitor
+ * has no other channel to receive a reply. Team replies are emailed to them (and, if
+ * they keep the chat open, shown live via poll()).
  */
 class HelpChatController
 {
@@ -28,35 +30,36 @@ class HelpChatController
         $data = $request->validate([
             'message' => ['required', 'string', 'max:2000'],
             'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:40'],
         ]);
 
         $message = trim((string) $data['message']);
         $email = filled($data['email'] ?? null) ? mb_strtolower(trim((string) $data['email'])) : null;
+        $phone = filled($data['phone'] ?? null) ? trim((string) $data['phone']) : null;
 
-        // Continue this visitor's conversation (bound to their session) so the bot
-        // answers follow-ups in context.
-        $conversation = $this->resumeOrStart($request, $message, $email);
+        $conversation = $this->resumeOrStart($request, $message, $email, $phone);
 
+        // Capture any contact the visitor supplies — never overwrite once set.
+        $contact = [];
         if ($email !== null && blank($conversation->requester_email)) {
-            $conversation->forceFill(['requester_email' => $email])->save();
+            $contact['requester_email'] = $email;
+        }
+        if ($phone !== null && blank($conversation->requester_phone)) {
+            $contact['requester_phone'] = $phone;
+        }
+        if ($contact !== []) {
+            $conversation->forceFill($contact)->save();
         }
 
         $conversation->postMessage(MessageAuthor::Customer, $message);
 
-        // Stand down only once a human has ACTUALLY replied — an escalated thread is
-        // still waiting on the team, so the bot keeps helping in the meantime.
+        // Already with a human — the bot stands down; the visitor waits on the team.
         $humanReplied = $conversation->messages()->where('author', MessageAuthor::Agent->value)->exists();
-
         if ($humanReplied) {
-            return response()->json([
-                'reply' => (string) __('support.bot.holding'),
-                'escalated' => true,
-                'email' => $conversation->requester_email,
-            ]);
+            return response()->json(['reply' => (string) __('support.bot.holding'), 'escalated' => true]);
         }
 
         $alreadyEscalated = $conversation->status === ConversationStatus::Escalated;
-
         $context = $conversation->load('messages')->botContext();
 
         try {
@@ -69,43 +72,82 @@ class HelpChatController
         if ($reply !== null) {
             $conversation->forceFill(['nature' => $reply->nature])->save();
         }
-
         if ($reply !== null && filled($reply->reply)) {
             $conversation->postMessage(MessageAuthor::Bot, $reply->reply, (string) __('support.author.bot'));
         }
 
         $resolved = $reply !== null && $reply->resolved && ! $reply->isComplaint;
+        $botText = $reply->reply ?? (string) __('support.bot.holding');
 
-        // Already with a human — the reply above was interim help; keep it escalated.
-        // Surface a still-unresolved follow-up to the team's Telegram thread.
+        // Follow-up on an already-escalated thread: surface it to the team, keep escalated.
         if ($alreadyEscalated) {
             if (! $resolved) {
                 app(TelegramNotifier::class)->pushFollowUp($conversation, $context['question']);
             }
 
-            return response()->json([
-                'reply' => $reply->reply ?? (string) __('support.bot.holding'),
-                'escalated' => true,
-                'email' => $conversation->requester_email,
-            ]);
+            return response()->json(['reply' => $botText, 'escalated' => true]);
         }
 
         if ($resolved) {
             $conversation->forceFill(['bot_resolved' => true, 'status' => ConversationStatus::AwaitingCustomer])->save();
-        } else {
-            $conversation->escalate();
-            app(TelegramNotifier::class)->pushEscalation($conversation);
+
+            return response()->json(['reply' => $botText, 'escalated' => false]);
         }
 
+        // Needs a human. An anonymous visitor can only be reached if they leave
+        // contact details — so require an email OR phone BEFORE escalating.
+        if (blank($conversation->requester_email) && blank($conversation->requester_phone)) {
+            return response()->json([
+                'reply' => $botText."\n\n".(string) __('support.login_chat.need_contact'),
+                'escalated' => false,
+                'needContact' => true,
+            ]);
+        }
+
+        $conversation->escalate();
+        app(TelegramNotifier::class)->pushEscalation($conversation);
+
         return response()->json([
-            'reply' => $reply->reply ?? (string) __('support.bot.holding'),
-            'escalated' => ! $resolved,
-            'email' => $conversation->requester_email,
+            'reply' => $botText."\n\n".(string) __('support.login_chat.escalated_ack'),
+            'escalated' => true,
+        ]);
+    }
+
+    /**
+     * Poll for team replies to this visitor's session-bound conversation, so a
+     * visitor who keeps the chat open sees the answer live — they aren't signed in,
+     * so there is no other in-page channel. Returns agent messages newer than `since`.
+     */
+    public function poll(Request $request): JsonResponse
+    {
+        $id = $request->session()->get('help_chat_conversation_id');
+        $since = (int) $request->query('since', '0');
+
+        if ($id === null) {
+            return response()->json(['messages' => []]);
+        }
+
+        $conversation = Conversation::query()->whereKey($id)->where('channel', 'login')->first();
+        if ($conversation === null) {
+            return response()->json(['messages' => []]);
+        }
+
+        $messages = $conversation->messages()
+            ->where('id', '>', $since)
+            ->where('author', MessageAuthor::Agent->value)
+            ->orderBy('id')
+            ->get(['id', 'body']);
+
+        return response()->json([
+            'messages' => $messages->map(static fn (ConversationMessage $m): array => [
+                'id' => $m->getKey(),
+                'body' => (string) $m->body,
+            ])->all(),
         ]);
     }
 
     /** Resume the visitor's session-bound conversation, or start a new one. */
-    private function resumeOrStart(Request $request, string $message, ?string $email): Conversation
+    private function resumeOrStart(Request $request, string $message, ?string $email, ?string $phone): Conversation
     {
         $id = $request->session()->get('help_chat_conversation_id');
 
@@ -125,6 +167,7 @@ class HelpChatController
             'tenant_id' => null,
             'tenant_name' => (string) __('app.login_chat.visitor'),
             'requester_email' => $email,
+            'requester_phone' => $phone,
             'subject' => Str::limit($message, 80),
             'nature' => ConversationNature::Question,
             'status' => ConversationStatus::New,

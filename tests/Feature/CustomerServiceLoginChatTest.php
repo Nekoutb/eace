@@ -77,7 +77,8 @@ it('does not email a signed-in customer (app channel) on reply', function () {
 it('keeps the bot helping an escalated login thread until a human replies', function () {
     bindLoginBot(new BotReply('A specialist will follow up shortly.', false, ConversationNature::Billing, false));
 
-    test()->postJson('/help/ask', ['message' => 'How much does it cost?'])->assertOk()->assertJson(['escalated' => true]);
+    // Escalation now requires contact details, so the visitor leaves an email.
+    test()->postJson('/help/ask', ['message' => 'How much does it cost?', 'email' => 'p@x.com'])->assertOk()->assertJson(['escalated' => true]);
     test()->postJson('/help/ask', ['message' => 'and what are your support hours?'])->assertOk();
 
     $c = Conversation::query()->where('channel', 'login')->first();
