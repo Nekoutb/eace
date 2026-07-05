@@ -42,3 +42,11 @@ Schedule::command('evidence:timestamp-pending')
 Schedule::command('signup:prune-expired')
     ->daily()
     ->withoutOverlapping();
+
+// Operations watch: every morning, ping the monitored services and send a digest of
+// upcoming/overdue subscription renewals + any down sites (Telegram, and email if
+// NIU_MONITORING_ALERT_EMAIL is set). Guards against an unpaid-bill outage. Silent
+// when everything is healthy.
+Schedule::command('monitoring:check')
+    ->dailyAt('07:30')
+    ->withoutOverlapping();
