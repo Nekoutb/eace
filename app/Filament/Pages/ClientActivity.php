@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Pages\ClientActivity\ActivityChart;
+use App\Filament\Pages\ClientActivity\AdoptionMatrix;
 use App\Filament\Pages\ClientActivity\ClientActivityTable;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -46,6 +47,7 @@ class ClientActivity extends Page
     {
         return [
             ActivityChart::class,
+            AdoptionMatrix::class,
             ClientActivityTable::class,
         ];
     }

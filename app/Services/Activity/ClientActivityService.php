@@ -95,6 +95,90 @@ final class ClientActivityService
     }
 
     /**
+     * The adoption steps every client is expected to complete, in journey order.
+     * Keys are used for lang labels (activity.step_*) and the matrix cells.
+     *
+     * @return list<string>
+     */
+    public static function adoptionSteps(): array
+    {
+        return ['signed_in', 'two_fa', 'settings', 'team', 'acf', 'recording', 'settlement'];
+    }
+
+    /**
+     * The adoption matrix: for every client, whether each expected usage step has
+     * been reached — detected from their workspace data (sign-ins, 2FA enrolment,
+     * company settings, team, ACFs, recording and settlement controls). Powers the
+     * "engage the client at the right moment" grid.
+     *
+     * @return list<array{id: string, name: string, completed: int, steps: array<string, array{done: bool, detail: ?string}>}>
+     */
+    public function adoptionMatrix(): array
+    {
+        $clients = [];
+
+        foreach (Tenant::query()->cursor() as $tenant) {
+            $steps = $this->tenantAdoption($tenant);
+
+            $clients[] = [
+                'id' => (string) $tenant->getTenantKey(),
+                'name' => (string) ($tenant->name ?? $tenant->getTenantKey()),
+                'completed' => count(array_filter($steps, fn (array $s): bool => $s['done'])),
+                'steps' => $steps,
+            ];
+        }
+
+        return $clients;
+    }
+
+    /**
+     * Detect ONE workspace's adoption state in a single pass. Cached briefly; a
+     * broken workspace database reads as "nothing reached yet".
+     *
+     * @return array<string, array{done: bool, detail: ?string}>
+     */
+    private function tenantAdoption(Tenant $tenant): array
+    {
+        $key = 'client-activity:adoption:'.$tenant->getTenantKey();
+
+        /** @var array<string, array{done: bool, detail: ?string}> */
+        return Cache::remember($key, self::CACHE_SECONDS, function () use ($tenant): array {
+            try {
+                return (array) $tenant->run(function (): array {
+                    $users = (int) DB::table('users')->count();
+                    $signedIn = (int) DB::table('users')->whereNotNull('last_login_at')->count();
+                    $lastLogin = DB::table('users')->max('last_login_at');
+                    $twoFa = (int) DB::table('users')->whereNotNull('app_authentication_secret')->count();
+
+                    $profile = DB::table('organization_profile')
+                        ->whereNotNull('entity_name')->where('entity_name', '!=', '')
+                        ->whereNotNull('entity_niu')->where('entity_niu', '!=', '')
+                        ->value('entity_name');
+
+                    $acfs = (int) DB::table('acf_certificates')->count();
+                    $recorded = (int) DB::table('verifications')->where('stage', 'recording')->count();
+                    $settled = (int) DB::table('verifications')->where('stage', 'settlement')->count();
+
+                    return [
+                        'signed_in' => ['done' => $signedIn > 0, 'detail' => is_string($lastLogin) ? Carbon::parse($lastLogin)->format('d/m/Y') : null],
+                        'two_fa' => ['done' => $twoFa > 0, 'detail' => $twoFa > 0 ? $twoFa.'/'.$users : null],
+                        'settings' => ['done' => is_string($profile) && $profile !== '', 'detail' => is_string($profile) && $profile !== '' ? $profile : null],
+                        'team' => ['done' => $users > 1, 'detail' => (string) $users],
+                        'acf' => ['done' => $acfs > 0, 'detail' => $acfs > 0 ? (string) $acfs : null],
+                        'recording' => ['done' => $recorded > 0, 'detail' => $recorded > 0 ? (string) $recorded : null],
+                        'settlement' => ['done' => $settled > 0, 'detail' => $settled > 0 ? (string) $settled : null],
+                    ];
+                });
+            } catch (Throwable $e) {
+                report($e);
+                $this->restoreCentralContext();
+
+                return array_fill_keys(self::adoptionSteps(), ['done' => false, 'detail' => null]);
+            }
+        });
+    }
+
+    /**
      * Per-day counts inside ONE workspace since $from: verifications split by stage
      * plus certificates processed. Cached briefly per tenant + window.
      *

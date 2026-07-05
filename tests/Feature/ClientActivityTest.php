@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Filament\Pages\ClientActivity;
 use App\Filament\Pages\ClientActivity\ActivityChart;
+use App\Filament\Pages\ClientActivity\AdoptionMatrix;
 use App\Filament\Pages\ClientActivity\ClientActivityTable;
 use App\Models\AcfCertificate;
 use App\Models\Tenant;
@@ -125,6 +126,59 @@ it('renders the page, the chart and the outreach table for an operator', functio
     Livewire\Livewire::test(ClientActivityTable::class)
         ->assertOk()
         ->assertSee('Render SARL');
+});
+
+it('detects each adoption step from the workspace data', function () {
+    // A client that has done everything.
+    $done = Tenant::create(['id' => 'act-done', 'name' => 'Done SARL']);
+    tenancy()->initialize($done);
+    DB::table('users')->insert([
+        ['name' => 'A', 'email' => 'a@done.test', 'password' => Hash::make('x'), 'role' => 'admin',
+            'last_login_at' => now()->subDay(), 'app_authentication_secret' => 'enc-secret',
+            'created_at' => now(), 'updated_at' => now()],
+        ['name' => 'B', 'email' => 'b@done.test', 'password' => Hash::make('x'), 'role' => 'recorder',
+            'last_login_at' => null, 'app_authentication_secret' => null,
+            'created_at' => now(), 'updated_at' => now()],
+    ]);
+    DB::table('organization_profile')->insert(['entity_name' => 'DONE SARL', 'entity_niu' => 'M058712345678X']);
+    activityAcf('620100000003', 1);
+    activityVerification('recording', 1);
+    activityVerification('settlement', 0);
+    tenancy()->end();
+
+    // A client that has only been provisioned.
+    Tenant::create(['id' => 'act-fresh', 'name' => 'Fresh SA']);
+
+    $matrix = collect(app(ClientActivityService::class)->adoptionMatrix())->keyBy('id');
+
+    $doneSteps = $matrix['act-done']['steps'];
+    foreach (ClientActivityService::adoptionSteps() as $step) {
+        expect($doneSteps[$step]['done'])->toBeTrue("step {$step} should be done");
+    }
+    expect($matrix['act-done']['completed'])->toBe(7)
+        ->and($doneSteps['two_fa']['detail'])->toBe('1/2')
+        ->and($doneSteps['settings']['detail'])->toBe('DONE SARL');
+
+    $freshSteps = $matrix['act-fresh']['steps'];
+    foreach (ClientActivityService::adoptionSteps() as $step) {
+        expect($freshSteps[$step]['done'])->toBeFalse("step {$step} should NOT be done");
+    }
+    expect($matrix['act-fresh']['completed'])->toBe(0);
+});
+
+it('renders the adoption matrix with the step labels and clients', function () {
+    Tenant::create(['id' => 'act-mx', 'name' => 'Matrix SARL']);
+
+    $central = User::query()->create(['name' => 'Boss', 'email' => 'boss2@central.test', 'password' => Hash::make('x')]);
+    $this->actingAs($central);
+    Filament::setCurrentPanel('admin');
+
+    Livewire\Livewire::test(AdoptionMatrix::class)
+        ->assertOk()
+        ->assertSee('Matrix SARL')
+        ->assertSee(__('activity.step_signed_in'))
+        ->assertSee(__('activity.step_settlement'))
+        ->assertSee('0/7');
 });
 
 // Runs LAST: simulates the real prod incident (a workspace's sqlite file cleaned
