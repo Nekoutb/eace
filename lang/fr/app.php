@@ -76,7 +76,7 @@ return [
         'submit' => 'Continuer',
         'have_account' => 'Vous avez déjà un espace ?',
         'signin' => 'Se connecter',
-        'link' => 'Nouveau ? Créez un espace d’essai',
+        'link' => 'Nouveau ? Créer mon compte',
         'email_taken' => 'Cet e-mail dispose déjà d’un espace. Veuillez vous connecter ou réinitialiser votre mot de passe.',
         'consent_required' => 'Veuillez lire et accepter la politique de confidentialité pour continuer.',
         // Étapes

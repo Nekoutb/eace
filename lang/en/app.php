@@ -76,7 +76,7 @@ return [
         'submit' => 'Continue',
         'have_account' => 'Already have a workspace?',
         'signin' => 'Sign in',
-        'link' => 'New here? Create a trial workspace',
+        'link' => 'New here? Create my account',
         'email_taken' => 'This email already has a workspace. Please sign in or reset your password instead.',
         'consent_required' => 'Please read and accept the privacy notice to continue.',
         // Stepper
