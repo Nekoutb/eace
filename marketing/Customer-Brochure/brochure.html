@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Elite Advisors Compliance Engine — Présentation</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root{
+    --red:#E2382B; --red-d:#B62015; --ink:#111111; --ink-soft:#3a3a38; --muted:#6B6B6B;
+    --paper:#F6F6F4; --line:#e7e6e1; --green:#16A34A; --green-d:#15803d; --green-50:#f0fdf4;
+    --sans:"Inter","Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;line-height:1.55}
+  img{display:block;max-width:100%}
+
+  .page{width:210mm;min-height:297mm;background:#fff;padding:17mm 16mm 14mm;page-break-after:always;position:relative;overflow:hidden}
+  .page:last-child{page-break-after:auto}
+
+  .ph{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:16px}
+  .ph svg{width:26px;height:21px}
+  .ph .nm{font-weight:800;letter-spacing:.15em;font-size:11.5px}
+  .ph .nm .ad{color:var(--red)}
+  .ph .pr{margin-left:auto;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .pf{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;font-size:9px;color:var(--muted);border-top:1px solid var(--line);padding-top:7px}
+
+  .kick{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+  h1{font-size:25px;line-height:1.15;margin:.25em 0 .4em;letter-spacing:-.01em}
+  h2{font-size:15px;margin:1.1em 0 .35em}
+  p{font-size:11.5px;color:var(--ink-soft);margin:.45em 0}
+  .lead{font-size:13px;color:var(--ink);max-width:64ch}
+  strong{color:var(--ink)}
+
+  .grid{display:grid;gap:11px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+  .card .ic{width:30px;height:30px;border-radius:8px;background:var(--green-50);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;margin-bottom:7px}
+  .card h3{font-size:12.5px;margin:.1em 0 .25em}
+  .card p{font-size:10.5px;margin:.15em 0}
+
+  .stat{border-radius:11px;padding:13px 15px;color:#fff;background:var(--ink)}
+  .stat.red{background:var(--red)}
+  .stat.red-d{background:var(--red-d)}
+  .stat .big{font-size:23px;font-weight:800;letter-spacing:-.02em}
+  .stat .lb{font-size:9.5px;opacity:.82;text-transform:uppercase;letter-spacing:.05em;line-height:1.25;margin-top:2px}
+
+  figure{margin:10px 0;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  figure img{width:100%}
+  figcaption{font-size:9.5px;color:var(--muted);padding:7px 12px;background:var(--paper);border-top:1px solid var(--line)}
+
+  ul.clean{list-style:none;padding:0;margin:.5em 0}
+  ul.clean li{position:relative;padding:5px 0 5px 20px;font-size:11.5px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+  ul.clean li:before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--green)}
+  ul.clean li b{color:var(--ink)}
+
+  .callout{border-left:4px solid var(--green);background:var(--green-50);border-radius:0 10px 10px 0;padding:11px 14px;margin:12px 0}
+  .callout.r{border-color:var(--red);background:#fdeceb}
+  .callout .h{font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .callout p{font-size:11.5px;margin:0;color:var(--ink-soft)}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .phase{border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .phase .tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;margin-bottom:6px}
+  .phase.rec .tag{background:var(--green-50);color:var(--green-d)}
+  .phase.set .tag{background:#eee;color:var(--ink)}
+  .phase h3{font-size:14px;margin:.1em 0 .3em}
+  .phase p{font-size:11px}
+
+  /* captured-evidence panels */
+  .evpanel{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}
+  .evhead{background:var(--paper);border-bottom:1px solid var(--line);padding:8px 13px;font-size:10px;font-weight:700;color:var(--ink-soft);letter-spacing:.02em}
+  .evbody{padding:15px 14px;text-align:center}
+  .checkcircle{width:50px;height:50px;border-radius:50%;background:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px}
+  .checkcircle svg{width:28px;height:28px}
+  .evmsg{font-size:11px;color:var(--green-d);font-weight:700;margin:0 0 11px;line-height:1.4}
+  .docmini,.taxcard{border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left;background:#fcfcfb}
+  .docgov{font-size:8px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;text-align:center}
+  .doctitle{font-size:10px;font-weight:800;text-align:center;margin:3px 0 7px;color:var(--ink)}
+  .docrow,.taxrow{font-size:9px;color:var(--ink-soft);padding:2px 0}
+  .docrow{border-top:1px dashed var(--line)}
+  .docstamp{margin-top:7px;display:inline-block;font-size:9px;font-weight:800;color:var(--green-d);background:var(--green-50);border:1px solid #cdeccd;border-radius:999px;padding:2px 9px}
+  .evresult{font-size:11.5px;color:var(--ink);margin-bottom:9px}
+  .evresult .cnt{display:inline-block;background:var(--green);color:#fff;font-weight:800;border-radius:6px;padding:1px 8px;margin-right:5px}
+  .taxname{font-size:11px;font-weight:800;color:var(--ink)}
+  .taxstate{margin-top:5px;font-size:10px}
+  .taxstate b{color:var(--green-d);background:var(--green-50);border-radius:6px;padding:1px 8px}
+  .evcap{font-size:8.5px;color:var(--muted);padding:6px 12px;border-top:1px solid var(--line);background:var(--paper);line-height:1.35}
+
+  /* cover */
+  .cover{padding:0;display:flex;flex-direction:column}
+  .cover .top{flex:1;padding:34mm 18mm 0;display:flex;flex-direction:column}
+  .cover .brand{display:flex;align-items:center;gap:14px;margin-bottom:48px}
+  .cover .brand svg{width:46px;height:37px}
+  .cover .brand .nm{font-weight:800;letter-spacing:.2em;font-size:19px}
+  .cover .brand .nm .ad{color:var(--red)}
+  .cover .pr{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .cover h1{font-size:38px;line-height:1.1;max-width:17ch;margin:.1em 0 .5em}
+  .cover .sub{font-size:15px;color:var(--ink-soft);max-width:46ch}
+  .cover .rule{width:64px;height:5px;background:var(--red);border-radius:3px;margin:22px 0}
+  .cover .foot{background:var(--ink);color:#fff;padding:13mm 18mm;display:flex;justify-content:space-between;align-items:center;font-size:11px}
+  .cover .foot .r{color:#cfcfcf}
+  .cover .foot b{color:#fff}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg>
+      <span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span>
+    </div>
+    <div class="pr">Elite Advisors Compliance Engine</div>
+    <h1>Vérifiez vos fournisseurs avant de payer. Protégez votre déductibilité.</h1>
+    <div class="rule"></div>
+    <p class="sub">L'Elite Advisors Compliance Engine confirme automatiquement la conformité fiscale de chaque fournisseur que vous réglez — et conserve la preuve. Voici, en quelques pages, ce que la plateforme fait pour votre entreprise et ce à quoi vous pouvez vous attendre.</p>
+    <div style="margin-top:30px;padding:15px 20px;border-left:5px solid var(--red);background:#fdeceb;border-radius:0 12px 12px 0;max-width:54ch">
+      <span style="font-weight:800;font-size:17px;color:var(--red-d);line-height:1.35;font-style:italic">« Si vous trouvez que la conformité coûte cher, essayez la non‑conformité. »</span>
+    </div>
+  </div>
+  <div class="foot">
+    <span><b>Elite Advisors SARLU</b> — Bonaberi, Douala &nbsp;·&nbsp; contact@cm-ea.com &nbsp;·&nbsp; WhatsApp +237 675 15 39 53</span>
+    <span class="r">eace.cm-ea.com</span>
+  </div>
+</section>
+
+<!-- 1 — WHY IT MATTERS -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Pourquoi c'est important pour vous</span>
+  <h1>Payer un fournisseur non conforme peut coûter près de la moitié de la facture.</h1>
+  <p class="lead">Au Cameroun, le Code Général des Impôts conditionne la déductibilité de vos charges et de votre TVA à la conformité fiscale du fournisseur. Si le fournisseur est introuvable, suspendu ou radié — ou si son Attestation de Conformité Fiscale (ACF) est fausse ou périmée — l'administration peut rejeter la charge et la TVA, puis aller plus loin.</p>
+
+  <h2>Le coût réel d'un seul rejet</h2>
+  <div class="grid g3" style="margin:8px 0">
+    <div class="stat"><div class="big">33 %</div><div class="lb">IS sur la charge réintégrée (non déductible)</div></div>
+    <div class="stat red"><div class="big">+ 16,5 %</div><div class="lb">IRCM sur distribution réputée occulte</div></div>
+    <div class="stat red-d"><div class="big">= 49,5 %</div><div class="lb">du montant, avant TVA, pénalités &amp; intérêts</div></div>
+  </div>
+  <p>Une charge rejetée peut être requalifiée en distribution occulte de revenus et frappée d'IRCM. Cumulé, le redressement approche la moitié de la facture — auquel s'ajoutent la TVA rejetée (19,25 %), les pénalités et les intérêts de retard.</p>
+
+  <div class="callout r"><div class="h">Exemple</div><p>Sur une facture de 10 000 000 FCFA réglée à un fournisseur radié : charge réintégrée (≈ 3,3 M d'IS), requalification (≈ 1,65 M d'IRCM), TVA rejetée (≈ 1,9 M) — soit près de 6,9 M, avant pénalités. Évitable en 30 secondes de vérification.</p></div>
+
+  <h2>Ce que la plateforme change</h2>
+  <ul class="clean">
+    <li><b>Avant</b> — vous payez en faisant confiance, sans preuve conservée. Le risque court sur chaque facture.</li>
+    <li><b>Avec l'Elite Advisors Compliance Engine</b> — vous savez avant de payer, et vous détenez une preuve opposable le jour du contrôle.</li>
+  </ul>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>1</span></div>
+</section>
+
+<!-- 2 — WHAT IT DOES -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Ce que fait la plateforme</span>
+  <h1>4 contrôles, à 2 moments clés — automatiquement.</h1>
+  <p class="lead">En une phrase : l'Elite Advisors Compliance Engine vérifie automatiquement que chaque fournisseur que vous payez est fiscalement en règle, et conserve la preuve. Il rend un verdict clair — conforme ou non conforme — avec les preuves à l'appui.</p>
+
+  <h2>Les 4 contrôles</h2>
+  <div class="grid g2">
+    <div class="card"><div class="ic">①</div><h3>Authenticité de l'ACF</h3><p>L'Attestation de Conformité Fiscale est-elle authentique ? Vérifiée en direct sur le portail Harmony2 de la DGI, avec capture de preuve. Démasque les fausses attestations.</p></div>
+    <div class="card"><div class="ic">②</div><h3>Statut du NIU</h3><p>Le contribuable est-il actif, suspendu ou radié ? Lecture du statut officiel sur le portail Fiscalis de la DGI, capturée comme preuve.</p></div>
+    <div class="card"><div class="ic">③</div><h3>Existence au fichier</h3><p>Le NIU figure-t-il au fichier national officiel des contribuables de la DGI, à jour ?</p></div>
+    <div class="card"><div class="ic">④</div><h3>Validité de l'ACF</h3><p>L'attestation est-elle encore valable (émission + 3 mois) ? Avec compte à rebours et alerte avant expiration.</p></div>
+  </div>
+
+  <div class="callout"><div class="h">Et la facture elle-même</div><p>Au-delà du fournisseur, la plateforme lit la facture et vérifie ses conditions de forme et de fond alignées sur le CGI (art. 150) : mentions obligatoires, identité du client, montants. Vous savez exactement pourquoi une facture passe ou échoue.</p></div>
+
+  <h2>Aucune action manuelle</h2>
+  <p>Vous déposez l'ACF et la facture — la plateforme interroge les portails officiels, exécute les contrôles, capture les preuves et enregistre le résultat. Ce qui prenait des appels et des PDF devient un contrôle instantané et tracé.</p>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>2</span></div>
+</section>
+
+<!-- 3 — TWO PHASES -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Les 2 phases de contrôle</span>
+  <h1>Protégé à l'enregistrement, et de nouveau au paiement.</h1>
+  <p class="lead">La conformité change avec le temps : un fournisseur en règle à la commande peut ne plus l'être au paiement, parfois plusieurs semaines plus tard. La plateforme vous protège aux deux moments.</p>
+
+  <div class="twocol" style="margin-top:10px">
+    <div class="phase rec"><span class="tag">Phase 1 — à la facturation</span><h3>Enregistrement</h3><p>À la réception de la facture, vous scannez l'ACF et déposez la facture. La plateforme la lit, contrôle le fournisseur et capture la preuve — avant de comptabiliser.</p></div>
+    <div class="phase set"><span class="tag">Phase 2 — au paiement</span><h3>Règlement</h3><p>Au moment de payer (par lots si besoin), la plateforme revérifie. Une ACF expirée ou un NIU devenu inactif bloque le paiement — avant que l'argent ne sorte.</p></div>
+  </div>
+
+  <figure><img src="assets/cust-engine.png" alt="Moteur de conformité" /><figcaption>L'écran de contrôle : choix de la phase (Enregistrement / Règlement), dépôt de l'ACF et de la facture, puis « Lancer les contrôles ».</figcaption></figure>
+
+  <div class="callout"><div class="h">Le bénéfice</div><p>Vous ne payez jamais sur une information périmée. Le contrôle au règlement attrape ce qui a changé depuis l'enregistrement.</p></div>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>3</span></div>
+</section>
+
+<!-- 4 — DASHBOARD -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Votre espace</span>
+  <h1>Votre conformité en un coup d'œil.</h1>
+  <p class="lead">Dès la connexion, le tableau de bord résume votre activité : factures traitées, conformes, rejetées au paiement, économies potentielles en FCFA — l'argent que la plateforme a protégé — et l'espace de stockage de vos preuves.</p>
+
+  <figure><img src="assets/cust-dashboard.png" alt="Tableau de bord" /><figcaption>Tableau de bord — indicateurs de conformité à l'enregistrement et au règlement, économies potentielles et stockage des preuves.</figcaption></figure>
+
+  <div class="grid g3" style="margin-top:6px">
+    <div class="card"><h3>Lisible par tous</h3><p>Pensé pour le dirigeant comme pour le comptable, en français et en anglais.</p></div>
+    <div class="card"><h3>Sur tout appareil</h3><p>Aucune application à installer — la plateforme fonctionne dans votre navigateur.</p></div>
+    <div class="card"><h3>Toujours à jour</h3><p>Chaque vérification s'appuie sur les données les plus récentes.</p></div>
+  </div>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>4</span></div>
+</section>
+
+<!-- 5 — CERTIFICATES & EXPIRY -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Suivi & alertes</span>
+  <h1>Chaque attestation suivie dans le temps — alerte avant l'expiration.</h1>
+  <p class="lead">Une ACF n'est valable que 3 mois. La plateforme suit chacune et vous prévient avant qu'elle n'expire : pastille orange à 20 jours, rouge à 10 jours. Vous pouvez relancer le contribuable par e-mail en un clic, directement depuis la plateforme.</p>
+
+  <figure><img src="assets/cust-certs.png" alt="Attestations de conformité" /><figcaption>Suivi des ACF — validité, authenticité et compte à rebours avant expiration (vert : large délai · orange : ≤ 20 jours · rouge : ≤ 10 jours). Données d'exemple.</figcaption></figure>
+
+  <div class="callout"><div class="h">Le bénéfice</div><p>Vous ne réglez plus jamais sur une attestation périmée — et vous gardez une longueur d'avance sur le renouvellement.</p></div>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>5</span></div>
+</section>
+
+<!-- 6 — AUDIT & EVIDENCE -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Audit &amp; preuves</span>
+  <h1>Une preuve opposable, prête pour le contrôle.</h1>
+  <p class="lead">Le jour du contrôle, ce n'est pas une promesse qui compte, c'est une preuve. Pour chaque facture, la plateforme conserve une trace horodatée et infalsifiable de tous les contrôles effectués.</p>
+
+  <figure><img src="assets/cust-audit.png" alt="Audit et preuves" /><figcaption>Audit &amp; preuves — fichiers de contribuables téléchargés, preuves par vérification, et le journal d'audit facture par facture.</figcaption></figure>
+
+  <h2>Ce qui est conservé pour chaque contrôle</h2>
+  <ul class="clean">
+    <li>L'extrait Fiscalis montrant le contribuable actif, horodaté.</li>
+    <li>La copie de l'ACF et la capture de son authentification (Harmony2).</li>
+    <li>La référence du fichier où le NIU a été recherché et confirmé présent.</li>
+    <li>Une empreinte SHA-256 qui garantit que la preuve n'a pas été modifiée.</li>
+  </ul>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>6</span></div>
+</section>
+
+<!-- 6b — CAPTURED EVIDENCE -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Les preuves capturées</span>
+  <h1>À quoi ressemblent les preuves que vous conservez.</h1>
+  <p class="lead">Pour chaque fournisseur contrôlé, la plateforme capture la preuve directement depuis les portails officiels de la DGI. Voici <strong>deux captures réelles</strong> du moteur — l'attestation authentifiée et le contribuable actif. L'identité du contribuable est masquée.</p>
+
+  <div class="grid g2" style="margin-top:12px;align-items:start">
+    <div class="evpanel">
+      <div class="evhead">① Authenticité de l'ACF — portail Harmony2 (DGI)</div>
+      <img src="assets/cust-acf-auth.png" alt="Authentification de l'ACF sur Harmony2" style="width:100%;display:block" />
+      <div class="evcap">Capture réelle du moteur. La pastille verte confirme : « Votre document est authentifié et reconnu par le système fiscal Camerounais. » Détails du contribuable masqués.</div>
+    </div>
+
+    <div class="evpanel">
+      <div class="evhead">② Statut du NIU — portail Fiscalis (DGI)</div>
+      <img src="assets/cust-fiscalis.png" alt="Statut du contribuable sur Fiscalis" style="width:100%;display:block" />
+      <div class="evcap">Capture réelle du moteur. Le contribuable est trouvé au fichier officiel et son état est « Actif ». Identité du contribuable masquée.</div>
+    </div>
+  </div>
+
+  <div class="callout"><div class="h">Pourquoi c'est décisif</div><p>Ces captures sont horodatées et archivées de façon infalsifiable. Le jour du contrôle, vous ne dites pas « le fournisseur était en règle » — vous le prouvez, document à l'appui.</p></div>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>7</span></div>
+</section>
+
+<!-- 7 — NIGHTLY DATA + SECURITY -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Données &amp; sécurité</span>
+  <h1>Des données à jour chaque nuit. Vos données, protégées.</h1>
+
+  <h2>Le fichier officiel, rafraîchi chaque nuit</h2>
+  <p>Le fichier officiel des contribuables de la DGI est téléchargé et archivé automatiquement <strong>chaque nuit à minuit</strong>. Chaque contrôle d'existence du NIU est effectué <strong>directement contre ce fichier</strong> — vos vérifications s'appuient toujours sur la liste la plus récente, sans aucune action de votre part.</p>
+
+  <h2>Sécurité &amp; protection des données</h2>
+  <div class="grid g2" style="margin:6px 0">
+    <div class="card"><div class="ic">▣</div><h3>Espace isolé</h3><p>Chaque client possède sa propre base de données. Vos données ne sont jamais partagées.</p></div>
+    <div class="card"><div class="ic">🔒</div><h3>Preuves infalsifiables</h3><p>Stockage en écriture unique (verrou objet), horodaté, empreinte SHA-256.</p></div>
+    <div class="card"><div class="ic">🔐</div><h3>Chiffrement</h3><p>Données chiffrées en transit (HTTPS/TLS) et au repos.</p></div>
+    <div class="card"><div class="ic">✓</div><h3>Accès maîtrisé</h3><p>Double authentification (2FA) obligatoire, rôles distincts, journal d'accès.</p></div>
+  </div>
+
+  <div class="callout"><div class="h">Conformité Loi N° 2024/017</div><p>Protection des données personnelles intégrée : avis de confidentialité et consentement, droit d'accès et de suppression, registre des traitements. « Vos données fiscales sont isolées, chiffrées et infalsifiables — personne, pas même nous, ne peut altérer une preuve après coup. »</p></div>
+  <div class="pf"><span>Elite Advisors Compliance Engine — Présentation client</span><span>8</span></div>
+</section>
+
+<!-- 8 — WHAT TO EXPECT / START -->
+<section class="page">
+  <div class="ph"><svg viewBox="0 0 40 32"><rect x="0" y="0" width="40" height="7" rx="1" fill="#E2382B"/><rect x="0" y="12.5" width="26" height="7" rx="1" fill="#E2382B"/><rect x="0" y="25" width="40" height="7" rx="1" fill="#E2382B"/></svg><span class="nm">ELITE&nbsp;<span class="ad">ADVISORS</span></span><span class="pr">Elite Advisors Compliance Engine</span></div>
+
+  <span class="kick">Ce que vous pouvez attendre</span>
+  <h1>Une tranquillité simple : payez en confiance, prouvez sans effort.</h1>
+
+  <div class="grid g2" style="margin:8px 0">
+    <div class="card"><div class="ic">FCFA</div><h3>Déductibilité protégée</h3><p>On sécurise la TVA et la charge avant de payer — pas après le redressement.</p></div>
+    <div class="card"><div class="ic">✓</div><h3>Preuve opposable</h3><p>Une diligence horodatée et archivée, prête pour l'inspecteur, à tout moment.</p></div>
+    <div class="card"><div class="ic">⏱</div><h3>30 secondes / facture</h3><p>Un contrôle instantané et tracé, en français comme en anglais.</p></div>
+    <div class="card"><div class="ic">🛡</div><h3>Continuité &amp; sérénité</h3><p>Une trésorerie maîtrisée, une performance prévisible, l'esprit tranquille.</p></div>
+  </div>
+
+  <h2>Pour commencer</h2>
+  <ul class="clean">
+    <li>Nous créons votre espace sécurisé et vos accès — vous démarrez en quelques minutes.</li>
+    <li>Nous vous accompagnons sur vos premières factures réelles, à l'enregistrement et au règlement.</li>
+    <li>Vous gardez une preuve opposable de chaque contrôle, archivée automatiquement.</li>
+  </ul>
+
+  <div class="callout"><div class="h">Demandez une démonstration</div><p>Voyez la plateforme tourner sur l'une de vos propres factures, en 5 minutes. Écrivez-nous à <strong>contact@cm-ea.com</strong> ou contactez-nous par <strong>WhatsApp au +237 675 15 39 53</strong> pour planifier une démonstration ou ouvrir votre espace.</p></div>
+
+  <div class="cover foot" style="position:absolute;left:0;right:0;bottom:0;background:var(--ink);color:#fff;padding:10mm 16mm;font-size:11px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+      <span><b style="color:#fff">Elite Advisors SARLU</b> — Bonaberi, Douala, Cameroun</span>
+      <span style="color:#cfcfcf">eace.cm-ea.com</span>
+    </div>
+    <div style="margin-top:8px;color:#e7e7e3;font-size:12px">
+      <a href="mailto:contact@cm-ea.com" style="color:#fff;text-decoration:none">&#9993; contact@cm-ea.com</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="https://wa.me/237675153953" style="color:#7ee29a;text-decoration:none">WhatsApp +237 675 15 39 53</a>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
