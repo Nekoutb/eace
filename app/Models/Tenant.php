@@ -2,23 +2,49 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 
 /**
- * A client. Custom attributes (e.g. name, allocated_space_mb) are stored in the
- * stancl `data` JSON column via VirtualColumn, so `$tenant->name` reads and
- * writes transparently.
+ * A client workspace (sub-account). Custom attributes (e.g. name,
+ * allocated_space_mb) are stored in the stancl `data` JSON column via
+ * VirtualColumn, so `$tenant->name` reads and writes transparently. firm_id is a
+ * REAL column (see getCustomColumns) so the admin can group and roll up clients by
+ * accounting firm; null firm_id = a standalone client.
  *
  * @property ?string $name
  * @property ?int $allocated_space_mb
+ * @property ?int $firm_id
  */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase;
     use HasDomains;
+
+    /**
+     * Real (non-JSON) columns. firm_id is added here so it is stored as its own
+     * indexed column — queryable and groupable — not inside the data blob.
+     *
+     * @return array<int, string>
+     */
+    public static function getCustomColumns(): array
+    {
+        return ['id', 'firm_id'];
+    }
+
+    /**
+     * The accounting firm this sub-account belongs to, or null for a standalone
+     * client.
+     *
+     * @return BelongsTo<Firm, $this>
+     */
+    public function firm(): BelongsTo
+    {
+        return $this->belongsTo(Firm::class);
+    }
 
     /** The tenant's primary subdomain (e.g. acme.localhost), or null if none. */
     public function primaryDomain(): ?string

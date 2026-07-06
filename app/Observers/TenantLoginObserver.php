@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Models\FirmMember;
 use App\Models\TenantLogin;
 use App\Models\User;
 
@@ -30,7 +31,14 @@ final class TenantLoginObserver
             TenantLogin::unlink($original, $tenantId);
         }
 
-        TenantLogin::link((string) $user->email, $tenantId);
+        // A firm member is mirrored into several sub-accounts, so their email maps
+        // to many workspaces (linkShared). A standalone client's email stays
+        // exclusive to its one workspace (link) — the cross-tenant-takeover guard.
+        if (FirmMember::query()->where('email', $user->email)->exists()) {
+            TenantLogin::linkShared((string) $user->email, $tenantId);
+        } else {
+            TenantLogin::link((string) $user->email, $tenantId);
+        }
     }
 
     public function deleted(User $user): void

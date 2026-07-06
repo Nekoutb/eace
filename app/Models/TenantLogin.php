@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 /**
- * Central. One row per tenant user's sign-in email → its workspace (tenant id).
- * The shared, no-subdomain login resolves which workspace an email belongs to
- * through this directory; kept in sync from the tenant users.
+ * Central. Maps a tenant user's sign-in email → its workspace(s). The shared,
+ * no-subdomain login resolves which workspace an email belongs to through this
+ * directory; kept in sync from the tenant users. A standalone client's email has
+ * exactly one row (link, exclusive); an accounting-firm member's email may have
+ * several — one per assigned sub-account (linkShared) — with (email, tenant_id)
+ * unique so it maps to each workspace at most once.
  *
  * @property string $email
  * @property string $tenant_id
@@ -24,6 +27,22 @@ class TenantLogin extends CentralModel
         $value = static::query()->where('email', $email)->value('tenant_id');
 
         return $value !== null ? (string) $value : null;
+    }
+
+    /**
+     * Every workspace this email can sign into — one row for a standalone client,
+     * several for a firm member mirrored across their assigned sub-accounts.
+     *
+     * @return list<string>
+     */
+    public static function tenantsFor(string $email): array
+    {
+        return static::query()
+            ->where('email', $email)
+            ->orderBy('tenant_id')
+            ->pluck('tenant_id')
+            ->map(fn ($v): string => (string) $v)
+            ->all();
     }
 
     /** Whether this email is already claimed by a DIFFERENT workspace. */
@@ -51,6 +70,18 @@ class TenantLogin extends CentralModel
         }
 
         static::query()->updateOrCreate(['email' => $email], ['tenant_id' => $tenantId]);
+    }
+
+    /**
+     * Map a firm member's email to one of their assigned workspaces, allowing the
+     * SAME email to map to several workspaces (unlike link()). Idempotent on the
+     * (email, tenant_id) pair. Only the firm-membership flow calls this, for emails
+     * whose credentials are centralised on firm_members — so the multi-mapping can
+     * never enable a standalone cross-tenant takeover (that path still uses link()).
+     */
+    public static function linkShared(string $email, string $tenantId): void
+    {
+        static::query()->updateOrCreate(['email' => $email, 'tenant_id' => $tenantId], []);
     }
 
     /**

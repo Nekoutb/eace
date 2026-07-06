@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Tenant;
 
 use App\Domain\Auth\UserRole;
+use App\Models\Firm;
 use App\Models\OrganizationProfile;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
@@ -98,6 +99,39 @@ final class ClientProvisioningService
                 throw ClientProvisioningException::emailTaken($adminEmail);
             }
 
+            throw $e;
+        }
+    }
+
+    /**
+     * Provision a client workspace that belongs to an accounting FIRM (a
+     * sub-account). Unlike provision(), it seeds NO standalone admin user — the
+     * firm's members are mirrored in later via account assignments — and it stamps
+     * firm_id + the buyer identity (name, optional NIU). Cleans up on failure.
+     */
+    public function provisionSubAccount(Firm $firm, string $clientName, ?string $niu, int $allocatedSpaceMb): Tenant
+    {
+        $id = $this->generateTenantId($clientName);
+
+        try {
+            $tenant = Tenant::create([
+                'id' => $id,
+                'firm_id' => $firm->getKey(),
+                'name' => trim($clientName),
+                'allocated_space_mb' => max(0, $allocatedSpaceMb),
+            ]);
+
+            $tenant->run(function () use ($clientName, $niu): void {
+                $attributes = ['entity_name' => trim($clientName)];
+                if (filled($niu)) {
+                    $attributes['entity_niu'] = mb_strtoupper(trim((string) $niu));
+                }
+                OrganizationProfile::current()->update($attributes);
+            });
+
+            return $tenant;
+        } catch (Throwable $e) {
+            $this->cleanup($id, ''); // no standalone admin email for a firm sub-account
             throw $e;
         }
     }
