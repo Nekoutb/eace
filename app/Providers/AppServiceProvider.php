@@ -11,7 +11,10 @@ use App\Http\Middleware\InitializeTenancyForLivewire;
 use App\Models\TaxpayerFileExtraction;
 use App\Models\User;
 use App\Services\Acf\AcfAuthenticityConnector;
+use App\Services\Acf\AcfOcr;
+use App\Services\Acf\ClaudeAcfOcr;
 use App\Services\Acf\FakeAcfAuthenticityConnector;
+use App\Services\Acf\FakeAcfOcr;
 use App\Services\Acf\Harmony2AcfConnector;
 use App\Services\Evidence\FakeTimestampAuthority;
 use App\Services\Evidence\Rfc3161TimestampAuthority;
@@ -80,6 +83,18 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return new FakeInvoiceReader;
+        });
+
+        // Scanned-ACF OCR: Claude vision when the key is set (same engine as scanned
+        // invoices), else a no-network fake — a scan then reads as "unreadable",
+        // exactly the pre-OCR behaviour. Digital PDFs never reach this connector.
+        $this->app->bind(AcfOcr::class, function () {
+            $key = config('services.anthropic.key');
+            if (filled($key)) {
+                return new ClaudeAcfOcr((string) $key, (string) config('services.anthropic.model'));
+            }
+
+            return new FakeAcfOcr;
         });
 
         // Customer-service bot: live Claude when enabled AND a key is set, else the

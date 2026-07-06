@@ -11,10 +11,10 @@ namespace App\Services\Evidence;
  */
 final class EvidenceNaming
 {
-    /** The tax-clearance certificate itself: ACF_<Vendor>_<datetime>.pdf */
-    public static function acfPdf(EvidenceContext $ctx): string
+    /** The tax-clearance certificate itself: ACF_<Vendor>_<datetime>.<ext> (a scan may be an image) */
+    public static function acfPdf(EvidenceContext $ctx, string $extension = 'pdf'): string
     {
-        return 'ACF_'.self::who($ctx).'_'.$ctx->stamp().'.pdf';
+        return 'ACF_'.self::who($ctx).'_'.$ctx->stamp().'.'.$extension;
     }
 
     /** The Harmony2 authentication of the ACF: ACF_Authentic_<620 ref>_<datetime>.png */

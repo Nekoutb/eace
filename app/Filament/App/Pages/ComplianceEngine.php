@@ -190,7 +190,7 @@ class ComplianceEngine extends Page
             return;
         }
 
-        $this->validate(['acfUpload' => ['file', 'mimes:pdf', 'max:10240']]);
+        $this->validate(['acfUpload' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240']]);
 
         $path = $this->acfUpload->store('acf', 'local');
         if (! is_string($path)) {
@@ -251,7 +251,8 @@ class ComplianceEngine extends Page
         $bytes = (string) (Storage::disk('local')->get($tmpPath) ?? '');
         if ($bytes !== '') {
             $context = EvidenceContext::forAcf($certificate);
-            app(EvidenceStore::class)->putEvidence($context, EvidenceNaming::acfPdf($context), $bytes, EvidenceStore::TYPE_ACF);
+            $extension = strtolower(pathinfo($tmpPath, PATHINFO_EXTENSION)) ?: 'pdf';
+            app(EvidenceStore::class)->putEvidence($context, EvidenceNaming::acfPdf($context, $extension), $bytes, EvidenceStore::TYPE_ACF);
         }
 
         Storage::disk('local')->delete($tmpPath);

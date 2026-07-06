@@ -332,7 +332,7 @@
                 @endif
                 <div class="niu-grid">
                     <label class="niu-drop niu-field--full">
-                        <input type="file" wire:model="acfUpload" accept="application/pdf" class="niu-file">
+                        <input type="file" wire:model="acfUpload" accept="application/pdf,image/jpeg,image/png,image/webp" class="niu-file">
                         <span class="niu-drop__icon">@svg('heroicon-o-document-arrow-up', 'niu-ico', ['aria-hidden' => 'true'])</span>
                         <span>
                             <span class="niu-drop__title">{{ __('app.ui.acf_pdf') }}</span>

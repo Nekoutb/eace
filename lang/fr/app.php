@@ -476,7 +476,7 @@ return [
         'niu_batch' => 'NIU à régler',
         'acf_reference' => 'Référence ACF',
         'acf_reference_optional' => 'Référence ACF (optionnel)',
-        'acf_pdf' => 'Attestation de Conformité Fiscale (PDF)',
+        'acf_pdf' => 'Attestation de Conformité Fiscale (PDF, scan ou photo)',
         'reference' => 'Référence ACF',
         'taxpayer' => 'Contribuable',
         'taxpayer_name' => 'Contribuable',
@@ -615,7 +615,7 @@ return [
         'save' => 'Enregistrer',
         // helper texts
         'niu_help' => '14 caractères : P (personne physique) ou M (personne morale) + 12 chiffres + lettre.',
-        'acf_help' => 'Importez l’ACF : le NIU et la référence en sont extraits automatiquement.',
+        'acf_help' => 'Importez l’ACF — PDF numérique, scan ou photo : le NIU et la référence en sont extraits automatiquement.',
         'niu_if_no_acf_help' => 'Laissez vide si vous importez une ACF ci-dessus.',
         'acf_reference_help' => 'Sinon, l’ACF la plus récente du NIU est utilisée.',
         'batch_help' => 'Un NIU par ligne (ou séparés par des virgules).',

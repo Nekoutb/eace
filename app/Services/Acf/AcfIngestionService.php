@@ -16,23 +16,64 @@ use Smalot\PdfParser\Parser;
 /**
  * Ingests an ACF (tenant context): parse the PDF text, read its fields, compute
  * validity, and upsert the monitored certificate (deduped on reference + NIU).
+ *
+ * Two reading paths: a digital PDF is read by the free local text parser; a
+ * SCANNED document (photo, scan, image-only PDF) has no text layer, so it falls
+ * back to AI vision OCR (AcfOcr) — same fields, same validation, same record.
  */
 final class AcfIngestionService
 {
-    public function __construct(private AcfReader $reader) {}
+    public function __construct(
+        private AcfReader $reader,
+        private AcfOcr $ocr,
+    ) {}
 
     /**
-     * Read an ACF PDF stored on a (tenant) disk and record it.
+     * Read an ACF document (PDF, or a photo/scan image) stored on a (tenant)
+     * disk and record it.
      */
     public function ingestFromUpload(string $diskPath, string $disk = 'local', ?int $uploadedBy = null): AcfCertificate
     {
-        $absolutePath = Storage::disk($disk)->path($diskPath);
-        $text = (new Parser)->parseFile($absolutePath)->getText();
-
-        return $this->ingestFromText($text, [
+        $context = [
             'file_path' => $diskPath,
             'created_by' => $uploadedBy,
-        ]);
+        ];
+
+        // Digital PDFs first: extract the text layer locally (fast, free). A
+        // scanned/corrupt PDF may throw or yield no text — that's the OCR's case.
+        if ($this->mediaType($diskPath) === 'application/pdf') {
+            try {
+                $absolutePath = Storage::disk($disk)->path($diskPath);
+                $text = (new Parser)->parseFile($absolutePath)->getText();
+            } catch (\Throwable) {
+                $text = '';
+            }
+
+            $extract = $this->reader->fromText($text);
+            if ($extract->isUsable()) {
+                return $this->persist($extract, $context);
+            }
+        }
+
+        // Scanned document (or an image upload): read it with vision OCR.
+        $bytes = (string) (Storage::disk($disk)->get($diskPath) ?? '');
+        $extract = $bytes !== '' ? $this->ocr->read($bytes, $this->mediaType($diskPath)) : null;
+
+        if ($extract === null || ! $extract->isUsable()) {
+            throw UnreadableAcfException::make();
+        }
+
+        return $this->persist($extract, $context);
+    }
+
+    private function mediaType(string $path): string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            default => 'application/pdf',
+        };
     }
 
     /**
