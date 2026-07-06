@@ -52,6 +52,13 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => view('filament.locale-switcher')->render(),
             )
+            // Accounting-firm workspace switcher: a member assigned to several client
+            // sub-accounts hops between them here, without signing in again. Renders
+            // nothing for a standalone client (or a member with a single workspace).
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => view('filament.app.workspace-switcher')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): string => view('filament.signup-link')->render(),

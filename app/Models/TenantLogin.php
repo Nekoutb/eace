@@ -21,10 +21,17 @@ class TenantLogin extends CentralModel
 
     protected $guarded = ['id'];
 
-    /** The tenant id this sign-in email belongs to, or null if unknown. */
+    /**
+     * The workspace this sign-in email resolves to at login, or null if unknown.
+     * DETERMINISTIC (ordered): a standalone client has one row; a firm member has
+     * several, and always resolves to the SAME "primary" workspace — so the
+     * password + 2FA checked at login are always that one workspace's, staying
+     * consistent without cross-tenant credential syncing. The in-app switcher moves
+     * them to their other workspaces afterwards (session-based, no re-auth).
+     */
     public static function tenantFor(string $email): ?string
     {
-        $value = static::query()->where('email', $email)->value('tenant_id');
+        $value = static::query()->where('email', $email)->orderBy('tenant_id')->value('tenant_id');
 
         return $value !== null ? (string) $value : null;
     }

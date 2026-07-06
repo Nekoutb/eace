@@ -6,6 +6,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\SignUpController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\AcademyAuthenticate;
 use App\Http\Middleware\ForceAcademyPasswordChange;
 use App\Http\Middleware\InitializeTenancyForLivewire;
@@ -29,6 +30,15 @@ Route::get('/', fn () => redirect('/app'))->name('home');
  */
 Route::get('/impersonation/enter', [ImpersonationController::class, 'enter'])->name('impersonation.enter');
 Route::post('/impersonation/exit', [ImpersonationController::class, 'exit'])->name('impersonation.exit');
+
+/*
+ * Accounting-firm workspace switch. The current workspace is initialised from the
+ * session (so the acting member is resolved from their own workspace); the target
+ * is re-verified against the member's account_assignments before the swap.
+ */
+Route::post('/workspace/switch', WorkspaceSwitchController::class)
+    ->middleware([InitializeTenancyForLivewire::class, 'auth', 'throttle:30,1'])
+    ->name('workspace.switch');
 
 /*
  * Public "how we protect your data" security showcase — the certified stack
