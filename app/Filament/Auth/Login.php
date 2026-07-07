@@ -91,58 +91,92 @@ class Login extends BaseLogin
 
     public function authenticate(): ?LoginResponse
     {
-        $resolvedWorkspace = false;
-        if (Filament::getCurrentPanel()?->getId() === 'app' && tenant() === null) {
-            $resolvedWorkspace = $this->initialiseWorkspaceForLogin();
+        if (Filament::getCurrentPanel()?->getId() === 'app') {
+            $this->initialiseWorkspaceForLogin();
         }
 
         try {
             $response = parent::authenticate();
         } catch (Throwable $e) {
-            // Auth failed (wrong password / MFA). Never leave the worker pinned to
-            // the workspace we speculatively initialised to check the password —
-            // that would bleed the tenant connection into the rest of the request.
-            $this->endSpeculativeWorkspace($resolvedWorkspace);
+            // Auth failed (wrong password / wrong 2FA code). Keep the workspace
+            // while an MFA challenge is in progress — the same request re-renders
+            // the challenge form, which resolves the challenged user by id from
+            // the auth provider and MUST do so against this workspace's users
+            // table (centrally the id belongs to nobody, or to somebody else).
+            // Otherwise never leave the worker speculatively pinned.
+            if (! $this->multiFactorChallengeInProgress()) {
+                $this->abandonWorkspaceForLogin();
+            }
 
             throw $e;
         }
 
-        // Pin the resolved workspace so every later request re-initialises it —
-        // but only once we've confirmed the authenticated user actually belongs to
-        // it (the guard resolved them from this tenant's database, and the central
-        // directory agrees). Otherwise drop back to central so a mismatch can never
-        // pin a user into a workspace that isn't theirs.
-        if ($response !== null && tenant() !== null && $this->authenticatedUserBelongsToTenant()) {
+        // Password verified, 2FA challenge now pending (parent returns null):
+        // pin the workspace on the session so THIS render and every request of
+        // the challenge conversation (code submit, wrong-code retry, recovery
+        // toggle) initialise it before resolving the challenged user.
+        if ($response === null) {
+            if (tenant() !== null && $this->multiFactorChallengeInProgress()) {
+                session()->put('tenant_id', tenant()->getTenantKey());
+            }
+
+            return null;
+        }
+
+        // Fully signed in: keep the pin only once we've confirmed the
+        // authenticated user actually belongs to this workspace (the guard
+        // resolved them from this tenant's database, and the central directory
+        // agrees). Otherwise drop back to central so a mismatch can never pin a
+        // user into a workspace that isn't theirs.
+        if (tenant() !== null && $this->authenticatedUserBelongsToTenant()) {
             session()->put('tenant_id', tenant()->getTenantKey());
 
             return $response;
         }
 
-        $this->endSpeculativeWorkspace($resolvedWorkspace);
+        $this->abandonWorkspaceForLogin();
 
         return $response;
     }
 
+    /** An MFA challenge is underway for this login (password already verified). */
+    private function multiFactorChallengeInProgress(): bool
+    {
+        return filled($this->userUndertakingMultiFactorAuthentication);
+    }
+
     /**
-     * Resolve the workspace from the submitted email and initialise it.
-     * Returns whether a workspace was initialised.
+     * Resolve the workspace for the email being signed in and initialise it.
+     * Self-reconciling: if a different workspace is already initialised (a pinned
+     * MFA conversation, or a stale pin from an abandoned login on this browser),
+     * it is ended first so the password is always checked against the RIGHT
+     * workspace's users.
      */
-    private function initialiseWorkspaceForLogin(): bool
+    private function initialiseWorkspaceForLogin(): void
     {
         try {
             $email = trim((string) ($this->form->getState()['email'] ?? ''));
         } catch (Throwable) {
-            return false; // the form is invalid — parent::authenticate() surfaces it
+            $email = ''; // the form is invalid — parent::authenticate() surfaces it
         }
 
-        $tenantId = $email !== '' ? TenantLogin::tenantFor($email) : null;
-        if ($tenantId === null) {
-            return false; // unknown email — parent fails auth cleanly (no workspace)
+        $directoryTenant = $email !== '' ? TenantLogin::tenantFor($email) : null;
+
+        if (tenant() !== null) {
+            if ($directoryTenant === (string) tenant()->getTenantKey()) {
+                return; // already in the right workspace (pinned mid-challenge)
+            }
+
+            $this->abandonWorkspaceForLogin(); // stale/mismatched — reset cleanly
         }
 
-        $tenant = Tenant::find($tenantId);
+        if ($directoryTenant === null) {
+            return; // unknown email — parent fails auth cleanly (no workspace)
+        }
+
+        $tenant = Tenant::find($directoryTenant);
         if ($tenant === null) {
-            return false;
+            return;
         }
 
         // A suspended workspace (e.g. unpaid bills) refuses sign-in with a clear
@@ -154,8 +188,16 @@ class Login extends BaseLogin
         }
 
         tenancy()->initialize($tenant);
+    }
 
-        return true;
+    /** Leave the login's workspace context and drop its session pin. */
+    private function abandonWorkspaceForLogin(): void
+    {
+        session()->forget('tenant_id');
+
+        if (tenant() !== null) {
+            tenancy()->end();
+        }
     }
 
     /** Whether the just-authenticated user's email maps to the current workspace. */
@@ -165,13 +207,5 @@ class Login extends BaseLogin
         $email = $user !== null ? (string) $user->getAttribute('email') : '';
 
         return $email !== '' && TenantLogin::tenantFor($email) === tenant()?->getTenantKey();
-    }
-
-    /** End a workspace we initialised only to verify the password, on any non-success. */
-    private function endSpeculativeWorkspace(bool $resolvedWorkspace): void
-    {
-        if ($resolvedWorkspace && tenant() !== null) {
-            tenancy()->end();
-        }
     }
 }
