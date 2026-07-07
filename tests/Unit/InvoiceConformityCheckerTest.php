@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domain\Acf\VendorRegime;
+use App\Domain\Invoice\ConformityFinding;
 use App\Domain\Invoice\ConformityType;
 use App\Domain\Invoice\ExemptionMention;
 use App\Domain\Invoice\InvoiceConformityChecker;
+use App\Domain\Invoice\InvoiceConformityResult;
 use App\Domain\Invoice\InvoiceData;
 use App\Domain\Niu\NiuNumber;
 use Carbon\CarbonImmutable;
@@ -54,7 +57,8 @@ beforeEach(function () {
 });
 
 it('passes a fully conform taxable invoice', function () {
-    $result = $this->checker->check(invoice());
+    // A taxable (VAT-carrying) invoice is only fully conform from a Réel vendor.
+    $result = $this->checker->check(invoice(), vendorRegime: 'RÉEL');
 
     expect($result->conform)->toBeTrue()
         ->and($result->failed())->toBeEmpty();
@@ -102,8 +106,8 @@ it('accepts a properly exempt invoice (no VAT)', function () {
 it('checks the supplier NIU matches the verified one', function () {
     $expected = NiuNumber::fromString('M058712345678X');
 
-    expect($this->checker->check(invoice(), $expected)->conform)->toBeTrue()
-        ->and($this->checker->check(invoice(['supplierNiu' => NiuNumber::fromString('M999999999999Z')]), $expected)->conform)
+    expect($this->checker->check(invoice(), $expected, vendorRegime: 'RÉEL')->conform)->toBeTrue()
+        ->and($this->checker->check(invoice(['supplierNiu' => NiuNumber::fromString('M999999999999Z')]), $expected, vendorRegime: 'RÉEL')->conform)
         ->toBeFalse();
 });
 
@@ -111,7 +115,7 @@ it('checks the client NIU and name match the organisation profile', function () 
     $clientNiu = NiuNumber::fromString('M020100021296Z');
 
     // Conform when both match (case-insensitive, substring-tolerant name).
-    expect($this->checker->check(invoice(), null, $clientNiu, 'express union finance')->conform)->toBeTrue();
+    expect($this->checker->check(invoice(), null, $clientNiu, 'express union finance', vendorRegime: 'RÉEL')->conform)->toBeTrue();
 
     // Wrong client NIU on the invoice → client_niu_match fails.
     $wrongNiu = $this->checker->check(invoice(['clientNiu' => NiuNumber::fromString('P111111111111A')]), null, $clientNiu, null);
@@ -158,7 +162,7 @@ it('still enforces the client identity from variations when the primary name is 
 
 it('checks the client RCCM and address match the organisation profile', function () {
     // Conform when both match (punctuation/whitespace tolerant).
-    expect($this->checker->check(invoice(), null, null, null, 'RC/DLA/2015/B/777', 'BP 5000 Douala')->conform)->toBeTrue();
+    expect($this->checker->check(invoice(), null, null, null, 'RC/DLA/2015/B/777', 'BP 5000 Douala', vendorRegime: 'RÉEL')->conform)->toBeTrue();
 
     // Wrong client RCCM on the invoice.
     $badRccm = $this->checker->check(invoice(['clientRccm' => 'RC/XXX/0000/Z/0']), null, null, null, 'RC/DLA/2015/B/777', null);
@@ -193,7 +197,69 @@ it('separates forme and fond findings', function () {
 
 it('tolerates small rounding differences', function () {
     // VAT off by 1 FCFA, TTC adjusted — within tolerance
-    $result = $this->checker->check(invoice(['vatAmount' => 192_499, 'ttcAmount' => 1_192_499]));
+    $result = $this->checker->check(invoice(['vatAmount' => 192_499, 'ttcAmount' => 1_192_499]), vendorRegime: 'RÉEL');
 
     expect($result->conform)->toBeTrue();
+});
+
+/*
+ * VAT <-> régime coherence: only a Régime du Réel vendor may invoice VAT.
+ * Rule (as specified): if the vendor is NOT réel and the invoice carries VAT > 0,
+ * the invoice is rejected. No VAT -> pass under any régime.
+ */
+
+function vatRegimeFinding(InvoiceConformityResult $result): ConformityFinding
+{
+    foreach ($result->findings as $finding) {
+        if ($finding->key === 'vat_regime') {
+            return $finding;
+        }
+    }
+
+    throw new RuntimeException('vat_regime finding missing');
+}
+
+it('accepts VAT invoiced by a Régime du Réel vendor', function () {
+    $result = $this->checker->check(invoice(), vendorRegime: 'RÉEL');
+
+    expect(vatRegimeFinding($result)->passed)->toBeTrue();
+});
+
+it('rejects VAT invoiced by a Régime Simplifié or IGS vendor', function (string $label) {
+    $result = $this->checker->check(invoice(), vendorRegime: $label);
+
+    $finding = vatRegimeFinding($result);
+    expect($finding->passed)->toBeFalse()
+        ->and($result->conform)->toBeFalse(); // a failed fond check rejects the invoice
+})->with(['SIMPLIFIE', 'Régime Simplifié', 'IGS', 'Impôt Général Synthétique', 'IMPOT GENERAL SYNTHETIQUE']);
+
+it('rejects VAT when the vendor régime cannot be established', function () {
+    $result = $this->checker->check(invoice(), vendorRegime: null);
+
+    expect(vatRegimeFinding($result)->passed)->toBeFalse();
+});
+
+it('passes any régime when no VAT is invoiced', function (?string $label) {
+    $exempt = invoice([
+        'vatRate' => null, 'vatAmount' => 0, 'ttcAmount' => 1_000_000,
+        'exemption' => ExemptionMention::Exonere,
+    ]);
+
+    $result = $this->checker->check($exempt, vendorRegime: $label);
+
+    expect(vatRegimeFinding($result)->passed)->toBeTrue();
+})->with(['SIMPLIFIE', 'IGS', 'RÉEL', null]);
+
+it('normalises the régime spelling variants found on documents', function () {
+    $r = fn (?string $l) => VendorRegime::fromLabel($l);
+
+    expect($r('Régime du réel'))->toBe(VendorRegime::Reel)
+        ->and($r('REEL'))->toBe(VendorRegime::Reel)
+        ->and($r('R.SIMPLIFIE'))->toBe(VendorRegime::Simplifie)
+        ->and($r('Régime simplifié'))->toBe(VendorRegime::Simplifie)
+        ->and($r('IGS'))->toBe(VendorRegime::Igs)
+        ->and($r('Impôt Général Synthétique'))->toBe(VendorRegime::Igs)
+        ->and($r(''))->toBe(VendorRegime::Unknown)
+        ->and($r(null))->toBe(VendorRegime::Unknown)
+        ->and($r('AUTRE CHOSE'))->toBe(VendorRegime::Unknown);
 });

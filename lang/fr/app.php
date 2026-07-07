@@ -424,6 +424,13 @@ return [
         'prise_en_charge' => 'Prise en charge État',
     ],
 
+    'regime' => [
+        'reel' => 'Régime du Réel',
+        'simplifie' => 'Régime Simplifié',
+        'igs' => 'Impôt Général Synthétique (IGS)',
+        'unknown' => 'régime indéterminé',
+    ],
+
     'conformity' => [
         'type_forme' => 'Conditions de forme',
         'type_fond' => 'Conditions de fond',
@@ -443,6 +450,7 @@ return [
         'vat_calc' => 'TVA = HT × taux',
         'ttc_calc' => 'TTC = HT + TVA',
         'vat_rate' => 'Taux de TVA légal (19,25 %)',
+        'vat_regime' => 'TVA autorisée par le régime fiscal du fournisseur',
         'niu_match' => 'NIU fournisseur cohérent',
         'client_niu_match' => 'NIU du client conforme à notre profil',
         'client_identity_match' => 'Nom du client conforme à notre profil',
@@ -454,6 +462,10 @@ return [
             'vat_calc' => 'Contrôle TVA : HT :ht × :rate = :expected attendu ; la facture indique :actual (écart :variance).',
             'ttc_calc' => 'Contrôle TTC : HT :ht + TVA :vat = :expected attendu ; la facture indique :actual (écart :variance).',
             'vat_rate' => 'Contrôle du taux : taux légal :legal ; la facture applique :actual.',
+            'vat_regime_no_vat' => 'Pas de TVA facturée — admis quel que soit le régime (fournisseur : :regime).',
+            'vat_regime_reel_ok' => 'Fournisseur au Régime du Réel — la facturation de la TVA (:vat FCFA) est autorisée.',
+            'vat_regime_forbidden' => 'Fournisseur au :regime — la facturation de la TVA est INTERDITE, or la facture porte :vat FCFA de TVA.',
+            'vat_regime_unknown' => 'Régime du fournisseur indéterminé (ACF et fichier), or la facture porte :vat FCFA de TVA — seul un fournisseur au Régime du Réel peut facturer la TVA.',
             'vat_rate_exempt' => 'Opération exonérée : aucun taux de TVA attendu.',
             'vat_exempt' => 'Opération exonérée : la TVA doit être nulle.',
             'missing_amounts' => 'Contrôle impossible : un montant manque sur la facture.',

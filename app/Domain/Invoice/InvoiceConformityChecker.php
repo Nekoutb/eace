@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Invoice;
 
+use App\Domain\Acf\VendorRegime;
 use App\Domain\Niu\NiuNumber;
 
 /**
  * Checks an invoice against CGI art. 150 — both the conditions de forme (the
  * mandatory mentions are present) and the conditions de fond (the figures are
- * coherent and the VAT is valid). Pure and unit-testable; the extraction that
- * builds the InvoiceData lives elsewhere.
+ * coherent, the VAT is valid, and the vendor's régime allows the VAT invoiced).
+ * Pure and unit-testable; the extraction that builds the InvoiceData lives
+ * elsewhere.
  */
 final class InvoiceConformityChecker
 {
@@ -34,6 +36,7 @@ final class InvoiceConformityChecker
         ?string $expectedClientRccm = null,
         ?string $expectedClientAddress = null,
         array $acceptedClientNames = [],
+        ?string $vendorRegime = null,
     ): InvoiceConformityResult {
         $findings = [
             // Conditions de forme — every mandatory mention of art. 150 present.
@@ -49,10 +52,11 @@ final class InvoiceConformityChecker
             $this->forme('vat', $invoice->isExempt() || ($invoice->vatAmount !== null && $invoice->vatRate !== null)),
             $this->forme('ttc', $invoice->ttcAmount !== null),
 
-            // Conditions de fond — figures coherent, VAT valid.
+            // Conditions de fond — figures coherent, VAT valid, régime respected.
             $this->fond('vat_calc', $this->vatCalcOk($invoice), $this->vatCalcDetail($invoice)),
             $this->fond('ttc_calc', $this->ttcCalcOk($invoice), $this->ttcCalcDetail($invoice)),
             $this->fond('vat_rate', $this->vatRateOk($invoice), $this->vatRateDetail($invoice)),
+            $this->vatRegimeFinding($invoice, $vendorRegime),
         ];
 
         if ($expectedSupplierNiu !== null) {
@@ -263,6 +267,40 @@ final class InvoiceConformityChecker
         $formatted = rtrim(rtrim(number_format($rate * 100, 2, ',', ''), '0'), ',');
 
         return $formatted.' %';
+    }
+
+    /**
+     * VAT ⇄ régime coherence: a vendor NOT under the Régime du Réel may never
+     * invoice VAT. The invoice is rejected when VAT > 0 and the vendor's régime
+     * (from their ACF, or the DGI register as fallback) is Simplifié, IGS — or
+     * cannot be established at all (the engine never assumes Réel). Invoices
+     * without VAT pass under any régime.
+     */
+    private function vatRegimeFinding(InvoiceData $invoice, ?string $vendorRegimeLabel): ConformityFinding
+    {
+        $regime = VendorRegime::fromLabel($vendorRegimeLabel);
+        $vatBilled = ($invoice->vatAmount ?? 0) > 0;
+
+        if (! $vatBilled) {
+            return $this->fond('vat_regime', true, (string) __('app.conformity.narr.vat_regime_no_vat', [
+                'regime' => $regime->label(),
+            ]));
+        }
+
+        if ($regime->mayInvoiceVat()) {
+            return $this->fond('vat_regime', true, (string) __('app.conformity.narr.vat_regime_reel_ok', [
+                'vat' => $this->fmt((int) $invoice->vatAmount),
+            ]));
+        }
+
+        $detail = $regime === VendorRegime::Unknown
+            ? (string) __('app.conformity.narr.vat_regime_unknown', ['vat' => $this->fmt((int) $invoice->vatAmount)])
+            : (string) __('app.conformity.narr.vat_regime_forbidden', [
+                'regime' => $regime->label(),
+                'vat' => $this->fmt((int) $invoice->vatAmount),
+            ]);
+
+        return $this->fond('vat_regime', false, $detail);
     }
 
     private function forme(string $key, bool $passed): ConformityFinding

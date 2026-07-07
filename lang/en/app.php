@@ -424,6 +424,13 @@ return [
         'prise_en_charge' => 'State-covered',
     ],
 
+    'regime' => [
+        'reel' => 'Régime du Réel',
+        'simplifie' => 'Régime Simplifié',
+        'igs' => 'Impôt Général Synthétique (IGS)',
+        'unknown' => 'régime not established',
+    ],
+
     'conformity' => [
         'type_forme' => 'Form conditions',
         'type_fond' => 'Substance conditions',
@@ -443,6 +450,7 @@ return [
         'vat_calc' => 'VAT = HT × rate',
         'ttc_calc' => 'TTC = HT + VAT',
         'vat_rate' => 'Legal VAT rate (19.25%)',
+        'vat_regime' => 'VAT allowed by the vendor’s tax régime',
         'niu_match' => 'Supplier NIU matches',
         'client_niu_match' => 'Client NIU matches our profile',
         'client_identity_match' => 'Client name matches our profile',
@@ -454,6 +462,10 @@ return [
             'vat_calc' => 'VAT control: HT :ht × :rate = :expected expected; the invoice states :actual (variance :variance).',
             'ttc_calc' => 'TTC control: HT :ht + VAT :vat = :expected expected; the invoice states :actual (variance :variance).',
             'vat_rate' => 'Rate control: legal rate is :legal; the invoice applies :actual.',
+            'vat_regime_no_vat' => 'No VAT invoiced — allowed under any régime (vendor: :regime).',
+            'vat_regime_reel_ok' => 'Vendor under Régime du Réel — invoicing VAT (:vat FCFA) is allowed.',
+            'vat_regime_forbidden' => 'Vendor under :regime — invoicing VAT is FORBIDDEN, yet the invoice carries :vat FCFA of VAT.',
+            'vat_regime_unknown' => 'The vendor’s régime could not be established (ACF and register), yet the invoice carries :vat FCFA of VAT — only a Régime du Réel vendor may invoice VAT.',
             'vat_rate_exempt' => 'Exempt operation: no VAT rate is expected.',
             'vat_exempt' => 'Exempt operation: VAT must be zero.',
             'missing_amounts' => 'Control not possible: an amount is missing from the invoice.',

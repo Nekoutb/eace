@@ -84,6 +84,9 @@ final class VerificationService
                 $profile->entity_rccm,
                 $profile->entity_address,
                 $profile->acceptedNames(),
+                // The vendor's régime drives the VAT-invoicing coherence check:
+                // from their ACF first, else the DGI register entry for the NIU.
+                vendorRegime: $certificate->regime ?? $record?->regime,
             );
         }
 
