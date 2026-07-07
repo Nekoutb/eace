@@ -15,12 +15,17 @@ use App\Services\Firm\FirmMembershipService;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Drives verify-first self-service onboarding: a prospective customer's sign-up
- * is held as a PendingSignup until they confirm their email, and only then is the
- * real workspace provisioned and its one-time credentials emailed.
+ * Self-service onboarding, built for the moment a client signs up IN FRONT OF
+ * someone: the workspace is provisioned INSTANTLY on submission and the one-time
+ * credentials are shown on screen right away — the welcome email (same
+ * credentials, sign-in button) is QUEUED as the courtesy copy, so slow SMTP can
+ * never stall or embarrass the flow. There is no fragile single-use link in the
+ * critical path any more: possessing the one-time password (on screen or from the
+ * email) is what proves the sign-up, and first sign-in forces 2FA enrolment + a
+ * new password.
  *
- * The email round-trip is the safeguard — no tenant database is created for an
- * unconfirmed (abandoned or fake) sign-up.
+ * The old verify-first path (completeFromToken) is kept working for any pending
+ * sign-ups already in flight.
  */
 final class SelfServiceOnboarding
 {
@@ -30,27 +35,31 @@ final class SelfServiceOnboarding
     ) {}
 
     /**
-     * Record a pending sign-up and email the verification link. The caller has
-     * already validated that the email is available (PendingSignup::emailAvailable).
+     * Provision instantly: a standalone company workspace, or an accounting-firm
+     * umbrella + its home workspace with the signer as power user. Queues the
+     * welcome email + operator notice; returns the credentials for the screen.
      */
-    public function startPending(string $orgName, string $name, string $email, string $accountType = 'company'): PendingSignup
+    public function provisionNow(string $orgName, string $name, string $email, string $accountType = 'company'): ProvisionedClient
     {
-        $pending = PendingSignup::start($orgName, $name, $email, $accountType);
+        $client = $accountType === 'firm'
+            ? $this->provisionFirmAccount($orgName, $name, $email)
+            : $this->provisioning->provision(
+                name: $orgName,
+                adminName: $name,
+                adminEmail: $email,
+                allocatedSpaceMb: (int) config('niu.trial_allocated_space_mb', 250),
+                // password: null → a one-time password, changed on first sign-in.
+            );
 
-        $this->sendVerification($pending);
+        $this->queueWelcome($client, $name, $orgName);
+        $this->queueOperatorNotice($client, $orgName);
 
-        return $pending;
-    }
-
-    /** Re-send the verification link for an existing pending sign-up. */
-    public function resend(PendingSignup $pending): void
-    {
-        $this->sendVerification($pending);
+        return $client;
     }
 
     /**
-     * Confirm a verification token and provision the workspace. Returns the
-     * provisioned client (carrying the one-time password) or null if the token is
+     * LEGACY (verify-first) — kept so confirmation links already in inboxes keep
+     * working. Confirms a token and provisions. Returns null if the token is
      * unknown, already used, or expired.
      */
     public function completeFromToken(string $token): ?ProvisionedClient
@@ -62,65 +71,60 @@ final class SelfServiceOnboarding
         }
 
         $client = $pending->isFirm()
-            ? $this->provisionFirm($pending)
+            ? $this->provisionFirmAccount($pending->org_name, $pending->name, $pending->email)
             : $this->provisioning->provision(
                 name: $pending->org_name,
                 adminName: $pending->name,
                 adminEmail: $pending->email,
                 allocatedSpaceMb: (int) config('niu.trial_allocated_space_mb', 250),
-                // password: null → a one-time password is generated and the user must
-                // change it on first sign-in (the same path as admin onboarding).
             );
 
-        // The email was proven by the verification step — mark it verified.
+        // This path DID prove the email — mark it verified.
         $client->tenant->run(function () use ($pending): void {
             User::query()->where('email', $pending->email)->update(['email_verified_at' => now()]);
         });
 
-        Mail::to($pending->email)->locale(app()->getLocale())->send(new WorkspaceCredentialsMail(
-            name: $pending->name,
-            orgName: $pending->org_name,
-            email: $pending->email,
-            temporaryPassword: (string) $client->temporaryPassword,
-            loginUrl: $client->loginUrl,
-        ));
-
-        $notify = config('niu.signup_admin_notify');
-        if (is_string($notify) && $notify !== '') {
-            Mail::to($notify)->send(new NewWorkspaceAdminNotice(
-                orgName: $pending->org_name,
-                email: $pending->email,
-                tenantId: (string) $client->tenant->getTenantKey(),
-            ));
-        }
+        $this->queueWelcome($client, $pending->name, $pending->org_name);
+        $this->queueOperatorNotice($client, $pending->org_name);
 
         return $client;
     }
 
+    /** LEGACY — re-send the verification link for an existing pending sign-up. */
+    public function resend(PendingSignup $pending): void
+    {
+        Mail::to($pending->email)->locale(app()->getLocale())->send(new WorkspaceVerifyMail(
+            name: $pending->name,
+            orgName: $pending->org_name,
+            verifyUrl: route('signup.verify', ['token' => $pending->token]),
+            expiryHours: (int) config('niu.pending_signup_expiry_hours', 24),
+        ));
+    }
+
     /**
-     * A FIRM sign-up: create the umbrella (trial plan caps), the signer as its
-     * POWER USER (one-time password, forced change on first sign-in), and the
-     * firm's own home workspace with the power user assigned as its admin. They
-     * then create client sub-accounts themselves from the in-app firm console.
+     * A FIRM sign-up: the umbrella (trial plan caps), the signer as POWER USER
+     * (one-time password, forced change on first sign-in), and the firm's own home
+     * workspace with the power user assigned as its admin. They then create client
+     * sub-accounts themselves from the in-app firm console.
      */
-    private function provisionFirm(PendingSignup $pending): ProvisionedClient
+    private function provisionFirmAccount(string $orgName, string $name, string $email): ProvisionedClient
     {
         $firm = $this->firms->createFirm(
-            $pending->org_name,
+            $orgName,
             maxSubAccounts: (int) config('niu.firm_trial_max_sub_accounts', 5),
             defaultQuotaMb: (int) config('niu.trial_allocated_space_mb', 250),
         );
 
         try {
-            $added = $this->firms->addMember($firm, $pending->name, $pending->email, FirmRole::PowerUser);
+            $added = $this->firms->addMember($firm, $name, $email, FirmRole::PowerUser);
 
-            $home = $this->firms->createSubAccount($firm, $pending->org_name);
+            $home = $this->firms->createSubAccount($firm, $orgName);
             $this->firms->assign($added->member, (string) $home->getTenantKey(), UserRole::Admin);
 
             return new ProvisionedClient(
                 tenant: $home,
                 loginUrl: rtrim((string) config('app.url'), '/').'/app/login',
-                adminEmail: $pending->email,
+                adminEmail: $email,
                 temporaryPassword: $added->temporaryPassword,
             );
         } catch (\Throwable $e) {
@@ -135,13 +139,41 @@ final class SelfServiceOnboarding
         }
     }
 
-    private function sendVerification(PendingSignup $pending): void
+    /**
+     * The welcome email carrying the credentials and the sign-in button (email
+     * pre-filled). QUEUED so a slow mail server can never stall the sign-up screen
+     * — the same details are already showing there.
+     */
+    private function queueWelcome(ProvisionedClient $client, string $name, string $orgName): void
     {
-        Mail::to($pending->email)->locale(app()->getLocale())->send(new WorkspaceVerifyMail(
-            name: $pending->name,
-            orgName: $pending->org_name,
-            verifyUrl: route('signup.verify', ['token' => $pending->token]),
-            expiryHours: (int) config('niu.pending_signup_expiry_hours', 24),
-        ));
+        try {
+            Mail::to($client->adminEmail)->locale(app()->getLocale())->queue(new WorkspaceCredentialsMail(
+                name: $name,
+                orgName: $orgName,
+                email: $client->adminEmail,
+                temporaryPassword: (string) $client->temporaryPassword,
+                loginUrl: $client->loginUrl,
+            ));
+        } catch (\Throwable $e) {
+            report($e); // the screen already carries the credentials
+        }
+    }
+
+    private function queueOperatorNotice(ProvisionedClient $client, string $orgName): void
+    {
+        $notify = config('niu.signup_admin_notify');
+        if (! is_string($notify) || $notify === '') {
+            return;
+        }
+
+        try {
+            Mail::to($notify)->queue(new NewWorkspaceAdminNotice(
+                orgName: $orgName,
+                email: $client->adminEmail,
+                tenantId: (string) $client->tenant->getTenantKey(),
+            ));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

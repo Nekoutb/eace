@@ -116,7 +116,7 @@ return [
         'sent_wrong' => 'Wrong address? Start over.',
         // Step 3 — workspace ready
         'done_heading' => 'Your workspace is ready',
-        'done_body' => 'We’ve emailed your sign-in details to :email. You can also use the one-time password below — you’ll be asked to change it on first sign-in.',
+        'done_body' => 'Here are your sign-in details — you can use them right now. A welcome email with the same details is also on its way to :email. On first sign-in you’ll set up your authenticator (2FA) and choose your own password.',
         'done_email_label' => 'Sign-in email',
         'done_password_label' => 'One-time password',
         'done_login_cta' => 'Go to sign in',
@@ -147,8 +147,8 @@ return [
             'fallback' => 'If the button doesn’t work, copy and paste this link into your browser:',
         ],
         'credentials' => [
-            'subject' => 'Your workspace is ready — sign-in details inside',
-            'intro' => 'Your workspace for “:org” is ready. Use the details below to sign in for the first time.',
+            'subject' => 'Welcome to Elite Advisors Compliance Engine — your workspace is ready',
+            'intro' => 'Welcome! Your workspace for “:org” is ready. Sign in with the details below — on first sign-in you’ll set up your authenticator (2FA) and choose your own password, then you can start right away.',
             'email_label' => 'Sign-in email',
             'password_label' => 'One-time password',
             'cta' => 'Sign in',

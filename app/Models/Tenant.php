@@ -19,6 +19,8 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
  * @property ?int $allocated_space_mb
  * @property ?int $firm_id
  * @property ?string $suspended_at
+ * @property ?string $consent_version
+ * @property ?string $consent_accepted_at
  */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {

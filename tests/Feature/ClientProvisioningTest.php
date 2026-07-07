@@ -172,18 +172,17 @@ it('provisions with the given role and the chosen password, and no temporary one
     });
 });
 
-it('defers public sign-up provisioning until the email is confirmed', function () {
-    // Verify-first: the public sign-up holds a pending request and does NOT create
-    // a workspace until the email is confirmed (the full flow is exercised in
-    // SelfServiceOnboardingTest). This guards against a regression to instant,
-    // unverified provisioning.
+it('provisions a public sign-up instantly with the credentials on screen', function () {
+    // Instant onboarding: the workspace exists the moment the form is submitted,
+    // the credentials are flashed to the done screen, and the welcome email is
+    // queued — no fragile confirmation link, no SMTP wait in front of a client.
     Mail::fake();
 
     $this->post('/register', [
         'org_name' => 'Gamma Ltd', 'name' => 'Gina', 'email' => 'gina@gamma.test', 'consent' => '1',
-    ])->assertRedirect(route('signup.sent'));
+    ])->assertRedirect(route('signup.done'))->assertSessionHas('done_password');
 
-    expect(Tenant::find('gamma-ltd'))->toBeNull()
-        ->and(TenantLogin::tenantFor('gina@gamma.test'))->toBeNull()
-        ->and(PendingSignup::query()->where('email', 'gina@gamma.test')->exists())->toBeTrue();
+    expect(Tenant::find('gamma-ltd'))->not->toBeNull()
+        ->and(TenantLogin::tenantFor('gina@gamma.test'))->toBe('gamma-ltd')
+        ->and(PendingSignup::query()->where('email', 'gina@gamma.test')->exists())->toBeFalse();
 });

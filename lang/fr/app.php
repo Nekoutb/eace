@@ -116,7 +116,7 @@ return [
         'sent_wrong' => 'Mauvaise adresse ? Recommencez.',
         // Étape 3 — espace prêt
         'done_heading' => 'Votre espace est prêt',
-        'done_body' => 'Nous avons envoyé vos identifiants à :email. Vous pouvez aussi utiliser le mot de passe à usage unique ci-dessous — il vous sera demandé de le changer à la première connexion.',
+        'done_body' => 'Voici vos identifiants — utilisables dès maintenant. Un e-mail de bienvenue avec les mêmes informations est aussi en route vers :email. À la première connexion, vous configurerez votre application d’authentification (2FA) et choisirez votre propre mot de passe.',
         'done_email_label' => 'E-mail de connexion',
         'done_password_label' => 'Mot de passe à usage unique',
         'done_login_cta' => 'Aller à la connexion',
@@ -147,8 +147,8 @@ return [
             'fallback' => 'Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :',
         ],
         'credentials' => [
-            'subject' => 'Votre espace est prêt — vos identifiants à l’intérieur',
-            'intro' => 'Votre espace pour « :org » est prêt. Utilisez les informations ci-dessous pour votre première connexion.',
+            'subject' => 'Bienvenue sur Elite Advisors Compliance Engine — votre espace est prêt',
+            'intro' => 'Bienvenue ! Votre espace pour « :org » est prêt. Connectez-vous avec les informations ci-dessous — à la première connexion, vous configurerez votre application d’authentification (2FA) et choisirez votre propre mot de passe, puis vous pourrez commencer immédiatement.',
             'email_label' => 'E-mail de connexion',
             'password_label' => 'Mot de passe à usage unique',
             'cta' => 'Se connecter',

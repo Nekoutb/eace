@@ -1,6 +1,6 @@
 <x-guest-layout :title="__('app.signup.done_heading')">
     <main class="card">
-        <x-signup-stepper :step="3" />
+        <x-signup-stepper :step="2" />
 
         <h1 class="brand">{{ __('app.signup.done_heading') }}</h1>
         <p class="sub">{{ __('app.signup.done_body', ['email' => $email]) }}</p>

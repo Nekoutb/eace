@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\PendingSignup;
+use App\Services\Tenant\ClientProvisioningException;
 use App\Services\Tenant\SelfServiceOnboarding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,10 +13,13 @@ use Illuminate\View\View;
 use Throwable;
 
 /**
- * Public, verify-first self-service onboarding. A prospective customer enters
- * their details (step 1), confirms their email (step 2), and only then is their
- * isolated workspace created with a one-time password emailed to them (step 3).
- * They land as the workspace Administrator. Gated by config('niu.self_service_signup').
+ * Public self-service onboarding, INSTANT: the customer enters their details and
+ * their isolated workspace is provisioned on the spot — the one-time credentials
+ * are shown on screen immediately and a welcome email (same credentials, sign-in
+ * button) is queued as the courtesy copy. First sign-in enforces 2FA enrolment +
+ * a new password, which is also what proves possession of the credentials. No
+ * fragile confirmation link in the critical path (the old verify links keep
+ * working for signups already in flight). Gated by config('niu.self_service_signup').
  */
 class SignUpController
 {
@@ -27,7 +31,7 @@ class SignUpController
         return view('auth.signup');
     }
 
-    /** Step 1 submit — hold a pending sign-up and email the verification link. */
+    /** Step 1 submit — provision INSTANTLY and show the credentials right away. */
     public function register(Request $request, SelfServiceOnboarding $onboarding): RedirectResponse
     {
         $this->ensureEnabled();
@@ -48,9 +52,32 @@ class SignUpController
             return back()->withInput()->withErrors(['email' => (string) __('app.signup.email_taken')]);
         }
 
-        $onboarding->startPending($data['org_name'], $data['name'], $email, (string) ($data['account_type'] ?? 'company'));
+        try {
+            $client = $onboarding->provisionNow(
+                $data['org_name'],
+                $data['name'],
+                $email,
+                (string) ($data['account_type'] ?? 'company'),
+            );
+        } catch (ClientProvisioningException) {
+            return back()->withInput()->withErrors(['email' => (string) __('app.signup.email_taken')]);
+        } catch (Throwable $e) {
+            report($e);
 
-        return redirect()->route('signup.sent')->with('signup_email', $email);
+            return back()->withInput()->withErrors(['email' => (string) __('app.client.provision_error')]);
+        }
+
+        // Record the accepted privacy notice (art. 9) on the workspace itself.
+        $client->tenant->update([
+            'consent_version' => (string) config('niu.data_protection.policy_version', '1.0'),
+            'consent_accepted_at' => now()->toDateTimeString(),
+        ]);
+
+        return redirect()->route('signup.done')->with([
+            'done_email' => $client->adminEmail,
+            'done_password' => (string) $client->temporaryPassword,
+            'done_login' => $client->loginUrl,
+        ]);
     }
 
     /** Step 2 — "check your email". */
