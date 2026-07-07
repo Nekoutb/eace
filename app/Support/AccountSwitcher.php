@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Models\AccountAssignment;
 use App\Models\DataAccessLog;
+use App\Models\Firm;
 use App\Models\FirmMember;
 use App\Models\Tenant;
 use App\Models\User;
@@ -41,6 +42,22 @@ final class AccountSwitcher
     }
 
     /**
+     * The firm the signed-in user manages, or null — they must be an active POWER
+     * USER of an active firm. Gates the in-app firm console.
+     */
+    public static function managedFirm(?User $user): ?Firm
+    {
+        $member = self::memberFor($user);
+        if ($member === null || ! $member->isPowerUser()) {
+            return null;
+        }
+
+        $firm = $member->firm()->first();
+
+        return $firm !== null && $firm->is_active ? $firm : null;
+    }
+
+    /**
      * The workspaces the signed-in member may switch to, each with its display name
      * and whether it is the current one. Empty for a standalone client.
      *
@@ -65,11 +82,16 @@ final class AccountSwitcher
         }
 
         // cursor(): iteration typed to our Tenant (stancl's TenantCollection erases
-        // the model type for static analysis).
+        // the model type for static analysis). Suspended workspaces are simply not
+        // offered.
         $names = [];
         foreach (Tenant::query()->whereIn('id', $assignments)->cursor() as $t) {
+            if ($t->isSuspended()) {
+                continue;
+            }
             $names[(string) $t->getTenantKey()] = (string) ($t->name ?? $t->getTenantKey());
         }
+        $assignments = array_values(array_intersect($assignments, array_keys($names)));
 
         $out = [];
         foreach ($assignments as $id) {
@@ -108,7 +130,7 @@ final class AccountSwitcher
         }
 
         $target = Tenant::query()->find($tenantId);
-        if ($target === null) {
+        if ($target === null || $target->isSuspended()) {
             return false;
         }
 

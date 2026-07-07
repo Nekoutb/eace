@@ -3,14 +3,17 @@
 namespace App\Filament\Resources\Clients\Tables;
 
 use App\Filament\Auth\AppAuthentication;
+use App\Models\DataAccessLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Evidence\EvidenceStorageService;
+use App\Services\Tenant\ClientPasswordReset;
 use App\Support\Impersonation;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\OneTimeCodeInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontFamily;
@@ -38,6 +41,20 @@ class ClientsTable
                     ->color('gray')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('firm_id')
+                    ->label(__('app.client.firm'))
+                    ->badge()
+                    ->color('info')
+                    ->getStateUsing(fn (Tenant $record): ?string => $record->firm()->first()?->name)
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('status')
+                    ->label(__('app.ui.status'))
+                    ->badge()
+                    ->getStateUsing(fn (Tenant $record): string => $record->isSuspended()
+                        ? (string) __('app.client.suspended')
+                        : (string) __('app.client.active'))
+                    ->color(fn (Tenant $record): string => $record->isSuspended() ? 'danger' : 'success'),
                 TextColumn::make('allocated_space_mb')
                     ->label(__('app.client.quota'))
                     ->badge()
@@ -57,6 +74,9 @@ class ClientsTable
                     self::badgeInAction(),
                     self::renameAction(),
                     self::setQuotaAction(),
+                    self::resetPasswordAction(),
+                    self::suspendAction(),
+                    self::reactivateAction(),
                     DeleteAction::make()
                         ->modalHeading(__('app.client.delete'))
                         ->modalDescription(__('app.client.delete_warning')),
@@ -102,6 +122,74 @@ class ClientsTable
                 ]);
 
                 $livewire->redirect(route('impersonation.enter'), navigate: false);
+            });
+    }
+
+    /**
+     * "The client forgot their password": pick which of the workspace's users to
+     * reset — a one-time password is generated, emailed to them, and shown ONCE
+     * here so the operator can also pass it on directly. Firm members are reset
+     * centrally (all their workspaces at once).
+     */
+    private static function resetPasswordAction(): Action
+    {
+        return Action::make('resetPassword')
+            ->label(__('app.client.reset_password'))
+            ->icon('heroicon-o-key')
+            ->color('gray')
+            ->modalHeading(__('app.client.reset_password'))
+            ->modalDescription(__('app.client.reset_password_desc'))
+            ->schema([
+                Select::make('email')
+                    ->label(__('app.client.reset_password_user'))
+                    ->options(fn (Tenant $record): array => app(ClientPasswordReset::class)->resettableUsers($record))
+                    ->required()
+                    ->native(false),
+            ])
+            ->action(function (Tenant $record, array $data): void {
+                $temporary = app(ClientPasswordReset::class)->reset($record, (string) $data['email']);
+
+                Notification::make()
+                    ->title(__('app.client.reset_password_done'))
+                    ->body(__('app.client.reset_password_body', ['email' => (string) $data['email'], 'password' => $temporary]))
+                    ->success()
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /** Suspend the workspace (e.g. unpaid bills): sign-in + all use blocked, data untouched. */
+    private static function suspendAction(): Action
+    {
+        return Action::make('suspend')
+            ->label(__('app.client.suspend'))
+            ->icon('heroicon-o-pause-circle')
+            ->color('danger')
+            ->visible(fn (Tenant $record): bool => $record->suspended_at === null)
+            ->requiresConfirmation()
+            ->modalHeading(fn (Tenant $record): string => (string) __('app.client.suspend_heading', ['client' => $record->name ?? $record->id]))
+            ->modalDescription(__('app.client.suspend_desc'))
+            ->action(function (Tenant $record): void {
+                $record->suspend();
+                DataAccessLog::record('client_suspend', 'tenant:'.$record->getTenantKey(), 'by admin '.(string) auth()->user()?->getAttribute('email'));
+
+                Notification::make()->title(__('app.client.suspended_done'))->warning()->send();
+            });
+    }
+
+    private static function reactivateAction(): Action
+    {
+        return Action::make('reactivate')
+            ->label(__('app.client.reactivate'))
+            ->icon('heroicon-o-play-circle')
+            ->color('success')
+            ->visible(fn (Tenant $record): bool => $record->suspended_at !== null)
+            ->requiresConfirmation()
+            ->action(function (Tenant $record): void {
+                $record->unsuspend();
+                DataAccessLog::record('client_reactivate', 'tenant:'.$record->getTenantKey(), 'by admin '.(string) auth()->user()?->getAttribute('email'));
+
+                Notification::make()->title(__('app.client.reactivated_done'))->success()->send();
             });
     }
 

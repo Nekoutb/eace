@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domain\Auth\StaffRole;
 use App\Domain\Auth\UserRole;
+use App\Observers\FirmCredentialSyncObserver;
 use App\Observers\TenantLoginObserver;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
@@ -37,7 +38,7 @@ use Illuminate\Support\Carbon;
  * @property ?string $app_authentication_secret
  * @property ?array<int, string> $app_authentication_recovery_codes
  */
-#[ObservedBy([TenantLoginObserver::class])]
+#[ObservedBy([TenantLoginObserver::class, FirmCredentialSyncObserver::class])]
 #[Fillable(['name', 'email', 'password', 'role', 'staff_role', 'telegram_username', 'telegram_chat_id', 'must_change_password', 'last_login_at'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class User extends Authenticatable implements CanResetPassword, FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery

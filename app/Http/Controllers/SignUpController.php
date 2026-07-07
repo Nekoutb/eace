@@ -33,6 +33,8 @@ class SignUpController
         $this->ensureEnabled();
 
         $data = $request->validate([
+            // Absent (e.g. an old cached form) safely means a plain company.
+            'account_type' => ['nullable', 'in:company,firm'],
             'org_name' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -46,7 +48,7 @@ class SignUpController
             return back()->withInput()->withErrors(['email' => (string) __('app.signup.email_taken')]);
         }
 
-        $onboarding->startPending($data['org_name'], $data['name'], $email);
+        $onboarding->startPending($data['org_name'], $data['name'], $email, (string) ($data['account_type'] ?? 'company'));
 
         return redirect()->route('signup.sent')->with('signup_email', $email);
     }

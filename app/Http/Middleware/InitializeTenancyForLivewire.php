@@ -41,6 +41,13 @@ class InitializeTenancyForLivewire
             $tenant = Tenant::find($tenantId);
 
             if ($tenant !== null) {
+                // A suspended workspace refuses Livewire actions too (page loads are
+                // gated by EnsureWorkspaceNotSuspended in the panel middleware).
+                if ($tenant->isSuspended()) {
+                    $request->session()->forget('tenant_id');
+                    abort(403, (string) __('app.suspended.message'));
+                }
+
                 tenancy()->initialize($tenant);
             } else {
                 // The workspace was removed — drop the stale pointer so the user is

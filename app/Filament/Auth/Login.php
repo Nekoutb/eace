@@ -12,6 +12,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Schemas\Components\Component;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -142,6 +143,14 @@ class Login extends BaseLogin
         $tenant = Tenant::find($tenantId);
         if ($tenant === null) {
             return false;
+        }
+
+        // A suspended workspace (e.g. unpaid bills) refuses sign-in with a clear
+        // message — before any password is checked. Data stays intact throughout.
+        if ($tenant->isSuspended()) {
+            throw ValidationException::withMessages([
+                'data.email' => (string) __('app.suspended.login'),
+            ]);
         }
 
         tenancy()->initialize($tenant);

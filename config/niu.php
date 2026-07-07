@@ -45,6 +45,12 @@ return [
     'trial_allocated_space_mb' => (int) env('NIU_TRIAL_SPACE_MB', 250),
 
     /*
+     * How many client sub-accounts a self-service accounting-firm trial may create
+     * before the operator raises their plan cap (admin → Firms → Edit plan).
+     */
+    'firm_trial_max_sub_accounts' => (int) env('NIU_FIRM_TRIAL_MAX_SUB_ACCOUNTS', 5),
+
+    /*
      * Whether prospective customers may self-provision a trial workspace from the
      * public sign-up page. Off in production unless you want open trials.
      */

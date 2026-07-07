@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
  * @property string $org_name
  * @property string $name
  * @property string $email
+ * @property string $account_type company | firm
  * @property ?string $consent_version
  * @property ?Carbon $consent_accepted_at
  * @property Carbon $expires_at
@@ -29,8 +30,14 @@ class PendingSignup extends CentralModel
         return ['expires_at' => 'datetime', 'consent_accepted_at' => 'datetime'];
     }
 
+    /** An accounting firm managing several clients (vs a single company). */
+    public function isFirm(): bool
+    {
+        return $this->account_type === 'firm';
+    }
+
     /** Begin a pending sign-up, returning the row carrying the verification token. */
-    public static function start(string $orgName, string $name, string $email): self
+    public static function start(string $orgName, string $name, string $email, string $accountType = 'company'): self
     {
         // A fresh request for the same email supersedes any earlier pending one.
         static::query()->where('email', $email)->delete();
@@ -40,6 +47,7 @@ class PendingSignup extends CentralModel
             'org_name' => trim($orgName),
             'name' => trim($name),
             'email' => $email,
+            'account_type' => $accountType === 'firm' ? 'firm' : 'company',
             // Consent was required + validated before reaching here (art. 9): record
             // which version of the privacy notice was accepted, and when.
             'consent_version' => (string) config('niu.data_protection.policy_version', '1.0'),
@@ -76,6 +84,12 @@ class PendingSignup extends CentralModel
     public static function emailAvailable(string $email): bool
     {
         if (TenantLogin::tenantFor($email) !== null) {
+            return false;
+        }
+
+        // Also refuse an email that already belongs to an accounting-firm member —
+        // a firm identity and a fresh sign-up must never collide.
+        if (FirmMember::query()->where('email', $email)->exists()) {
             return false;
         }
 

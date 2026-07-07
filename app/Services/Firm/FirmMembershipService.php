@@ -139,12 +139,15 @@ final class FirmMembershipService
             $tenant = Tenant::query()->find($assignment->tenant_id);
             $tenant?->run(function () use ($member): void {
                 $user = User::query()->where('email', $member->email)->first();
+                // saveQuietly: these rows are already directory-linked, and firing
+                // the credential-sync observer here would only re-push the very
+                // values we are fanning out.
                 $user?->forceFill([
                     'password' => $member->passwordHash(),
                     'must_change_password' => $member->must_change_password,
                     'app_authentication_secret' => $member->app_authentication_secret,
                     'app_authentication_recovery_codes' => $member->app_authentication_recovery_codes,
-                ])->save();
+                ])->saveQuietly();
             });
         }
     }

@@ -10,6 +10,7 @@ use App\Filament\Auth\RequestPasswordReset;
 use App\Filament\Auth\ResetPassword;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnforceImpersonationReadOnly;
+use App\Http\Middleware\EnsureWorkspaceNotSuspended;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Http\Middleware\InitializeTenancyFromSession;
 use App\Http\Middleware\SetLocale;
@@ -111,6 +112,9 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                // A suspended workspace (unpaid bills) signs the user out of every
+                // page; the Livewire route enforces the same rule.
+                EnsureWorkspaceNotSuspended::class,
                 EnforceImpersonationReadOnly::class,
                 ForcePasswordChange::class,
             ]);
