@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Auth;
 
+use App\Models\FirmMember;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
@@ -171,6 +172,15 @@ class Login extends BaseLogin
         }
 
         if ($directoryTenant === null) {
+            // A firm member who exists but has NO client account assigned yet would
+            // otherwise see a misleading "credentials not recognised" — tell them
+            // the true reason so they ask their power user for access instead.
+            if ($email !== '' && FirmMember::query()->where('email', mb_strtolower($email))->where('is_active', true)->exists()) {
+                throw ValidationException::withMessages([
+                    'data.email' => (string) __('firm.login_no_access'),
+                ]);
+            }
+
             return; // unknown email — parent fails auth cleanly (no workspace)
         }
 

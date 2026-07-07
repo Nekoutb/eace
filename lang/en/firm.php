@@ -6,6 +6,8 @@ return [
         'member' => 'Team member',
     ],
 
+    'login_no_access' => 'Your firm account exists, but no client account has been assigned to you yet. Ask your firm’s power user to give you access, then sign in again.',
+
     'switcher' => [
         'title' => 'Switch client workspace',
         'workspace' => 'Workspace',
@@ -31,6 +33,8 @@ return [
         'member_role' => 'Firm role',
         'member_accounts' => 'Accounts',
         'add_member' => 'Invite a member',
+        'invite_accounts' => 'Give access to these client accounts',
+        'invite_accounts_help' => 'Required — a member signs in through their assigned accounts, so the welcome email only works once at least one is granted.',
         'member_added' => 'Member invited — credentials emailed',
         'member_added_body' => 'One-time password for :email (also emailed): :password — they will choose their own at first sign-in.',
         'give_access' => 'Give access to an account',

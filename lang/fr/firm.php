@@ -6,6 +6,8 @@ return [
         'member' => 'Membre de l’équipe',
     ],
 
+    'login_no_access' => 'Votre compte cabinet existe, mais aucun compte client ne vous a encore été attribué. Demandez à l’utilisateur principal de votre cabinet de vous donner accès, puis reconnectez-vous.',
+
     'switcher' => [
         'title' => 'Changer d’espace client',
         'workspace' => 'Espace',
@@ -31,6 +33,8 @@ return [
         'member_role' => 'Rôle au cabinet',
         'member_accounts' => 'Comptes',
         'add_member' => 'Inviter un membre',
+        'invite_accounts' => 'Donner accès à ces comptes clients',
+        'invite_accounts_help' => 'Obligatoire — un membre se connecte via ses comptes attribués : l’e-mail de bienvenue ne fonctionne qu’avec au moins un accès accordé.',
         'member_added' => 'Membre invité — identifiants envoyés par e-mail',
         'member_added_body' => 'Mot de passe à usage unique pour :email (aussi envoyé par e-mail) : :password — il choisira le sien à la première connexion.',
         'give_access' => 'Donner accès à un compte',

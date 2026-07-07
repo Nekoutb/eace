@@ -80,9 +80,34 @@ class FirmTeamWidget extends TableWidget
                             ->default(FirmRole::Member->value)
                             ->required()
                             ->native(false),
+                        // A member can only sign in through an assigned account —
+                        // so the invite REQUIRES at least one, or the welcome email
+                        // would lead to "email not recognised".
+                        Select::make('accounts')
+                            ->label(__('firm.console.invite_accounts'))
+                            ->helperText(__('firm.console.invite_accounts_help'))
+                            ->multiple()
+                            ->options(function (): array {
+                                $firm = AccountSwitcher::managedFirm(Filament::auth()->user());
+                                $out = [];
+                                foreach (Tenant::query()->where('firm_id', $firm?->getKey() ?? -1)->cursor() as $t) {
+                                    $out[(string) $t->getTenantKey()] = (string) ($t->name ?? $t->getTenantKey());
+                                }
+
+                                return $out;
+                            })
+                            ->required()
+                            ->native(false),
+                        Select::make('account_role')
+                            ->label(__('firm.console.account_role'))
+                            ->options(UserRole::options())
+                            ->default(UserRole::Recorder->value)
+                            ->required()
+                            ->native(false),
                     ])
                     ->action(function (array $data): void {
                         $firm = AccountSwitcher::managedFirm(Filament::auth()->user());
+                        $actor = AccountSwitcher::memberFor(Filament::auth()->user());
                         if ($firm === null) {
                             return;
                         }
@@ -94,15 +119,27 @@ class FirmTeamWidget extends TableWidget
                                 (string) $data['email'],
                                 FirmRole::from((string) $data['role']),
                             );
+
+                            // Give access BEFORE the email goes out, so its sign-in
+                            // button works the moment it lands in their inbox.
+                            foreach ((array) $data['accounts'] as $tenantId) {
+                                app(FirmMembershipService::class)->assign(
+                                    $added->member,
+                                    (string) $tenantId,
+                                    UserRole::from((string) $data['account_role']),
+                                    $actor !== null ? (int) $actor->getKey() : null,
+                                );
+                            }
                         } catch (FirmException $e) {
                             Notification::make()->title($e->getMessage())->danger()->send();
 
                             return;
                         }
 
-                        // Credentials by email (best effort) + shown once here.
+                        // Credentials by email (queued — never stalls the modal) +
+                        // shown once here as the power user's backup copy.
                         try {
-                            Mail::to($added->member->email)->locale(app()->getLocale())->send(new WorkspaceCredentialsMail(
+                            Mail::to($added->member->email)->locale(app()->getLocale())->queue(new WorkspaceCredentialsMail(
                                 name: $added->member->name,
                                 orgName: (string) $firm->name,
                                 email: $added->member->email,
@@ -236,7 +273,7 @@ class FirmTeamWidget extends TableWidget
                 app(FirmMembershipService::class)->syncCredentials($record);
 
                 try {
-                    Mail::to($record->email)->locale(app()->getLocale())->send(new WorkspaceCredentialsMail(
+                    Mail::to($record->email)->locale(app()->getLocale())->queue(new WorkspaceCredentialsMail(
                         name: $record->name,
                         orgName: (string) $firm->name,
                         email: $record->email,

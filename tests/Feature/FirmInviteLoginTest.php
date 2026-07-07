@@ -1,0 +1,107 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domain\Auth\UserRole;
+use App\Domain\Firm\FirmRole;
+use App\Filament\App\Pages\FirmConsole\FirmTeamWidget;
+use App\Filament\Auth\Login;
+use App\Mail\WorkspaceCredentialsMail;
+use App\Models\AccountAssignment;
+use App\Models\FirmMember;
+use App\Models\Tenant;
+use App\Models\TenantLogin;
+use App\Models\User;
+use App\Services\Firm\FirmMembershipService;
+use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
+
+/*
+ * REGRESSION — "email not recognised" after a firm invite. Inviting a member
+ * created their central identity but assigned NO client account, so their welcome
+ * email led to a sign-in that could not resolve any workspace. The invite now
+ * REQUIRES at least one account (access granted before the email goes out), and a
+ * member who somehow has none gets a truthful message instead of "not recognised".
+ */
+
+beforeEach(fn () => Mail::fake());
+
+afterEach(function () {
+    tenancy()->end();
+    Tenant::all()->each->delete();
+});
+
+/** A firm with a home workspace and its signed-in power user; returns [firm, home, powerUser]. */
+function firmWithPowerUser(): array
+{
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Invite Test', maxSubAccounts: 5);
+    $power = $svc->addMember($firm, 'Power', 'power@invite.test', FirmRole::PowerUser, password: 'Power-Pass-1')->member;
+    $home = $svc->createSubAccount($firm, 'Cabinet Invite Test');
+    $svc->assign($power, (string) $home->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($home);
+    $user = User::query()->where('email', 'power@invite.test')->firstOrFail();
+
+    return [$firm, $home, $user];
+}
+
+it('invites a member WITH account access so their welcome email just works', function () {
+    [$firm, $home, $powerUser] = firmWithPowerUser();
+    test()->actingAs($powerUser);
+    Filament::setCurrentPanel('app');
+
+    Livewire::test(FirmTeamWidget::class)
+        ->callTableAction('addMember', data: [
+            'name' => 'Nouvelle Collègue',
+            'email' => 'collegue@invite.test',
+            'role' => FirmRole::Member->value,
+            'accounts' => [(string) $home->getTenantKey()],
+            'account_role' => UserRole::Recorder->value,
+        ])
+        ->assertHasNoTableActionErrors();
+
+    // Access exists BEFORE the (queued) email lands: the sign-in resolves.
+    expect(TenantLogin::tenantsFor('collegue@invite.test'))->toBe([(string) $home->getTenantKey()])
+        ->and(AccountAssignment::query()->whereHas('member', fn ($q) => $q->where('email', 'collegue@invite.test'))->count())->toBe(1);
+
+    Mail::assertQueued(WorkspaceCredentialsMail::class, fn (WorkspaceCredentialsMail $m) => $m->hasTo('collegue@invite.test'));
+
+    $mirrored = $home->run(fn () => User::query()->where('email', 'collegue@invite.test')->exists());
+    expect($mirrored)->toBeTrue();
+});
+
+it('requires at least one client account on the invite form', function () {
+    [, , $powerUser] = firmWithPowerUser();
+    test()->actingAs($powerUser);
+    Filament::setCurrentPanel('app');
+
+    Livewire::test(FirmTeamWidget::class)
+        ->callTableAction('addMember', data: [
+            'name' => 'Sans Compte',
+            'email' => 'sans@invite.test',
+            'role' => FirmRole::Member->value,
+            'accounts' => [],
+            'account_role' => UserRole::Recorder->value,
+        ])
+        ->assertHasTableActionErrors(['accounts']);
+
+    expect(FirmMember::query()->where('email', 'sans@invite.test')->exists())->toBeFalse();
+});
+
+it('tells an unassigned firm member the TRUTH at sign-in instead of "not recognised"', function () {
+    // A member who exists centrally but holds no account (legacy invite / all
+    // access revoked) — the login must say why, not pretend the email is unknown.
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Orphan');
+    $svc->addMember($firm, 'Orpheline', 'orpheline@invite.test', FirmRole::Member, password: 'Some-Pass-1');
+
+    Filament::setCurrentPanel('app');
+
+    Livewire::test(Login::class)
+        ->fillForm(['email' => 'orpheline@invite.test', 'password' => 'Some-Pass-1'])
+        ->call('authenticate')
+        ->assertHasFormErrors()
+        ->assertSee(__('firm.login_no_access'));
+});
