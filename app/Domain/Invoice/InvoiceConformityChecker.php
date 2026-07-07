@@ -20,6 +20,15 @@ final class InvoiceConformityChecker
 
     private const AMOUNT_TOLERANCE = 2; // FCFA, absorbs rounding
 
+    /** Set per check(): the user attested the operation is VAT-exempt (CGI). */
+    private bool $attested = false;
+
+    /** Exempt by the invoice's own mention, or by the user's attestation. */
+    private function treatExempt(InvoiceData $invoice): bool
+    {
+        return $invoice->isExempt() || $this->attested;
+    }
+
     /**
      * @param  array<int, string>  $acceptedClientNames  every accepted spelling of
      *                                                   the buyer's own name (the
@@ -37,7 +46,9 @@ final class InvoiceConformityChecker
         ?string $expectedClientAddress = null,
         array $acceptedClientNames = [],
         ?string $vendorRegime = null,
+        bool $userAttestedVatExempt = false,
     ): InvoiceConformityResult {
+        $this->attested = $userAttestedVatExempt;
         $findings = [
             // Conditions de forme — every mandatory mention of art. 150 present.
             $this->forme('supplier_niu', $invoice->supplierNiu !== null),
@@ -49,7 +60,7 @@ final class InvoiceConformityChecker
             $this->forme('client_identity', $this->filled($invoice->clientIdentity)),
             $this->forme('description', $this->filled($invoice->description)),
             $this->forme('ht', $invoice->htAmount !== null),
-            $this->forme('vat', $invoice->isExempt() || ($invoice->vatAmount !== null && $invoice->vatRate !== null)),
+            $this->forme('vat', $this->treatExempt($invoice) || ($invoice->vatAmount !== null && $invoice->vatRate !== null)),
             $this->forme('ttc', $invoice->ttcAmount !== null),
 
             // Conditions de fond — figures coherent, VAT valid, régime respected.
@@ -113,7 +124,7 @@ final class InvoiceConformityChecker
     /** HT × taux = montant de la TVA (or no VAT when exempt). */
     private function vatCalcOk(InvoiceData $invoice): bool
     {
-        if ($invoice->isExempt()) {
+        if ($this->treatExempt($invoice)) {
             return ($invoice->vatAmount ?? 0) === 0;
         }
 
@@ -131,7 +142,7 @@ final class InvoiceConformityChecker
             return false;
         }
 
-        $vat = $invoice->isExempt() ? 0 : $invoice->vatAmount;
+        $vat = $this->treatExempt($invoice) ? 0 : $invoice->vatAmount;
 
         if ($vat === null) {
             return false;
@@ -143,7 +154,7 @@ final class InvoiceConformityChecker
     /** The legal common rate (19.25 %), or no rate when exempt. */
     private function vatRateOk(InvoiceData $invoice): bool
     {
-        if ($invoice->isExempt()) {
+        if ($this->treatExempt($invoice)) {
             return $invoice->vatRate === null || abs($invoice->vatRate) < 0.0001;
         }
 
@@ -198,8 +209,8 @@ final class InvoiceConformityChecker
     /** "VAT = HT × rate = expected; invoice states actual (variance …)." */
     private function vatCalcDetail(InvoiceData $invoice): string
     {
-        if ($invoice->isExempt()) {
-            return (string) __('app.conformity.narr.vat_exempt');
+        if ($this->treatExempt($invoice)) {
+            return (string) __($invoice->isExempt() ? 'app.conformity.narr.vat_exempt' : 'app.conformity.narr.vat_attested');
         }
 
         if ($invoice->htAmount === null || $invoice->vatRate === null || $invoice->vatAmount === null) {
@@ -224,7 +235,7 @@ final class InvoiceConformityChecker
             return (string) __('app.conformity.narr.missing_amounts');
         }
 
-        $vat = $invoice->isExempt() ? 0 : ($invoice->vatAmount ?? 0);
+        $vat = $this->treatExempt($invoice) ? 0 : ($invoice->vatAmount ?? 0);
         $expected = $invoice->htAmount + $vat;
 
         return (string) __('app.conformity.narr.ttc_calc', [
@@ -238,8 +249,8 @@ final class InvoiceConformityChecker
 
     private function vatRateDetail(InvoiceData $invoice): string
     {
-        if ($invoice->isExempt()) {
-            return (string) __('app.conformity.narr.vat_rate_exempt');
+        if ($this->treatExempt($invoice)) {
+            return (string) __($invoice->isExempt() ? 'app.conformity.narr.vat_rate_exempt' : 'app.conformity.narr.vat_attested');
         }
 
         return (string) __('app.conformity.narr.vat_rate', [

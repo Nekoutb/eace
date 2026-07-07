@@ -87,6 +87,7 @@ final class VerificationService
                 // The vendor's régime drives the VAT-invoicing coherence check:
                 // from their ACF first, else the DGI register entry for the NIU.
                 vendorRegime: $certificate->regime ?? $record?->regime,
+                userAttestedVatExempt: $request->vatExemptAttested,
             );
         }
 

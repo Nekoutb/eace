@@ -263,3 +263,43 @@ it('normalises the régime spelling variants found on documents', function () {
         ->and($r(null))->toBe(VendorRegime::Unknown)
         ->and($r('AUTRE CHOSE'))->toBe(VendorRegime::Unknown);
 });
+
+/*
+ * User-attested VAT exemption: an invoice with NO VAT and NO exemption mention is
+ * not auto-failed — the user decides (per the CGI) whether the operation is
+ * exempt. Attested -> treated as exempt; not attested -> the VAT checks fail.
+ */
+
+it('fails the VAT mentions when no VAT, no exemption mention and no attestation', function () {
+    $noVat = invoice(['vatRate' => null, 'vatAmount' => null, 'ttcAmount' => 1_000_000]);
+
+    $result = $this->checker->check($noVat);
+
+    expect($result->conform)->toBeFalse()
+        ->and(collect($result->failed())->pluck('key'))->toContain('vat');
+});
+
+it('treats the invoice as exempt when the user attests the operation is VAT-exempt', function () {
+    $noVat = invoice(['vatRate' => null, 'vatAmount' => null, 'ttcAmount' => 1_000_000]);
+
+    $result = $this->checker->check($noVat, userAttestedVatExempt: true);
+
+    expect($result->conform)->toBeTrue();
+
+    $vatCalc = collect($result->findings)->firstWhere('key', 'vat_calc');
+    expect($vatCalc->detail)->toBe(__('app.conformity.narr.vat_attested')); // audit trail says WHO decided
+});
+
+it('rejects a contradictory attestation (invoice still carries VAT)', function () {
+    // Ticking "exempt" cannot whitewash an invoice that DOES bill VAT.
+    $result = $this->checker->check(invoice(), userAttestedVatExempt: true);
+
+    expect($result->conform)->toBeFalse()
+        ->and(collect($result->failed())->pluck('key'))->toContain('vat_calc');
+});
+
+it('does not let attestation bypass the régime rule when VAT is billed', function () {
+    $result = $this->checker->check(invoice(), vendorRegime: 'IGS', userAttestedVatExempt: true);
+
+    expect($result->conform)->toBeFalse();
+});

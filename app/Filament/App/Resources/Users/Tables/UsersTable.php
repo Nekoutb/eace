@@ -112,6 +112,9 @@ class UsersTable
                     'must_change_password' => true,
                 ]);
 
+                // The user receives the new one-time password by email directly.
+                UserResource::emailCredentials((string) $record->name, (string) $record->email, $temporaryPassword);
+
                 UserResource::credentialsNotification(
                     (string) __('app.user.reset_title'),
                     (string) $record->email,

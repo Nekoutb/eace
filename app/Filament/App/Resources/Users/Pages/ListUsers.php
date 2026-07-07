@@ -68,6 +68,10 @@ class ListUsers extends ListRecords
                         'must_change_password' => true,
                     ]);
 
+                    // The new user gets their own onboarding email (credentials +
+                    // sign-in button); the toast stays as the admin's backup copy.
+                    UserResource::emailCredentials(trim($data['name']), trim($data['email']), $temporaryPassword);
+
                     UserResource::credentialsNotification(
                         (string) __('app.user.created_title'),
                         trim($data['email']),

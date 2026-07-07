@@ -353,7 +353,7 @@
                     </label>
                     @error('invoiceUploads.*') <p class="niu-err niu-field--full">{{ $message }}</p> @enderror
 
-                    @foreach ($invoices as $inv)
+                    @foreach ($invoices as $i => $inv)
                         <div class="niu-extract niu-field--full">
                             <div class="niu-extract__h">@svg('heroicon-o-sparkles', 'niu-ico', ['aria-hidden' => 'true']){{ filled($inv['name'] ?? null) ? $inv['name'] : __('app.ui.scan_extract') }}</div>
                             <div class="niu-extract__grid">
@@ -376,6 +376,17 @@
                                     </div>
                                 @endforeach
                             </div>
+                            @if ($inv['needs_vat_attestation'] ?? false)
+                                {{-- No VAT billed and no exemption mention: the user decides,
+                                     per the CGI, whether the operation is VAT-exempt. --}}
+                                <label style="display:flex;align-items:flex-start;gap:.55rem;margin:.65rem .9rem .8rem;cursor:pointer">
+                                    <input type="checkbox" wire:model.live="invoices.{{ $i }}.vat_attested" style="margin-top:.2rem;accent-color:#16a34a;width:1rem;height:1rem">
+                                    <span style="font-size:.84rem;line-height:1.45">
+                                        <strong>{{ __('app.ui.vat_attest_label') }}</strong><br>
+                                        <span class="niu-help" style="margin:0">{{ __('app.ui.vat_attest_help') }}</span>
+                                    </span>
+                                </label>
+                            @endif
                         </div>
                     @endforeach
 

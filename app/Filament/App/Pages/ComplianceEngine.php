@@ -307,6 +307,10 @@ class ComplianceEngine extends Page
                 'path' => $ref,
                 'data' => $invoice->toArray(),
                 'extracted' => $this->extractedSummary($invoice),
+                // No VAT billed and no exemption mention: the user may attest the
+                // operation is VAT-exempt per the CGI before the engine concludes.
+                'needs_vat_attestation' => ($invoice->vatAmount ?? 0) <= 0 && ! $invoice->isExempt(),
+                'vat_attested' => false,
             ];
 
             // Auto-fill the control fields from the first readable invoice.
@@ -631,6 +635,7 @@ class ComplianceEngine extends Page
                 invoiceData: $invoiceData,
                 invoiceFilePath: null,
                 checkedBy: auth()->id(),
+                vatExemptAttested: (bool) ($invoice['vat_attested'] ?? false),
             ));
 
             // Commit this invoice's staged captures (invoice file + the vendor's

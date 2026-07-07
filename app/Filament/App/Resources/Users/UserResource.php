@@ -4,11 +4,13 @@ namespace App\Filament\App\Resources\Users;
 
 use App\Filament\App\Resources\Users\Pages\ListUsers;
 use App\Filament\App\Resources\Users\Tables\UsersTable;
+use App\Mail\WorkspaceCredentialsMail;
 use App\Models\User;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -52,6 +54,28 @@ class UserResource extends Resource
     public static function canCreate(): bool
     {
         return false; // users are added via the guided "Add a user" action
+    }
+
+    /**
+     * Email the new/reset credentials to the USER THEMSELVES so they can continue
+     * onboarding on their own: the welcome mail carries their sign-in email, the
+     * one-time password and a pre-filled sign-in button; first sign-in enforces
+     * 2FA enrolment + a new password. QUEUED (drained every minute) and
+     * best-effort — the admin's on-screen toast remains the fallback channel.
+     */
+    public static function emailCredentials(string $name, string $email, string $temporaryPassword): void
+    {
+        try {
+            Mail::to($email)->locale(app()->getLocale())->queue(new WorkspaceCredentialsMail(
+                name: $name,
+                orgName: (string) (tenant()->name ?? config('app.name')),
+                email: $email,
+                temporaryPassword: $temporaryPassword,
+                loginUrl: rtrim((string) config('app.url'), '/').'/app/login',
+            ));
+        } catch (\Throwable $e) {
+            report($e); // the toast still shows the credentials
+        }
     }
 
     /**

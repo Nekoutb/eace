@@ -32,5 +32,8 @@ final readonly class VerifyRequest
         public ?InvoiceData $invoiceData = null,
         public ?string $invoiceFilePath = null,
         public ?int $checkedBy = null,
+        // The user attested (per the CGI) that this operation is VAT-exempt —
+        // offered when the invoice bills no VAT yet carries no exemption mention.
+        public bool $vatExemptAttested = false,
     ) {}
 }
