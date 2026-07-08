@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Firm\FirmMembershipService;
 use App\Support\AccountSwitcher;
 use Filament\Facades\Filament;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -243,4 +244,65 @@ it('switches via the URL parameter even when the form body is stripped in transi
         ->assertRedirect('/app');
 
     expect(session('tenant_id'))->toBe((string) $b->getTenantKey());
+});
+
+/*
+ * THE production failure: session-based auth (what real browsers do — actingAs()
+ * bypasses it) on the switch route. Laravel's middleware priority used to run
+ * `auth` BEFORE the tenancy initializer, resolving the session's user id against
+ * the CENTRAL users table — wrong or missing user, so the switch NEVER worked
+ * live. The priority override must keep tenancy first.
+ */
+
+it('switches with real session-based auth (the exact production failure mode)', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Session');
+    $member = $svc->addMember($firm, 'S', 'sess@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
+    $a = $svc->createSubAccount($firm, 'Session Alpha');
+    $b = $svc->createSubAccount($firm, 'Session Beta');
+    $svc->assign($member, (string) $a->getTenantKey(), UserRole::Admin);
+    $svc->assign($member, (string) $b->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($a);
+    $userId = User::query()->where('email', 'sess@switch.test')->value('id');
+    tenancy()->end();
+
+    // The REAL session state a signed-in browser carries — no actingAs().
+    $guardSessionKey = 'login_web_'.sha1(SessionGuard::class);
+
+    $this->withSession([
+        $guardSessionKey => $userId,
+        'tenant_id' => (string) $a->getTenantKey(),
+    ])->post('/workspace/switch/'.$b->getTenantKey())
+        ->assertRedirect('/app');
+
+    expect(session('tenant_id'))->toBe((string) $b->getTenantKey())
+        ->and(DataAccessLog::query()->where('action', 'workspace_switch')->count())->toBe(1);
+});
+
+it('refuses to switch while impersonation is active (read-only view)', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Imp');
+    $member = $svc->addMember($firm, 'I', 'imp@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
+    $a = $svc->createSubAccount($firm, 'Imp Alpha');
+    $b = $svc->createSubAccount($firm, 'Imp Beta');
+    $svc->assign($member, (string) $a->getTenantKey(), UserRole::Admin);
+    $svc->assign($member, (string) $b->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($a);
+    $userA = User::query()->where('email', 'imp@switch.test')->firstOrFail();
+    tenancy()->end();
+
+    $this->actingAs($userA)->withSession([
+        'tenant_id' => (string) $a->getTenantKey(),
+        'impersonation' => ['admin_id' => 1, 'tenant' => (string) $a->getTenantKey(), 'tenant_name' => 'Imp Alpha', 'started_at' => now()->timestamp],
+    ])->post('/workspace/switch/'.$b->getTenantKey())
+        ->assertRedirect('/app');
+
+    // Refused: context unchanged, no switch audited.
+    expect(session('tenant_id'))->toBe((string) $a->getTenantKey())
+        ->and(DataAccessLog::query()->where('action', 'workspace_switch')->count())->toBe(0);
+
+    // Drop the marker so teardown (tenant deletes) runs without the write-guard.
+    session()->forget('impersonation');
 });

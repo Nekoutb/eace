@@ -1,6 +1,7 @@
 @php($ws = \App\Support\AccountSwitcher::workspacesFor(\Filament\Facades\Filament::auth()->user()))
 
-@if (count($ws) > 1)
+{{-- Hidden while badged-in: impersonation is a read-only view of ONE workspace. --}}
+@if (count($ws) > 1 && ! \App\Support\Impersonation::isActive())
     @php($current = collect($ws)->firstWhere('current', true))
     <div x-data="{ open: false }" style="position:relative" @keydown.escape="open=false">
         <style>

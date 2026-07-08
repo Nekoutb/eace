@@ -132,6 +132,12 @@ final class AccountSwitcher
             return false;
         };
 
+        // A badged-in operator is a read-only VIEWER of one workspace — switching
+        // would silently swap the audited identity. Exit impersonation first.
+        if (Impersonation::isActive()) {
+            return $refused('impersonation active — read-only view cannot switch workspaces');
+        }
+
         $current = Auth::user();
         $member = self::memberFor($current instanceof User ? $current : null);
         if ($member === null) {
