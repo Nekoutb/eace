@@ -222,3 +222,25 @@ it('tells the member plainly when a switch target is no longer available', funct
     expect(collect(session('filament.notifications', []))->isNotEmpty())->toBeTrue()
         ->and(session('tenant_id'))->toBe((string) $a->getTenantKey());
 });
+
+it('switches via the URL parameter even when the form body is stripped in transit', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Param');
+    $member = $svc->addMember($firm, 'P', 'pp@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
+    $a = $svc->createSubAccount($firm, 'Param Alpha');
+    $b = $svc->createSubAccount($firm, 'Param Beta');
+    $svc->assign($member, (string) $a->getTenantKey(), UserRole::Admin);
+    $svc->assign($member, (string) $b->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($a);
+    $userA = User::query()->where('email', 'pp@switch.test')->firstOrFail();
+    tenancy()->end();
+
+    // EMPTY body — the reported live failure mode; the URL alone must carry it.
+    $this->actingAs($userA)
+        ->withSession(['tenant_id' => (string) $a->getTenantKey()])
+        ->post('/workspace/switch/'.$b->getTenantKey(), [])
+        ->assertRedirect('/app');
+
+    expect(session('tenant_id'))->toBe((string) $b->getTenantKey());
+});

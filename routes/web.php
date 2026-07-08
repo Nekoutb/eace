@@ -36,7 +36,11 @@ Route::post('/impersonation/exit', [ImpersonationController::class, 'exit'])->na
  * session (so the acting member is resolved from their own workspace); the target
  * is re-verified against the member's account_assignments before the swap.
  */
-Route::post('/workspace/switch', WorkspaceSwitchController::class)
+// The target workspace travels IN THE URL ({tenant}) — a route parameter cannot
+// be dropped the way a form-body field can (observed live: POSTs arriving with an
+// empty body field). The optional-param form keeps older cached pages working via
+// the hidden-input fallback.
+Route::post('/workspace/switch/{tenant?}', WorkspaceSwitchController::class)
     ->middleware([InitializeTenancyForLivewire::class, 'auth', 'throttle:30,1'])
     ->name('workspace.switch');
 

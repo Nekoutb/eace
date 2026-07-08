@@ -8,6 +8,7 @@ use App\Support\AccountSwitcher;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Switches a signed-in accounting-firm member between the client sub-accounts they
@@ -20,9 +21,22 @@ use Illuminate\Http\Request;
  */
 final class WorkspaceSwitchController
 {
-    public function __invoke(Request $request): RedirectResponse
+    public function __invoke(Request $request, ?string $tenant = null): RedirectResponse
     {
-        $tenantId = trim((string) $request->input('tenant'));
+        // Route parameter first (cannot be dropped in transit); hidden-input body
+        // field as fallback for older cached pages.
+        $tenantId = trim((string) ($tenant ?? $request->input('tenant')));
+
+        if ($tenantId === '') {
+            // Observed live: a POST arriving with no target at all. Log what DID
+            // arrive so the transport problem stays diagnosable.
+            Log::warning('workspace switch arrived without a target', [
+                'auth_id' => $request->user()?->getAuthIdentifier(),
+                'content_type' => (string) $request->header('content-type'),
+                'body_keys' => array_keys($request->except(['_token'])),
+                'referer' => (string) $request->header('referer'),
+            ]);
+        }
 
         if ($tenantId !== '' && AccountSwitcher::switchTo($tenantId)) {
             return redirect('/app');

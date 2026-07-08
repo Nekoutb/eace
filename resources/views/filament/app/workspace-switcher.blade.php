@@ -36,8 +36,9 @@
                 @if ($w['current'])
                     <div class="nws-item nws-current">@svg('heroicon-m-check-circle'){{ $w['name'] }}</div>
                 @else
-                    <form method="POST" action="{{ route('workspace.switch') }}">
+                    <form method="POST" action="{{ route('workspace.switch', ['tenant' => $w['id']]) }}">
                         @csrf
+                        {{-- Belt & braces: the target rides in the URL (primary) AND the body. --}}
                         <input type="hidden" name="tenant" value="{{ $w['id'] }}">
                         <button type="submit" class="nws-item">@svg('heroicon-m-arrow-right-circle'){{ $w['name'] }}</button>
                     </form>
