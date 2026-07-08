@@ -11,6 +11,7 @@ use App\Models\FirmMember;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * The accounting-firm workspace switcher: lets a signed-in firm member move
@@ -115,10 +116,26 @@ final class AccountSwitcher
      */
     public static function switchTo(string $tenantId): bool
     {
+        // Refusals are rare and always confusing for the member — log WHY, with
+        // enough context to diagnose from the server without a repro session.
+        $refused = static function (string $reason, array $context = []) use ($tenantId): bool {
+            Log::warning('workspace switch refused', array_merge([
+                'reason' => $reason,
+                'target' => $tenantId,
+                'auth_id' => Auth::id(),
+                'auth_class' => Auth::user() !== null ? Auth::user()::class : null,
+                'auth_email' => (string) Auth::user()?->getAttribute('email'),
+                'session_tenant' => session('tenant_id'),
+                'tenancy_initialized' => (bool) tenancy()->initialized,
+            ], $context));
+
+            return false;
+        };
+
         $current = Auth::user();
         $member = self::memberFor($current instanceof User ? $current : null);
         if ($member === null) {
-            return false;
+            return $refused('no active firm member matches the signed-in user');
         }
 
         $assigned = AccountAssignment::query()
@@ -126,12 +143,13 @@ final class AccountSwitcher
             ->where('tenant_id', $tenantId)
             ->exists();
         if (! $assigned) {
-            return false; // never trust the request — only real assignments switch
+            // never trust the request — only real assignments switch
+            return $refused('member is not assigned to the target', ['member_id' => $member->getKey()]);
         }
 
         $target = Tenant::query()->find($tenantId);
         if ($target === null || $target->isSuspended()) {
-            return false;
+            return $refused($target === null ? 'target workspace does not exist' : 'target workspace is suspended');
         }
 
         DataAccessLog::record('workspace_switch', 'tenant:'.$tenantId, 'member '.$member->email);
@@ -145,7 +163,7 @@ final class AccountSwitcher
         if (! $user instanceof User) {
             tenancy()->end();
 
-            return false;
+            return $refused('no mirrored user for the member inside the target workspace');
         }
 
         Auth::guard('web')->login($user);
