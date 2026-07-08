@@ -6,6 +6,7 @@ use App\Domain\Auth\UserRole;
 use App\Domain\Firm\FirmRole;
 use App\Models\AccountAssignment;
 use App\Models\OrganizationProfile;
+use App\Models\PendingSignup;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
 use App\Models\User;
@@ -161,4 +162,34 @@ it('keeps standalone clients on an exclusive single-workspace mapping', function
     expect(fn () => $prov->provision('Two SARL', 'A', 'a@one.test'))
         ->toThrow(ClientProvisioningException::class)
         ->and(TenantLogin::tenantsFor('a@one.test'))->toHaveCount(1);
+});
+
+/*
+ * REGRESSION — deleting a workspace must FREE its sign-in emails. The admin
+ * deleted a client, but the ghost directory row kept the email "claimed", so the
+ * client could not sign up again ("you still have a workspace").
+ */
+
+it('frees the sign-in email when a standalone workspace is deleted', function () {
+    app(ClientProvisioningService::class)->provision('Ghost SARL', 'Caven', 'caven@ghost.test');
+    expect(TenantLogin::tenantsFor('caven@ghost.test'))->toHaveCount(1);
+
+    Tenant::query()->findOrFail('ghost-sarl')->delete();
+
+    // Email fully released: resolvable nowhere, and signup accepts it again.
+    expect(TenantLogin::tenantsFor('caven@ghost.test'))->toBe([])
+        ->and(PendingSignup::emailAvailable('caven@ghost.test'))->toBeTrue();
+});
+
+it('drops directory rows AND assignments when a firm sub-account is deleted', function () {
+    $svc = firmSvc();
+    $firm = $svc->createFirm('Firm Del');
+    $member = $svc->addMember($firm, 'M', 'm@del.test')->member;
+    $sub = $svc->createSubAccount($firm, 'Del Client');
+    $svc->assign($member, (string) $sub->getTenantKey());
+
+    Tenant::query()->findOrFail((string) $sub->getTenantKey())->delete();
+
+    expect(TenantLogin::tenantsFor('m@del.test'))->toBe([])
+        ->and(AccountAssignment::query()->where('tenant_id', (string) $sub->getTenantKey())->count())->toBe(0);
 });

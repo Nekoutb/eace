@@ -27,6 +27,20 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     use HasDatabase;
     use HasDomains;
 
+    protected static function booted(): void
+    {
+        // Deleting a workspace must free its SIGN-IN entries and firm assignments,
+        // whatever path deleted it (admin console, firm console, provisioning
+        // cleanup). The tenant database is dropped wholesale, so the per-user
+        // observer never fires — without this, ghost directory rows keep the
+        // emails "claimed" and block the client from ever signing up again.
+        static::deleted(function (self $tenant): void {
+            $id = (string) $tenant->getTenantKey();
+            TenantLogin::query()->where('tenant_id', $id)->delete();
+            AccountAssignment::query()->where('tenant_id', $id)->delete();
+        });
+    }
+
     /**
      * Real (non-JSON) columns. firm_id is added here so it is stored as its own
      * indexed column — queryable and groupable — not inside the data blob.
