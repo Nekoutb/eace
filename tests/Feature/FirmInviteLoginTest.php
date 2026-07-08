@@ -13,7 +13,9 @@ use App\Models\Tenant;
 use App\Models\TenantLogin;
 use App\Models\User;
 use App\Services\Firm\FirmMembershipService;
+use App\Support\AccountSwitcher;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -104,4 +106,67 @@ it('tells an unassigned firm member the TRUTH at sign-in instead of "not recogni
         ->call('authenticate')
         ->assertHasFormErrors()
         ->assertSee(__('firm.login_no_access'));
+});
+
+/*
+ * Assignment consistency: workspace access granted through ANY path must record
+ * the assignment that drives the member's switcher. The reported case: a member
+ * added via the workspace's own Users screen had access but no assignment — so
+ * "he does not have the selector".
+ */
+
+it('records the assignment when a firm member is added via the workspace Users screen', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Sync');
+    $member = $svc->addMember($firm, 'Idris', 'idris@sync.test', FirmRole::Member, password: 'Pass-123456')->member;
+    $home = $svc->createSubAccount($firm, 'Sync Client One');
+
+    // The workspace-admin path: a plain tenant User created inside the workspace.
+    tenancy()->initialize($home);
+    User::query()->create([
+        'name' => 'Idris', 'email' => 'idris@sync.test',
+        'password' => Hash::make('Pass-123456'),
+        'role' => UserRole::Settler,
+    ]);
+    tenancy()->end();
+
+    $assignment = AccountAssignment::query()
+        ->where('firm_member_id', $member->getKey())
+        ->where('tenant_id', (string) $home->getTenantKey())
+        ->first();
+
+    expect($assignment)->not->toBeNull()
+        ->and($assignment->account_role)->toBe(UserRole::Settler)  // role follows the user row
+        ->and(AccountSwitcher::workspacesFor(
+            $home->run(fn () => User::query()->where('email', 'idris@sync.test')->first())
+        ))->toHaveCount(1); // the switcher now sees it
+});
+
+it('drops the assignment when the workspace user is deleted', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Sync');
+    $member = $svc->addMember($firm, 'Idris', 'idris@sync.test', FirmRole::Member, password: 'Pass-123456')->member;
+    $home = $svc->createSubAccount($firm, 'Sync Client One');
+    $svc->assign($member, (string) $home->getTenantKey(), UserRole::Recorder);
+
+    $home->run(fn () => User::query()->where('email', 'idris@sync.test')->get()->each->delete());
+
+    expect(AccountAssignment::query()->where('firm_member_id', $member->getKey())->count())->toBe(0);
+});
+
+it('never creates a cross-firm assignment from an unrelated workspace user row', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Sync');
+    $member = $svc->addMember($firm, 'Idris', 'idris@sync.test', FirmRole::Member, password: 'Pass-123456')->member;
+    $other = Tenant::create(['id' => 'standalone-sync', 'name' => 'Standalone']); // no firm
+
+    tenancy()->initialize($other);
+    User::query()->create([
+        'name' => 'Idris', 'email' => 'idris@sync.test',
+        'password' => Hash::make('x'),
+        'role' => UserRole::Recorder,
+    ]);
+    tenancy()->end();
+
+    expect(AccountAssignment::query()->where('firm_member_id', $member->getKey())->count())->toBe(0);
 });
