@@ -1,8 +1,10 @@
 @php($ws = \App\Support\AccountSwitcher::workspacesFor(\Filament\Facades\Filament::auth()->user()))
 
-{{-- Hidden while badged-in: impersonation is a read-only view of ONE workspace. --}}
-@if (count($ws) > 1 && ! \App\Support\Impersonation::isActive())
+{{-- Shown for a firm member with several assigned workspaces — INCLUDING a badged-in
+     operator, whose switch stays read-only (the impersonation follows along). --}}
+@if (count($ws) > 1)
     @php($current = collect($ws)->firstWhere('current', true))
+    @php($readOnly = \App\Support\Impersonation::isActive())
     <div x-data="{ open: false }" style="position:relative" @keydown.escape="open=false">
         <style>
             .nws-btn{display:inline-flex;align-items:center;gap:.4rem;max-width:15rem;padding:.4rem .7rem;border-radius:10px;
@@ -33,6 +35,9 @@
 
         <div class="nws-menu" x-show="open" x-cloak x-transition @click.outside="open=false">
             <div class="nws-head">{{ __('firm.switcher.title') }}</div>
+            @if ($readOnly)
+                <div class="nws-head" style="color:#92400e;text-transform:none;font-weight:600">@svg('heroicon-m-eye', '', ['style' => 'width:.9em;height:.9em;display:inline;vertical-align:-.1em']) {{ __('firm.switcher.read_only') }}</div>
+            @endif
             @foreach ($ws as $w)
                 @if ($w['current'])
                     <div class="nws-item nws-current">@svg('heroicon-m-check-circle'){{ $w['name'] }}</div>

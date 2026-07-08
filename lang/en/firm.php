@@ -11,6 +11,7 @@ return [
     'switcher' => [
         'title' => 'Switch client workspace',
         'workspace' => 'Workspace',
+        'read_only' => 'Read-only preview (you are badged in)',
         'unavailable_title' => 'This client account is no longer available',
         'unavailable_body' => 'It may have been deleted or your access changed since this page loaded. The list has been refreshed — pick an account from the updated selector.',
     ],

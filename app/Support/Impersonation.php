@@ -57,6 +57,24 @@ final class Impersonation
         return is_string($name) ? $name : null;
     }
 
+    /**
+     * Re-point an ACTIVE impersonation at a sibling workspace (the firm workspace
+     * switcher, used read-only by a badged-in operator). Keeps the same admin and
+     * start time — the lifetime spans the whole badge-in — so read-only stays
+     * enforced throughout. No-op if not impersonating.
+     */
+    public static function retarget(Tenant $tenant): void
+    {
+        $ctx = self::context();
+        if ($ctx === null) {
+            return;
+        }
+
+        $ctx['tenant'] = (string) $tenant->getTenantKey();
+        $ctx['tenant_name'] = $tenant->name;
+        session()->put(self::SESSION_KEY, $ctx);
+    }
+
     public static function startedAt(): ?int
     {
         $at = self::context()['started_at'] ?? null;
@@ -166,8 +184,13 @@ final class Impersonation
      * Register a write-blocking guard on the given (tenant) connection while
      * impersonating. Called from the TenancyInitialized listener, so it fires for
      * both regular page loads and Livewire requests. No-op when not impersonating,
-     * so normal client use is unaffected; central writes (audit) use a different
-     * connection and are never guarded.
+     * so normal client use is unaffected.
+     *
+     * The one exemption is the central `data_access_logs` table: it is the
+     * landlord's compliance audit trail (never tenant data), and the impersonation
+     * itself must be recordable — including a read-only workspace switch. Because
+     * this deployment shares one connection for central + tenant, that audit write
+     * would otherwise be blocked too.
      */
     public static function guard(Connection $connection): void
     {
@@ -180,6 +203,7 @@ final class Impersonation
         // rather than blocking a legitimate write.
         $connection->beforeExecuting(function (string $query): void {
             if (self::readOnly()
+                && str_contains($query, 'data_access_logs') === false
                 && preg_match('/^\s*(insert|update|delete|replace|create|alter|drop|truncate)\b/i', $query) === 1) {
                 throw new ReadOnlyImpersonationException;
             }

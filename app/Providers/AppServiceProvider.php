@@ -186,7 +186,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Stamp a tenant user's last sign-in. Guarded on the column being present
         // so central admin users (whose table has no last_login_at) are skipped.
+        // Skipped entirely while impersonating: a read-only badge-in (including a
+        // read-only workspace switch) must never write to the client's database —
+        // and the write-guard would otherwise reject this stamp with a 500.
         Event::listen(Login::class, function (Login $event): void {
+            if (Impersonation::readOnly()) {
+                return;
+            }
             $user = $event->user;
             if ($user instanceof User && array_key_exists('last_login_at', $user->getAttributes())) {
                 $user->forceFill(['last_login_at' => now()])->saveQuietly();

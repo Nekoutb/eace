@@ -132,11 +132,12 @@ final class AccountSwitcher
             return false;
         };
 
-        // A badged-in operator is a read-only VIEWER of one workspace — switching
-        // would silently swap the audited identity. Exit impersonation first.
-        if (Impersonation::isActive()) {
-            return $refused('impersonation active — read-only view cannot switch workspaces');
-        }
+        // A badged-in operator (read-only impersonation) may ALSO switch between the
+        // member's workspaces — it's the operator's only window into the firm's
+        // multi-client view — but the view stays STRICTLY read-only: we re-target
+        // the impersonation to the sibling workspace, never dropping the marker, so
+        // the write-guard follows and no client data can be mutated.
+        $impersonating = Impersonation::isActive();
 
         $current = Auth::user();
         $member = self::memberFor($current instanceof User ? $current : null);
@@ -158,11 +159,11 @@ final class AccountSwitcher
             return $refused($target === null ? 'target workspace does not exist' : 'target workspace is suspended');
         }
 
-        DataAccessLog::record('workspace_switch', 'tenant:'.$tenantId, 'member '.$member->email);
-
         if (tenant() !== null) {
             tenancy()->end();
         }
+        // Re-initialising fires TenancyInitialized, which re-arms the read-only
+        // write-guard on the new connection WHILE the impersonation marker stands.
         tenancy()->initialize($target);
 
         $user = User::query()->where('email', $member->email)->first();
@@ -177,6 +178,13 @@ final class AccountSwitcher
         // request and logs out on a mismatch — update it after swapping users.
         session()->put('password_hash_'.Auth::getDefaultDriver(), $user->getAuthPassword());
         session()->put('tenant_id', $tenantId);
+
+        if ($impersonating) {
+            Impersonation::retarget($target); // keep read-only, follow the new workspace
+            DataAccessLog::record('impersonate_switch', 'tenant:'.$tenantId, 'admin (read-only) → '.$member->email);
+        } else {
+            DataAccessLog::record('workspace_switch', 'tenant:'.$tenantId, 'member '.$member->email);
+        }
 
         return true;
     }

@@ -11,6 +11,7 @@ return [
     'switcher' => [
         'title' => 'Changer d’espace client',
         'workspace' => 'Espace',
+        'read_only' => 'Aperçu en lecture seule (vous êtes en accès badge)',
         'unavailable_title' => 'Ce compte client n’est plus disponible',
         'unavailable_body' => 'Il a peut-être été supprimé, ou votre accès a changé depuis l’affichage de la page. La liste a été actualisée — choisissez un compte dans le sélecteur mis à jour.',
     ],

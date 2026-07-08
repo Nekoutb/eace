@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 use App\Domain\Auth\UserRole;
 use App\Domain\Firm\FirmRole;
+use App\Exceptions\ReadOnlyImpersonationException;
 use App\Filament\App\Pages\FirmConsole\FirmTeamWidget;
 use App\Filament\Auth\Login;
 use App\Mail\WorkspaceCredentialsMail;
 use App\Models\AccountAssignment;
 use App\Models\DataAccessLog;
 use App\Models\FirmMember;
+use App\Models\OrganizationProfile;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
 use App\Models\User;
 use App\Services\Firm\FirmMembershipService;
 use App\Support\AccountSwitcher;
+use App\Support\Impersonation;
 use Filament\Facades\Filament;
 use Illuminate\Auth\SessionGuard;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -280,7 +284,7 @@ it('switches with real session-based auth (the exact production failure mode)', 
         ->and(DataAccessLog::query()->where('action', 'workspace_switch')->count())->toBe(1);
 });
 
-it('refuses to switch while impersonation is active (read-only view)', function () {
+it('lets a badged-in operator switch workspaces READ-ONLY (the only way to test the firm view)', function () {
     $svc = app(FirmMembershipService::class);
     $firm = $svc->createFirm('Cabinet Imp');
     $member = $svc->addMember($firm, 'I', 'imp@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
@@ -293,16 +297,49 @@ it('refuses to switch while impersonation is active (read-only view)', function 
     $userA = User::query()->where('email', 'imp@switch.test')->firstOrFail();
     tenancy()->end();
 
+    // Badged into workspace A (read-only impersonation marker set).
     $this->actingAs($userA)->withSession([
         'tenant_id' => (string) $a->getTenantKey(),
         'impersonation' => ['admin_id' => 1, 'tenant' => (string) $a->getTenantKey(), 'tenant_name' => 'Imp Alpha', 'started_at' => now()->timestamp],
     ])->post('/workspace/switch/'.$b->getTenantKey())
         ->assertRedirect('/app');
 
-    // Refused: context unchanged, no switch audited.
-    expect(session('tenant_id'))->toBe((string) $a->getTenantKey())
+    // Switched to B, but STILL read-only: the impersonation follows, retargeted to B,
+    // and it is audited as an impersonation move (not a normal member switch).
+    expect(session('tenant_id'))->toBe((string) $b->getTenantKey())
+        ->and(session('impersonation.tenant'))->toBe((string) $b->getTenantKey())
+        ->and(Impersonation::readOnly())->toBeTrue()
+        ->and(DataAccessLog::query()->where('action', 'impersonate_switch')->count())->toBe(1)
         ->and(DataAccessLog::query()->where('action', 'workspace_switch')->count())->toBe(0);
 
-    // Drop the marker so teardown (tenant deletes) runs without the write-guard.
+    session()->forget('impersonation'); // clear before teardown
+});
+
+/*
+ * The read-only guard's exemption (the mechanism behind the impersonation switch):
+ * while impersonating, tenant-data writes are blocked, but the CENTRAL audit log
+ * — which records the impersonation itself, including a read-only switch — is not.
+ */
+
+it('read-only guard blocks tenant writes yet allows the central audit log', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Guard');
+    $sub = $svc->createSubAccount($firm, 'Guard Client');
+
+    tenancy()->initialize($sub);
+    session()->put('impersonation', ['admin_id' => 1, 'tenant' => (string) $sub->getTenantKey(), 'tenant_name' => 'Guard Client', 'started_at' => now()->timestamp]);
+
+    // Arm the guard exactly as the TenancyInitialized listener does.
+    Impersonation::guard(DB::connection());
+
+    // The compliance audit log is exempt — the impersonation must be recordable.
+    DataAccessLog::record('probe_audit', 'tenant:'.$sub->getTenantKey());
+    expect(DataAccessLog::query()->where('action', 'probe_audit')->count())->toBe(1);
+
+    // Any other tenant-data write is rejected.
+    expect(fn () => OrganizationProfile::current()->update(['entity_name' => 'HACK']))
+        ->toThrow(ReadOnlyImpersonationException::class);
+
     session()->forget('impersonation');
+    tenancy()->end();
 });
