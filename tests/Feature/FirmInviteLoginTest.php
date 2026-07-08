@@ -8,6 +8,7 @@ use App\Filament\App\Pages\FirmConsole\FirmTeamWidget;
 use App\Filament\Auth\Login;
 use App\Mail\WorkspaceCredentialsMail;
 use App\Models\AccountAssignment;
+use App\Models\DataAccessLog;
 use App\Models\FirmMember;
 use App\Models\Tenant;
 use App\Models\TenantLogin;
@@ -169,4 +170,55 @@ it('never creates a cross-firm assignment from an unrelated workspace user row',
     tenancy()->end();
 
     expect(AccountAssignment::query()->where('firm_member_id', $member->getKey())->count())->toBe(0);
+});
+
+/*
+ * The switcher's POST route end-to-end: a power user pinned to workspace A picks
+ * assigned workspace B — the swap must happen (reported: clicks 302 back with no
+ * switch and no audit entry ever recorded).
+ */
+
+it('switches an assigned member between workspaces via the real POST route', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Switch');
+    $member = $svc->addMember($firm, 'P', 'p@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
+    $a = $svc->createSubAccount($firm, 'Switch Alpha');
+    $b = $svc->createSubAccount($firm, 'Switch Beta');
+    $svc->assign($member, (string) $a->getTenantKey(), UserRole::Admin);
+    $svc->assign($member, (string) $b->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($a);
+    $userA = User::query()->where('email', 'p@switch.test')->firstOrFail();
+    tenancy()->end();
+
+    $this->actingAs($userA)
+        ->withSession(['tenant_id' => (string) $a->getTenantKey()])
+        ->post('/workspace/switch', ['tenant' => (string) $b->getTenantKey()])
+        ->assertRedirect('/app');
+
+    expect(session('tenant_id'))->toBe((string) $b->getTenantKey())          // pinned to B
+        ->and((string) auth()->user()->email)->toBe('p@switch.test')          // still the member
+        ->and(DataAccessLog::query()->where('action', 'workspace_switch')->count())->toBe(1); // audited
+});
+
+it('tells the member plainly when a switch target is no longer available', function () {
+    $svc = app(FirmMembershipService::class);
+    $firm = $svc->createFirm('Cabinet Switch Fail');
+    $member = $svc->addMember($firm, 'P', 'pf@switch.test', FirmRole::PowerUser, password: 'Pass-123456')->member;
+    $a = $svc->createSubAccount($firm, 'Fail Alpha');
+    $svc->assign($member, (string) $a->getTenantKey(), UserRole::Admin);
+
+    tenancy()->initialize($a);
+    $userA = User::query()->where('email', 'pf@switch.test')->firstOrFail();
+    tenancy()->end();
+
+    // The clicked account was deleted after the page rendered (stale selector).
+    $this->actingAs($userA)
+        ->withSession(['tenant_id' => (string) $a->getTenantKey()])
+        ->post('/workspace/switch', ['tenant' => 'deleted-or-never-assigned'])
+        ->assertRedirect('/app');
+
+    // The user is told, not silently bounced; their context is unchanged.
+    expect(collect(session('filament.notifications', []))->isNotEmpty())->toBeTrue()
+        ->and(session('tenant_id'))->toBe((string) $a->getTenantKey());
 });
