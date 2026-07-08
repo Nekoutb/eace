@@ -75,12 +75,8 @@
                 @error('entityNiu') <p class="niu-set__err">{{ $message }}</p> @enderror
             </div>
 
-            <div class="niu-set__field">
-                <label class="niu-set__label" for="set-rccm">{{ __('app.ui.entity_rccm') }}</label>
-                <input id="set-rccm" type="text" wire:model="entityRccm" class="niu-set__input niu-set__input--mono" placeholder="RC/YAO/2019/B/1234" autocomplete="off">
-                <p class="niu-set__help">{{ __('app.ui.entity_rccm_help') }}</p>
-                @error('entityRccm') <p class="niu-set__err">{{ $message }}</p> @enderror
-            </div>
+            {{-- No buyer RCCM here: CGI art. 150 requires the trade-register number
+                 of the SUPPLIER only — the customer's RCCM is not a legal mention. --}}
 
             <div class="niu-set__field">
                 <label class="niu-set__label" for="set-addr">{{ __('app.ui.entity_address') }}</label>

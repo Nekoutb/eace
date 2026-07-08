@@ -138,7 +138,7 @@ it('accepts the client identity when it matches an accepted name variation', fun
 
     // Registering "EU FINANCE" as an accepted variation makes it pass.
     $withAlias = $this->checker->check(
-        $invoice, null, null, 'EXPRESS UNION FINANCE SA', null, null,
+        $invoice, null, null, 'EXPRESS UNION FINANCE SA', null,
         ['EXPRESS UNION FINANCE SA', 'EU FINANCE'],
     );
     expect(collect($withAlias->failed())->pluck('key'))->not->toContain('client_identity_match');
@@ -147,7 +147,7 @@ it('accepts the client identity when it matches an accepted name variation', fun
 it('still enforces the client identity from variations when the primary name is blank', function () {
     // The buyer left the primary entity name empty but registered a variation.
     $passes = $this->checker->check(
-        invoice(['clientIdentity' => 'EU FINANCE']), null, null, null, null, null, ['EU FINANCE'],
+        invoice(['clientIdentity' => 'EU FINANCE']), null, null, null, null, ['EU FINANCE'],
     );
     $hit = collect($passes->findings)->firstWhere('key', 'client_identity_match');
     expect($hit)->not->toBeNull()
@@ -155,21 +155,26 @@ it('still enforces the client identity from variations when the primary name is 
 
     // And the same control still FAILS for a buyer name that matches no variation.
     $fails = $this->checker->check(
-        invoice(['clientIdentity' => 'AUTRE CLIENT SARL']), null, null, null, null, null, ['EU FINANCE'],
+        invoice(['clientIdentity' => 'AUTRE CLIENT SARL']), null, null, null, null, ['EU FINANCE'],
     );
     expect(collect($fails->failed())->pluck('key'))->toContain('client_identity_match');
 });
 
-it('checks the client RCCM and address match the organisation profile', function () {
-    // Conform when both match (punctuation/whitespace tolerant).
-    expect($this->checker->check(invoice(), null, null, null, 'RC/DLA/2015/B/777', 'BP 5000 Douala', vendorRegime: 'RÉEL')->conform)->toBeTrue();
+it('never judges the customer RCCM — not a legal mention (CGI art. 150)', function () {
+    // An invoice WITHOUT any client RCCM is fully conform; there is no
+    // client_rccm_match control at all any more.
+    $noClientRccm = $this->checker->check(invoice(['clientRccm' => null]), vendorRegime: 'RÉEL');
 
-    // Wrong client RCCM on the invoice.
-    $badRccm = $this->checker->check(invoice(['clientRccm' => 'RC/XXX/0000/Z/0']), null, null, null, 'RC/DLA/2015/B/777', null);
-    expect(collect($badRccm->failed())->pluck('key'))->toContain('client_rccm_match');
+    expect($noClientRccm->conform)->toBeTrue()
+        ->and(collect($noClientRccm->findings)->pluck('key'))->not->toContain('client_rccm_match');
+});
+
+it('checks the client address match when the profile provides one', function () {
+    // Conform when it matches (punctuation/whitespace tolerant).
+    expect($this->checker->check(invoice(), null, null, null, 'BP 5000 Douala', vendorRegime: 'RÉEL')->conform)->toBeTrue();
 
     // Wrong client address on the invoice.
-    $badAddr = $this->checker->check(invoice(['clientAddress' => 'Autre adresse, Yaoundé']), null, null, null, null, 'BP 5000 Douala');
+    $badAddr = $this->checker->check(invoice(['clientAddress' => 'Autre adresse, Yaoundé']), null, null, null, 'BP 5000 Douala');
     expect(collect($badAddr->failed())->pluck('key'))->toContain('client_address_match');
 });
 

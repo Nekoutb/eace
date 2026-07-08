@@ -42,7 +42,6 @@ final class InvoiceConformityChecker
         ?NiuNumber $expectedSupplierNiu = null,
         ?NiuNumber $expectedClientNiu = null,
         ?string $expectedClientName = null,
-        ?string $expectedClientRccm = null,
         ?string $expectedClientAddress = null,
         array $acceptedClientNames = [],
         ?string $vendorRegime = null,
@@ -100,13 +99,9 @@ final class InvoiceConformityChecker
             );
         }
 
-        if ($this->filled($expectedClientRccm)) {
-            $findings[] = $this->fond(
-                'client_rccm_match',
-                $this->nameMatches($invoice->clientRccm, $expectedClientRccm),
-                $this->matchDetail($invoice->clientRccm, $expectedClientRccm),
-            );
-        }
+        // Deliberately NO client-RCCM control: CGI art. 150 requires the
+        // trade-register number of the SUPPLIER only — a customer's RCCM is not a
+        // legal invoice mention, so its absence must never reject an invoice.
 
         if ($this->filled($expectedClientAddress)) {
             $findings[] = $this->fond(

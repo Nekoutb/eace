@@ -81,7 +81,6 @@ final class VerificationService
                 $niu,
                 $expectedClientNiu,
                 $profile->entity_name,
-                $profile->entity_rccm,
                 $profile->entity_address,
                 $profile->acceptedNames(),
                 // The vendor's régime drives the VAT-invoicing coherence check:

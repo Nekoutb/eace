@@ -32,7 +32,6 @@ it('saves the organisation buyer identity through the settings page', function (
     Livewire::test(Settings::class)
         ->set('entityName', 'Ma Société SARL')
         ->set('entityNiu', 'm020100021296z') // lower-case → stored upper-cased
-        ->set('entityRccm', 'RC/DLA/2015/B/777')
         ->set('entityAddress', 'BP 5000, Douala')
         ->call('save')
         ->assertHasNoErrors();
@@ -41,8 +40,13 @@ it('saves the organisation buyer identity through the settings page', function (
 
     expect($profile->entity_name)->toBe('Ma Société SARL')
         ->and($profile->entity_niu)->toBe('M020100021296Z')
-        ->and($profile->entity_rccm)->toBe('RC/DLA/2015/B/777')
         ->and($profile->entity_address)->toBe('BP 5000, Douala');
+});
+
+it('collects no buyer RCCM — not a legal invoice mention (CGI art. 150)', function () {
+    // The settings page neither shows nor persists a buyer RCCM any more; a
+    // legacy value already stored stays untouched but is never checked.
+    Livewire::test(Settings::class)->assertOk()->assertDontSee(__('app.ui.entity_rccm'));
 });
 
 it('keeps a single profile row (singleton)', function () {
