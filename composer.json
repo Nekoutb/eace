@@ -15,6 +15,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "^3.1",
+        "mailersend/laravel-driver": "^3.2",
         "saloonphp/saloon": "^4.0",
         "smalot/pdfparser": "^2.12",
         "spatie/browsershot": "^5.4",
