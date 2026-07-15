@@ -46,10 +46,20 @@ final class AcfValidityCheck implements Check
                 CheckKey::AcfValidity,
                 (string) __('app.check.msg.validity_not_authentic'),
             ),
-            default => CheckResult::fail(
-                CheckKey::AcfValidity,
-                (string) __('app.check.msg.validity_none'),
-            ),
+            // No certificate at all. At settlement the document lives in the
+            // certificate register — its absence means the check cannot run,
+            // which is not the same finding as a failing certificate. At
+            // recording the user is uploading it right here, so absence stays
+            // a plain failure ("attach it").
+            default => $context->stage === VerificationStage::Settlement
+                ? CheckResult::notPerformed(
+                    CheckKey::AcfValidity,
+                    (string) __('app.check.msg.validity_absent_settlement'),
+                )
+                : CheckResult::fail(
+                    CheckKey::AcfValidity,
+                    (string) __('app.check.msg.validity_none'),
+                ),
         };
     }
 }

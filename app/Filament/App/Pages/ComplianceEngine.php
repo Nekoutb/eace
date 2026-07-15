@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Pages;
 
+use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\CheckKey;
@@ -31,6 +32,7 @@ use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The Compliance Engine — the single working surface. A live toggle switches
@@ -203,6 +205,13 @@ class ComplianceEngine extends Page
             $certificate = app(AcfIngestionService::class)->ingestFromUpload($path, 'local', auth()->id());
         } catch (UnreadableAcfException $e) {
             Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
+
+            return;
+        } catch (SupersededAcfException $e) {
+            // The register already holds a certificate running as long or
+            // longer for this vendor — the upload was not applied.
+            $this->acfUpload = null;
+            Notification::make()->title(__('app.ui.notif_acf_superseded'))->body($e->getMessage())->warning()->send();
 
             return;
         }
@@ -777,6 +786,65 @@ class ComplianceEngine extends Page
     }
 
     /**
+     * Download the settlement results as a CSV report: one row per NIU with
+     * the vendor's name, every check's outcome, the verdict and the pay /
+     * no-pay decision, closed by the batch summary line.
+     */
+    public function exportSettlementReport(): ?StreamedResponse
+    {
+        if (! $this->batch) {
+            return null;
+        }
+
+        $rows = $this->batch['rows'];
+        $summary = $this->batch['summary'];
+        $columns = $this->checkColumns();
+
+        return response()->streamDownload(function () use ($rows, $summary, $columns): void {
+            $out = fopen('php://output', 'w');
+
+            // UTF-8 BOM so Excel renders the accented vendor names correctly.
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, array_merge(
+                [(string) __('app.ui.niu'), (string) __('app.ui.vendor')],
+                array_column($columns, 'label'),
+                [(string) __('app.ui.verdict'), (string) __('app.ui.decision_col')],
+            ));
+
+            foreach ($rows as $row) {
+                $cells = [
+                    (string) ($row['niu'] ?? $row['raw_input']),
+                    (string) ($row['vendor_name'] ?? ''),
+                ];
+
+                foreach ($columns as $col) {
+                    $cell = $row['checks_by_key'][$col['key']] ?? null;
+                    $cells[] = (string) match ($cell['passed'] ?? null) {
+                        true => __('app.ui.passed'),
+                        false => __('app.ui.failed'),
+                        default => __('app.ui.not_run'),
+                    };
+                }
+
+                $cells[] = (string) ($row['verdict']['label'] ?? '');
+                $cells[] = (string) ($row['conclusion']['decision'] ?? '');
+
+                fputcsv($out, $cells);
+            }
+
+            fputcsv($out, []);
+            fputcsv($out, [
+                (string) __('app.ui.total'), (string) $summary['total'],
+                (string) __('app.ui.accepted'), (string) $summary['accepted'],
+                (string) __('app.ui.rejected'), (string) $summary['rejected'],
+            ]);
+
+            fclose($out);
+        }, 'settlement-report-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
      * A flat, human-readable summary of what the scan pulled off the invoice.
      *
      * @return array<string, mixed>
@@ -815,18 +883,33 @@ class ComplianceEngine extends Page
         // invoice be recorded?", settlement answers "may this invoice be paid?".
         $isSettlement = $verification->stage === VerificationStage::Settlement;
 
+        // At settlement with no ACF in the certificate register the ACF checks
+        // could not run at all (passed === null) — presented neutrally: not a
+        // conformity verdict, not a "do not pay", but "cannot conclude".
+        $acfAbsent = $isSettlement && collect($checks)->contains(
+            fn (array $c): bool => ($c['key'] ?? null) === CheckKey::AcfValidity->value
+                && array_key_exists('passed', $c)
+                && $c['passed'] === null,
+        );
+
         return [
             'niu' => $verification->niu,
             'raw_input' => $verification->raw_input,
-            'verdict' => [
+            'vendor_name' => $verification->vendor_name,
+            'verdict' => $acfAbsent ? [
+                'label' => (string) __('app.verdict.not_performed'),
+                'color' => 'warning',
+                'icon' => 'heroicon-o-exclamation-triangle',
+            ] : [
                 'label' => $accepted ? (string) __('app.verdict.conforme') : (string) __('app.verdict.non_conforme'),
                 'color' => $accepted ? 'success' : 'danger',
                 'icon' => $accepted ? 'heroicon-o-check-badge' : 'heroicon-o-x-circle',
             ],
             'conclusion' => [
                 'payable' => $accepted,
-                'label' => $this->conclusionLabel($isSettlement, $accepted),
-                'decision' => $this->decisionLabel($isSettlement, $accepted),
+                'color' => $accepted ? 'success' : ($acfAbsent ? 'warning' : 'danger'),
+                'label' => $this->conclusionLabel($isSettlement, $accepted, $acfAbsent),
+                'decision' => $this->decisionLabel($isSettlement, $accepted, $acfAbsent),
             ],
             'approval' => $verification->approval !== null ? [
                 'label' => $verification->approval->label(),
@@ -849,10 +932,11 @@ class ComplianceEngine extends Page
      * The full final-decision sentence, phrased for the stage: recording decides
      * whether the invoice may be recorded; settlement whether it may be paid.
      */
-    private function conclusionLabel(bool $isSettlement, bool $accepted): string
+    private function conclusionLabel(bool $isSettlement, bool $accepted, bool $acfAbsent = false): string
     {
         return (string) match (true) {
             $isSettlement && $accepted => __('app.ui.conclusion_payable'),
+            $isSettlement && $acfAbsent => __('app.ui.conclusion_no_acf'),
             $isSettlement => __('app.ui.conclusion_not_payable'),
             $accepted => __('app.ui.conclusion_recordable'),
             default => __('app.ui.conclusion_not_recordable'),
@@ -860,10 +944,11 @@ class ComplianceEngine extends Page
     }
 
     /** The short decision verb shown per row in the settlement batch table. */
-    private function decisionLabel(bool $isSettlement, bool $accepted): string
+    private function decisionLabel(bool $isSettlement, bool $accepted, bool $acfAbsent = false): string
     {
         return (string) match (true) {
             $isSettlement && $accepted => __('app.ui.decision_pay'),
+            $isSettlement && $acfAbsent => __('app.ui.decision_no_acf'),
             $isSettlement => __('app.ui.decision_no_pay'),
             $accepted => __('app.ui.decision_record'),
             default => __('app.ui.decision_no_record'),
@@ -923,7 +1008,11 @@ class ComplianceEngine extends Page
         $items = [];
 
         foreach ($verification->checks ?? [] as $check) {
-            if (($check['passed'] ?? true) === false) {
+            // `?? true` would swallow a stored null — a not-performed check —
+            // so read the key explicitly to keep the three states apart.
+            $passed = array_key_exists('passed', $check) ? $check['passed'] : true;
+
+            if ($passed === false) {
                 $items[] = [
                     'kind' => 'check',
                     'label' => $check['label'] ?? '',
@@ -931,6 +1020,15 @@ class ComplianceEngine extends Page
                     'detail' => $check['detail'] ?? '',
                     'action' => (string) __('app.remediation.check'),
                     'severity' => 'danger',
+                ];
+            } elseif ($passed === null) {
+                $items[] = [
+                    'kind' => 'check',
+                    'label' => $check['label'] ?? '',
+                    'article' => $check['article'] ?? '',
+                    'detail' => $check['detail'] ?? '',
+                    'action' => (string) __('app.remediation.check_not_performed'),
+                    'severity' => 'warning',
                 ];
             }
         }

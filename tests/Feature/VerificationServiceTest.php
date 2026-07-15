@@ -31,6 +31,18 @@ it('records a conforme verification for a clean active NIU', function () {
         ->and($verification->snapshot_id)->not->toBeNull();
 });
 
+it('persists the vendor name from the register at verification time', function () {
+    $verification = $this->service->verify(new VerifyRequest(rawInput: 'M058712345678X'));
+
+    expect($verification->vendor_name)->toBe('SARL EXEMPLE');
+});
+
+it('leaves the vendor name null when the NIU is not in the register and no ACF or invoice names it', function () {
+    $verification = $this->service->verify(new VerifyRequest(rawInput: 'M999999999999Z'));
+
+    expect($verification->vendor_name)->toBeNull();
+});
+
 it('captures an immutable central snapshot on lookup', function () {
     $this->service->verify(new VerifyRequest(rawInput: 'M058712345678X'));
 

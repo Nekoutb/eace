@@ -8,6 +8,7 @@ use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Acf\AcfExtract;
 use App\Domain\Acf\AcfReader;
 use App\Domain\Acf\AcfValidity;
+use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Models\AcfCertificate;
 use Illuminate\Support\Facades\Storage;
@@ -104,6 +105,38 @@ final class AcfIngestionService
             'reference' => $extract->reference,
             'niu' => $extract->niu?->value,
         ]);
+
+        // Newest-validity-wins: a DIFFERENT certificate arriving for a vendor
+        // that already has one enters the register only if it expires LATER —
+        // and then it overwrites the registered row in place (the id survives,
+        // so past verifications keep their evidence link). Same-or-earlier
+        // validity is refused. Re-uploading the same reference just refreshes it.
+        if (! $certificate->exists && $extract->niu !== null && $extract->issuedAt !== null) {
+            $incumbent = AcfCertificate::query()
+                ->where('niu', $extract->niu->value)
+                ->orderByDesc('expires_at')
+                ->first();
+
+            if ($incumbent !== null) {
+                $newExpiry = AcfValidity::expiresAt($extract->issuedAt, $validityMonths);
+
+                if ($newExpiry->lessThanOrEqualTo($incumbent->expires_at->startOfDay())) {
+                    throw SupersededAcfException::make($incumbent);
+                }
+
+                // One live certificate per vendor: reuse the registered row.
+                $certificate = $incumbent;
+                $certificate->reference = $extract->reference;
+                // A different physical document: prior authentication, its
+                // snapshot, and any expiry reminders no longer apply.
+                $certificate->authenticity_status = AcfAuthenticityStatus::Unverified;
+                $certificate->authenticity_snapshot_path = null;
+                $certificate->authenticity_note = null;
+                $certificate->last_verified_at = null;
+                $certificate->reminded_at = null;
+                $certificate->reminder_count = 0;
+            }
+        }
 
         $certificate->fill([
             'taxpayer_name' => $extract->taxpayerName,

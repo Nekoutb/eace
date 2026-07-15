@@ -101,3 +101,43 @@ it('serialises the four checks with key, article, passed and detail', function (
     expect($checks)->toHaveCount(4)
         ->and($checks[0])->toHaveKeys(['key', 'label', 'article', 'passed', 'detail']);
 });
+
+it('marks both ACF checks "not performed" (null) when no certificate exists at settlement', function () {
+    $result = $this->evaluator->evaluate(approvalCtx([
+        'stage' => VerificationStage::Settlement,
+        'acfStatus' => null,
+        'acfAuthenticity' => null,
+    ]));
+
+    $byKey = fn (CheckKey $key) => collect($result->checks)->first(fn ($c) => $c->key === $key);
+
+    // The checks could not run — but that never amounts to an acceptance.
+    expect($result->decision)->toBe(ApprovalDecision::Rejected)
+        ->and($byKey(CheckKey::AcfValidity)->passed)->toBeNull()
+        ->and($byKey(CheckKey::DocumentAuthenticity)->passed)->toBeNull();
+});
+
+it('keeps the plain red failure for a missing certificate at recording', function () {
+    $result = $this->evaluator->evaluate(approvalCtx([
+        'stage' => VerificationStage::Recording,
+        'acfStatus' => null,
+        'acfAuthenticity' => null,
+    ]));
+
+    $validity = collect($result->checks)->first(fn ($c) => $c->key === CheckKey::AcfValidity);
+
+    expect($result->decision)->toBe(ApprovalDecision::Rejected)
+        ->and($validity->passed)->toBeFalse();
+});
+
+it('does not treat an unverified EXISTING certificate as "not performed" at settlement', function () {
+    $result = $this->evaluator->evaluate(approvalCtx([
+        'stage' => VerificationStage::Settlement,
+        'acfStatus' => AcfStatus::Valid,
+        'acfAuthenticity' => AcfAuthenticityStatus::Unverified,
+    ]));
+
+    $authenticity = collect($result->checks)->first(fn ($c) => $c->key === CheckKey::DocumentAuthenticity);
+
+    expect($authenticity->passed)->toBeFalse();
+});

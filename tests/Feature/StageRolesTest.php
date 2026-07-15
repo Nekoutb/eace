@@ -86,7 +86,7 @@ it('phrases the settlement final decision with the payment wording, not the reco
         ->get('batch')['rows'];
 
     expect($rows[0]['conclusion']['decision'])
-        ->toBeIn([__('app.ui.decision_pay'), __('app.ui.decision_no_pay')]);
+        ->toBeIn([__('app.ui.decision_pay'), __('app.ui.decision_no_pay'), __('app.ui.decision_no_acf')]);
 });
 
 it('records an accepted invoice with the recording wording for an admin', function () {

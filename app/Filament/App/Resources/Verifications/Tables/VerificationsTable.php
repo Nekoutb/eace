@@ -25,6 +25,14 @@ class VerificationsTable
                     ->copyable()
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('vendor_name')
+                    ->label(__('app.ui.vendor'))
+                    // Engine rows carry the register-established name; older
+                    // rows fall back to the linked third party if one exists.
+                    ->getStateUsing(fn ($record): ?string => $record->vendor_name ?? $record->thirdParty?->name)
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->searchable()
+                    ->wrap(),
                 TextColumn::make('stage')
                     ->label(__('app.ui.stage'))
                     ->badge()

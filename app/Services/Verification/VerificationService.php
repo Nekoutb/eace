@@ -101,6 +101,11 @@ final class VerificationService
             'stage' => $request->stage,
             'raw_input' => $request->rawInput,
             'niu' => $niu !== null ? (string) $niu : null,
+            // The vendor's name as established NOW: register first (the
+            // authoritative raison sociale), else the ACF, else the invoice.
+            'vendor_name' => $record->taxpayerName
+                ?? $certificate->taxpayer_name
+                ?? $request->invoiceData?->supplierName,
             'snapshot_id' => $lookup->snapshotId,
             'acf_certificate_id' => $certificate?->id,
             'verdict' => $result->verdict,

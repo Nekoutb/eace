@@ -34,7 +34,7 @@ final class FourCheckEvaluator
     {
         $results = array_map(fn (Check $check) => $check->evaluate($context), $this->checks);
 
-        $allPassed = array_reduce($results, fn (bool $carry, CheckResult $r) => $carry && $r->passed, true);
+        $allPassed = array_reduce($results, fn (bool $carry, CheckResult $r) => $carry && $r->passed === true, true);
 
         return new ApprovalResult(
             decision: $allPassed ? ApprovalDecision::Accepted : ApprovalDecision::Rejected,

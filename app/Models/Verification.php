@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $raw_input
  * @property ?string $niu
+ * @property ?string $vendor_name
  * @property VerificationStage $stage
  * @property ?string $snapshot_id
  * @property Verdict $verdict
