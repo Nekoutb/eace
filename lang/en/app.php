@@ -459,8 +459,6 @@ return [
     'conformity' => [
         'type_forme' => 'Form conditions',
         'type_fond' => 'Substance conditions',
-        'type_regime' => 'VAT liability (tax régime)',
-        'regime_article' => 'CGI — régimes d’imposition (TVA)',
         'supplier_niu' => 'Supplier NIU',
         'client_niu' => 'Client NIU',
         'date' => 'Invoice date',
@@ -477,7 +475,6 @@ return [
         'vat_calc' => 'VAT = HT × rate',
         'ttc_calc' => 'TTC = HT + VAT',
         'vat_rate' => 'Legal VAT rate (19.25%)',
-        'vat_not_allowed' => 'VAT liability under the vendor’s régime',
         'niu_match' => 'Supplier NIU matches',
         'client_niu_match' => 'Client NIU matches our profile',
         'client_identity_match' => 'Client name matches our profile',
@@ -490,8 +487,6 @@ return [
             'ttc_calc' => 'TTC control: HT :ht + VAT :vat = :expected expected; the invoice states :actual (variance :variance).',
             'vat_rate' => 'Rate control: legal rate is :legal; the invoice applies :actual.',
             'vat_attested' => 'No exemption mention on the invoice; the user attested the operation is VAT-exempt under the CGI — treated as exempt.',
-            'vat_not_allowed_ok' => 'No VAT invoiced — correct for a vendor under :regime, who may not charge VAT.',
-            'vat_not_allowed_billed' => 'VAT included in error: a vendor under :regime may not invoice VAT, yet the invoice carries :vat of VAT. Record the amount excluding tax (HT).',
             'vat_rate_exempt' => 'Exempt operation: no VAT rate is expected.',
             'vat_exempt' => 'Exempt operation: VAT must be zero.',
             'missing_amounts' => 'Control not possible: an amount is missing from the invoice.',
@@ -501,7 +496,6 @@ return [
 
     'remediation' => [
         'conformity' => 'Request a corrected invoice fixing this mention/figure (CGI art. 150).',
-        'vat_regime' => 'Request a corrected invoice without VAT — this vendor’s régime does not allow it; record the amount excluding tax (HT).',
         'check' => 'The vendor must regularise their tax standing before this invoice can be paid.',
         'check_not_performed' => 'Add the vendor’s tax clearance certificate to the certificate register, then run the checks again.',
         'rule' => 'Review this risk before settling the invoice.',
@@ -592,7 +586,7 @@ return [
         'section_verdict_exposure' => 'Verdict & exposure',
         'section_triggered_rules' => 'Triggered rules',
         'section_acf' => 'Tax Compliance Certificate',
-        'section_invoice_conformity' => 'Invoice conformity',
+        'section_invoice_conformity' => 'Invoice conformity (art. 150)',
         'invoice_file' => 'Scanned invoice (PDF or image)',
         'invoice_file_help' => 'The invoice is OCR-read and checked against art. 150: form and substance conditions.',
         'invoice_files' => 'Scanned invoices (PDF or image)',

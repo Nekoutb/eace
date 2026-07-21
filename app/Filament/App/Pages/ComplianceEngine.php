@@ -1061,19 +1061,14 @@ class ComplianceEngine extends Page
 
         foreach ($verification->invoice_checks ?? [] as $finding) {
             if (($finding['passed'] ?? true) === false) {
-                // A régime-type finding (VAT billed by a vendor who may not) is
-                // a VAT-liability matter — cite the régime basis, not art. 150,
-                // and point the user at removing the VAT rather than at a form fix.
-                $isRegime = ($finding['type'] ?? 'forme') === 'regime';
-
                 $items[] = [
                     'kind' => 'conformity',
                     'label' => $finding['label'] ?? '',
-                    'article' => $isRegime ? (string) __('app.conformity.regime_article') : 'CGI art. 150',
+                    'article' => 'CGI art. 150',
                     'detail' => filled($finding['detail'] ?? null)
                         ? (string) $finding['detail']
                         : (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
-                    'action' => (string) __($isRegime ? 'app.remediation.vat_regime' : 'app.remediation.conformity'),
+                    'action' => (string) __('app.remediation.conformity'),
                     'severity' => 'danger',
                 ];
             }

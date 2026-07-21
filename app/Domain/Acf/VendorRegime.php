@@ -46,6 +46,12 @@ enum VendorRegime: string
             return self::Simplifie;
         }
 
+        // "RSI" (Régime Simplifié) as printed on some ACFs, incl. "R.S.I" —
+        // match on a letters-only compaction so dots/spaces don't matter.
+        if (str_contains((string) preg_replace('/[^A-Z]/', '', $normalized), 'RSI')) {
+            return self::Simplifie;
+        }
+
         if (str_contains($normalized, 'REEL')) {
             return self::Reel;
         }

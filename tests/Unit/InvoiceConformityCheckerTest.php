@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domain\Acf\VendorRegime;
-use App\Domain\Invoice\ConformityFinding;
 use App\Domain\Invoice\ConformityType;
 use App\Domain\Invoice\ExemptionMention;
 use App\Domain\Invoice\InvoiceConformityChecker;
@@ -208,71 +207,54 @@ it('tolerates small rounding differences', function () {
 });
 
 /*
- * VAT is governed by the vendor's régime. Only a Régime du Réel vendor may
- * invoice VAT — for them the figure checks run as usual. A vendor whose régime
- * forbids VAT (Simplifié, IGS, non-business) must carry none: the figure checks
- * do not apply, and any VAT present is rejected as "included in error" — a
- * régime finding (ConformityType::Regime), NOT an art. 150 forme/fond defect.
- * An undetermined régime is judged conservatively: figures verified, never
- * rejected merely for being unknown.
+ * VAT controls apply ONLY to a Régime du Réel vendor — for them the figure
+ * checks run as usual. For a positively non-Réel vendor (Simplifié/RSI, IGS, a
+ * non-business category) VAT is IGNORED entirely: no VAT findings at all,
+ * whether or not the invoice carries VAT. An undetermined régime is judged
+ * conservatively, exactly like Réel.
  */
 
-function regimeFinding(InvoiceConformityResult $result): ?ConformityFinding
+/** The keys of every VAT-related finding — none of these must appear for a non-Réel vendor. */
+function vatFindingKeys(InvoiceConformityResult $result): array
 {
-    foreach ($result->findings as $finding) {
-        if ($finding->key === 'vat_not_allowed') {
-            return $finding;
-        }
-    }
-
-    return null;
+    return collect($result->findings)
+        ->pluck('key')
+        ->intersect(['vat', 'vat_calc', 'vat_rate', 'ttc_calc', 'vat_not_allowed'])
+        ->values()
+        ->all();
 }
 
-it('lets a Régime du Réel vendor invoice VAT — no régime finding, fully conform', function () {
+it('runs the VAT checks for a Régime du Réel vendor', function () {
     $result = $this->checker->check(invoice(), vendorRegime: 'RÉEL');
 
     expect($result->conform)->toBeTrue()
-        ->and(regimeFinding($result))->toBeNull(); // VAT is legitimate; nothing to flag
+        ->and(vatFindingKeys($result))->toContain('vat_calc'); // VAT is verified
 });
 
-it('rejects VAT billed by a non-Réel vendor as included in error, not an art. 150 defect', function (string $label) {
-    $result = $this->checker->check(invoice(), vendorRegime: $label);
+it('ignores VAT entirely for a non-Réel vendor — conform whether or not VAT is billed', function (string $label) {
+    // Default invoice() DOES carry VAT. A non-Réel vendor's VAT is simply
+    // ignored (not rejected), so the invoice stays conform on its other merits.
+    $withVat = $this->checker->check(invoice(), vendorRegime: $label);
+    expect($withVat->conform)->toBeTrue()
+        ->and(vatFindingKeys($withVat))->toBeEmpty(); // NO VAT findings at all
 
-    $finding = regimeFinding($result);
-    expect($finding)->not->toBeNull()
-        ->and($finding->passed)->toBeFalse()
-        ->and($finding->type)->toBe(ConformityType::Regime) // NOT Forme/Fond (art. 150)
-        ->and($result->conform)->toBeFalse()
-        // The art. 150 VAT-figure checks are not applied to this vendor at all.
-        ->and(collect($result->findings)->pluck('key'))
-        ->not->toContain('vat')
-        ->not->toContain('vat_calc')
-        ->not->toContain('vat_rate');
+    // And an invoice that carries no VAT is equally fine.
+    $noVat = $this->checker->check(
+        invoice(['vatRate' => null, 'vatAmount' => null, 'ttcAmount' => 1_000_000]),
+        vendorRegime: $label,
+    );
+    expect($noVat->conform)->toBeTrue()
+        ->and(vatFindingKeys($noVat))->toBeEmpty();
 })->with([
-    'SIMPLIFIE', 'Régime Simplifié', 'IGS', 'Impôt Général Synthétique',
+    'SIMPLIFIE', 'Régime Simplifié', 'RSI', 'R.S.I', 'IGS', 'Impôt Général Synthétique',
     'ORGANISME À BUT NON LUCRATIF', 'NON PROFESSIONNEL', "HORS REGIME D'IMPOSITION",
 ]);
 
-it('accepts a non-Réel vendor who correctly bills no VAT', function (string $label) {
-    // HT only, no VAT, TTC = HT. Previously the art. 150 VAT-mention check
-    // rejected this; now it is simply correct for the vendor's régime.
-    $noVat = invoice(['vatRate' => null, 'vatAmount' => null, 'ttcAmount' => 1_000_000]);
-
-    $result = $this->checker->check($noVat, vendorRegime: $label);
-
-    $finding = regimeFinding($result);
-    expect($result->conform)->toBeTrue()
-        ->and($finding)->not->toBeNull()
-        ->and($finding->passed)->toBeTrue();
-})->with(['IGS', 'SIMPLIFIE', 'ORGANISME À BUT NON LUCRATIF', 'NON PROFESSIONNEL']);
-
-it('verifies the VAT figures (not the régime) when the régime is undetermined', function () {
-    // Valid VAT + unknown régime → the figure checks run and pass; there is no
-    // régime rejection just because the régime could not be established.
+it('verifies the VAT figures when the régime is undetermined (conservative)', function () {
+    // Valid VAT + unknown régime → the figure checks run and pass.
     $result = $this->checker->check(invoice(), vendorRegime: null);
-
     expect($result->conform)->toBeTrue()
-        ->and(regimeFinding($result))->toBeNull();
+        ->and(vatFindingKeys($result))->toContain('vat_calc');
 
     // A wrong VAT figure under an undetermined régime still fails on the figure.
     $bad = $this->checker->check(invoice(['vatAmount' => 200_000, 'ttcAmount' => 1_200_000]), vendorRegime: null);
@@ -295,6 +277,8 @@ it('normalises the régime spelling variants found on documents', function () {
         ->and($r('REEL'))->toBe(VendorRegime::Reel)
         ->and($r('R.SIMPLIFIE'))->toBe(VendorRegime::Simplifie)
         ->and($r('Régime simplifié'))->toBe(VendorRegime::Simplifie)
+        ->and($r('RSI'))->toBe(VendorRegime::Simplifie)      // RSI = Régime Simplifié
+        ->and($r('R.S.I'))->toBe(VendorRegime::Simplifie)
         ->and($r('IGS'))->toBe(VendorRegime::Igs)
         ->and($r('Impôt Général Synthétique'))->toBe(VendorRegime::Igs)
         ->and($r('ORGANISME À BUT NON LUCRATIF'))->toBe(VendorRegime::NonLucratif)
@@ -349,8 +333,11 @@ it('rejects a contradictory attestation (invoice still carries VAT)', function (
         ->and(collect($result->failed())->pluck('key'))->toContain('vat_calc');
 });
 
-it('does not let attestation bypass the régime rule when VAT is billed', function () {
+it('ignores VAT for a non-Réel vendor regardless of any exemption attestation', function () {
+    // The vendor is IGS → VAT is ignored entirely; the attestation is moot and
+    // the invoice is judged on its non-VAT merits (here: conform).
     $result = $this->checker->check(invoice(), vendorRegime: 'IGS', userAttestedVatExempt: true);
 
-    expect($result->conform)->toBeFalse();
+    expect($result->conform)->toBeTrue()
+        ->and(vatFindingKeys($result))->toBeEmpty();
 });

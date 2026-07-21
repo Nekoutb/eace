@@ -459,8 +459,6 @@ return [
     'conformity' => [
         'type_forme' => 'Conditions de forme',
         'type_fond' => 'Conditions de fond',
-        'type_regime' => 'Assujettissement à la TVA (régime fiscal)',
-        'regime_article' => 'CGI — régimes d’imposition (TVA)',
         'supplier_niu' => 'NIU du fournisseur',
         'client_niu' => 'NIU du client',
         'date' => 'Date de facturation',
@@ -477,7 +475,6 @@ return [
         'vat_calc' => 'TVA = HT × taux',
         'ttc_calc' => 'TTC = HT + TVA',
         'vat_rate' => 'Taux de TVA légal (19,25 %)',
-        'vat_not_allowed' => 'Assujettissement à la TVA selon le régime du fournisseur',
         'niu_match' => 'NIU fournisseur cohérent',
         'client_niu_match' => 'NIU du client conforme à notre profil',
         'client_identity_match' => 'Nom du client conforme à notre profil',
@@ -490,8 +487,6 @@ return [
             'ttc_calc' => 'Contrôle TTC : HT :ht + TVA :vat = :expected attendu ; la facture indique :actual (écart :variance).',
             'vat_rate' => 'Contrôle du taux : taux légal :legal ; la facture applique :actual.',
             'vat_attested' => 'Pas de mention d’exonération sur la facture ; l’utilisateur atteste que l’opération est exonérée de TVA au sens du CGI — traitée comme exonérée.',
-            'vat_not_allowed_ok' => 'Pas de TVA facturée — correct pour un fournisseur au :regime, qui ne peut pas facturer la TVA.',
-            'vat_not_allowed_billed' => 'TVA incluse par erreur : un fournisseur au :regime ne peut pas facturer la TVA, or la facture porte :vat de TVA. Comptabilisez le montant hors taxe (HT).',
             'vat_rate_exempt' => 'Opération exonérée : aucun taux de TVA attendu.',
             'vat_exempt' => 'Opération exonérée : la TVA doit être nulle.',
             'missing_amounts' => 'Contrôle impossible : un montant manque sur la facture.',
@@ -501,7 +496,6 @@ return [
 
     'remediation' => [
         'conformity' => 'Demander une facture corrigée rectifiant cette mention/ce montant (CGI art. 150).',
-        'vat_regime' => 'Demander une facture corrigée sans TVA — le régime de ce fournisseur ne l’autorise pas ; comptabilisez le montant hors taxe (HT).',
         'check' => 'Le fournisseur doit régulariser sa situation fiscale avant le paiement de la facture.',
         'check_not_performed' => 'Ajoutez l’attestation de conformité fiscale du fournisseur au registre des attestations, puis relancez les contrôles.',
         'rule' => 'Examiner ce risque avant de régler la facture.',
@@ -594,7 +588,7 @@ return [
         'section_verdict_exposure' => 'Verdict & exposition',
         'section_triggered_rules' => 'Règles déclenchées',
         'section_acf' => 'Attestation de Conformité Fiscale',
-        'section_invoice_conformity' => 'Conformité de la facture',
+        'section_invoice_conformity' => 'Conformité de la facture (art. 150)',
         'invoice_file' => 'Facture scannée (PDF ou image)',
         'invoice_file_help' => 'La facture est lue (OCR) et contrôlée selon l’art. 150 : conditions de forme et de fond.',
         'invoice_files' => 'Factures scannées (PDF ou image)',
