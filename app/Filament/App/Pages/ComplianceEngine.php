@@ -4,6 +4,7 @@ namespace App\Filament\App\Pages;
 
 use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
+use App\Domain\Acf\VendorRegime;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\CheckKey;
 use App\Domain\Approval\VerificationStage;
@@ -22,6 +23,7 @@ use App\Services\Evidence\EvidenceTimestampService;
 use App\Services\Fiscalis\FiscalisConnector;
 use App\Services\Fiscalis\FiscalisStatusService;
 use App\Services\Invoice\InvoiceNoticeService;
+use App\Services\Registry\TaxpayerFileResolver;
 use App\Services\Verification\BatchVerificationService;
 use App\Services\Verification\VerificationService;
 use App\Services\Verification\VerifyRequest;
@@ -318,7 +320,11 @@ class ComplianceEngine extends Page
                 'extracted' => $this->extractedSummary($invoice),
                 // No VAT billed and no exemption mention: the user may attest the
                 // operation is VAT-exempt per the CGI before the engine concludes.
-                'needs_vat_attestation' => ($invoice->vatAmount ?? 0) <= 0 && ! $invoice->isExempt(),
+                // But a vendor whose régime forbids VAT is EXPECTED to bill none,
+                // so no attestation is asked of them — it is simply correct.
+                'needs_vat_attestation' => ($invoice->vatAmount ?? 0) <= 0
+                    && ! $invoice->isExempt()
+                    && ! $this->vatForbiddenForVendor($invoice),
                 'vat_attested' => false,
             ];
 
@@ -845,6 +851,26 @@ class ComplianceEngine extends Page
     }
 
     /**
+     * Whether the invoice's vendor is under a régime that forbids invoicing VAT
+     * — resolved the way the verification does it: the loaded ACF's régime
+     * first, the DGI register entry for the supplier NIU as fallback. Drives the
+     * scan panel's attestation prompt so a legitimately VAT-free invoice from an
+     * IGS/Simplifié vendor is not flagged as needing an exemption.
+     */
+    private function vatForbiddenForVendor(InvoiceData $invoice): bool
+    {
+        $label = filled($this->acfReference)
+            ? AcfCertificate::query()->where('reference', $this->acfReference)->value('regime')
+            : null;
+
+        if (blank($label) && $invoice->supplierNiu !== null) {
+            $label = app(TaxpayerFileResolver::class)->resolve($invoice->supplierNiu)?->regime;
+        }
+
+        return VendorRegime::fromLabel($label)->vatApplicable() === false;
+    }
+
+    /**
      * A flat, human-readable summary of what the scan pulled off the invoice.
      *
      * @return array<string, mixed>
@@ -1035,14 +1061,19 @@ class ComplianceEngine extends Page
 
         foreach ($verification->invoice_checks ?? [] as $finding) {
             if (($finding['passed'] ?? true) === false) {
+                // A régime-type finding (VAT billed by a vendor who may not) is
+                // a VAT-liability matter — cite the régime basis, not art. 150,
+                // and point the user at removing the VAT rather than at a form fix.
+                $isRegime = ($finding['type'] ?? 'forme') === 'regime';
+
                 $items[] = [
                     'kind' => 'conformity',
                     'label' => $finding['label'] ?? '',
-                    'article' => 'CGI art. 150',
+                    'article' => $isRegime ? (string) __('app.conformity.regime_article') : 'CGI art. 150',
                     'detail' => filled($finding['detail'] ?? null)
                         ? (string) $finding['detail']
                         : (string) __('app.conformity.type_'.($finding['type'] ?? 'forme')),
-                    'action' => (string) __('app.remediation.conformity'),
+                    'action' => (string) __($isRegime ? 'app.remediation.vat_regime' : 'app.remediation.conformity'),
                     'severity' => 'danger',
                 ];
             }

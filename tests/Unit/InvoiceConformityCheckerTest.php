@@ -208,52 +208,85 @@ it('tolerates small rounding differences', function () {
 });
 
 /*
- * VAT <-> régime coherence: only a Régime du Réel vendor may invoice VAT.
- * Rule (as specified): if the vendor is NOT réel and the invoice carries VAT > 0,
- * the invoice is rejected. No VAT -> pass under any régime.
+ * VAT is governed by the vendor's régime. Only a Régime du Réel vendor may
+ * invoice VAT — for them the figure checks run as usual. A vendor whose régime
+ * forbids VAT (Simplifié, IGS, non-business) must carry none: the figure checks
+ * do not apply, and any VAT present is rejected as "included in error" — a
+ * régime finding (ConformityType::Regime), NOT an art. 150 forme/fond defect.
+ * An undetermined régime is judged conservatively: figures verified, never
+ * rejected merely for being unknown.
  */
 
-function vatRegimeFinding(InvoiceConformityResult $result): ConformityFinding
+function regimeFinding(InvoiceConformityResult $result): ?ConformityFinding
 {
     foreach ($result->findings as $finding) {
-        if ($finding->key === 'vat_regime') {
+        if ($finding->key === 'vat_not_allowed') {
             return $finding;
         }
     }
 
-    throw new RuntimeException('vat_regime finding missing');
+    return null;
 }
 
-it('accepts VAT invoiced by a Régime du Réel vendor', function () {
+it('lets a Régime du Réel vendor invoice VAT — no régime finding, fully conform', function () {
     $result = $this->checker->check(invoice(), vendorRegime: 'RÉEL');
 
-    expect(vatRegimeFinding($result)->passed)->toBeTrue();
+    expect($result->conform)->toBeTrue()
+        ->and(regimeFinding($result))->toBeNull(); // VAT is legitimate; nothing to flag
 });
 
-it('rejects VAT invoiced by a Régime Simplifié or IGS vendor', function (string $label) {
+it('rejects VAT billed by a non-Réel vendor as included in error, not an art. 150 defect', function (string $label) {
     $result = $this->checker->check(invoice(), vendorRegime: $label);
 
-    $finding = vatRegimeFinding($result);
-    expect($finding->passed)->toBeFalse()
-        ->and($result->conform)->toBeFalse(); // a failed fond check rejects the invoice
-})->with(['SIMPLIFIE', 'Régime Simplifié', 'IGS', 'Impôt Général Synthétique', 'IMPOT GENERAL SYNTHETIQUE']);
+    $finding = regimeFinding($result);
+    expect($finding)->not->toBeNull()
+        ->and($finding->passed)->toBeFalse()
+        ->and($finding->type)->toBe(ConformityType::Regime) // NOT Forme/Fond (art. 150)
+        ->and($result->conform)->toBeFalse()
+        // The art. 150 VAT-figure checks are not applied to this vendor at all.
+        ->and(collect($result->findings)->pluck('key'))
+        ->not->toContain('vat')
+        ->not->toContain('vat_calc')
+        ->not->toContain('vat_rate');
+})->with([
+    'SIMPLIFIE', 'Régime Simplifié', 'IGS', 'Impôt Général Synthétique',
+    'ORGANISME À BUT NON LUCRATIF', 'NON PROFESSIONNEL', "HORS REGIME D'IMPOSITION",
+]);
 
-it('rejects VAT when the vendor régime cannot be established', function () {
+it('accepts a non-Réel vendor who correctly bills no VAT', function (string $label) {
+    // HT only, no VAT, TTC = HT. Previously the art. 150 VAT-mention check
+    // rejected this; now it is simply correct for the vendor's régime.
+    $noVat = invoice(['vatRate' => null, 'vatAmount' => null, 'ttcAmount' => 1_000_000]);
+
+    $result = $this->checker->check($noVat, vendorRegime: $label);
+
+    $finding = regimeFinding($result);
+    expect($result->conform)->toBeTrue()
+        ->and($finding)->not->toBeNull()
+        ->and($finding->passed)->toBeTrue();
+})->with(['IGS', 'SIMPLIFIE', 'ORGANISME À BUT NON LUCRATIF', 'NON PROFESSIONNEL']);
+
+it('verifies the VAT figures (not the régime) when the régime is undetermined', function () {
+    // Valid VAT + unknown régime → the figure checks run and pass; there is no
+    // régime rejection just because the régime could not be established.
     $result = $this->checker->check(invoice(), vendorRegime: null);
 
-    expect(vatRegimeFinding($result)->passed)->toBeFalse();
+    expect($result->conform)->toBeTrue()
+        ->and(regimeFinding($result))->toBeNull();
+
+    // A wrong VAT figure under an undetermined régime still fails on the figure.
+    $bad = $this->checker->check(invoice(['vatAmount' => 200_000, 'ttcAmount' => 1_200_000]), vendorRegime: null);
+    expect(collect($bad->failed())->pluck('key'))->toContain('vat_calc');
 });
 
-it('passes any régime when no VAT is invoiced', function (?string $label) {
-    $exempt = invoice([
-        'vatRate' => null, 'vatAmount' => 0, 'ttcAmount' => 1_000_000,
-        'exemption' => ExemptionMention::Exonere,
-    ]);
+it('still fails a wrong VAT rate for a Régime du Réel vendor', function () {
+    $result = $this->checker->check(
+        invoice(['vatRate' => 0.18, 'vatAmount' => 180_000, 'ttcAmount' => 1_180_000]),
+        vendorRegime: 'RÉEL',
+    );
 
-    $result = $this->checker->check($exempt, vendorRegime: $label);
-
-    expect(vatRegimeFinding($result)->passed)->toBeTrue();
-})->with(['SIMPLIFIE', 'IGS', 'RÉEL', null]);
+    expect(collect($result->failed())->pluck('key'))->toContain('vat_rate');
+});
 
 it('normalises the régime spelling variants found on documents', function () {
     $r = fn (?string $l) => VendorRegime::fromLabel($l);
@@ -264,9 +297,22 @@ it('normalises the régime spelling variants found on documents', function () {
         ->and($r('Régime simplifié'))->toBe(VendorRegime::Simplifie)
         ->and($r('IGS'))->toBe(VendorRegime::Igs)
         ->and($r('Impôt Général Synthétique'))->toBe(VendorRegime::Igs)
+        ->and($r('ORGANISME À BUT NON LUCRATIF'))->toBe(VendorRegime::NonLucratif)
+        ->and($r('NON PROFESSIONNEL'))->toBe(VendorRegime::NonProfessionnel)
+        ->and($r("HORS REGIME D'IMPOSITION"))->toBe(VendorRegime::HorsRegime)
         ->and($r(''))->toBe(VendorRegime::Unknown)
         ->and($r(null))->toBe(VendorRegime::Unknown)
         ->and($r('AUTRE CHOSE'))->toBe(VendorRegime::Unknown);
+});
+
+it('maps each régime to VAT applicability', function () {
+    expect(VendorRegime::Reel->vatApplicable())->toBeTrue()
+        ->and(VendorRegime::Igs->vatApplicable())->toBeFalse()
+        ->and(VendorRegime::Simplifie->vatApplicable())->toBeFalse()
+        ->and(VendorRegime::NonLucratif->vatApplicable())->toBeFalse()
+        ->and(VendorRegime::NonProfessionnel->vatApplicable())->toBeFalse()
+        ->and(VendorRegime::HorsRegime->vatApplicable())->toBeFalse()
+        ->and(VendorRegime::Unknown->vatApplicable())->toBeNull();
 });
 
 /*
