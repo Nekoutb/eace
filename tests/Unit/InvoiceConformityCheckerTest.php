@@ -177,6 +177,43 @@ it('checks the client address match when the profile provides one', function () 
     expect(collect($badAddr->failed())->pluck('key'))->toContain('client_address_match');
 });
 
+it('accepts the client address whatever the order of its words', function (string $invoiceAddress) {
+    // The profile holds « Rue Bertaut Bali »; the invoice may write the very
+    // same place in any word order, with extra detail or stray punctuation.
+    $result = $this->checker->check(
+        invoice(['clientAddress' => $invoiceAddress]),
+        null, null, null, 'Rue Bertaut Bali',
+        vendorRegime: 'RÉEL',
+    );
+
+    expect(collect($result->failed())->pluck('key'))->not->toContain('client_address_match');
+})->with([
+    'Rue Bertaut Bali',
+    'Bali Rue Bertaut',
+    'BALI, RUE BERTAUT',
+    'Bali - Rue Bertaut, Douala',
+    'Rue  Bertaut   Bali',
+]);
+
+it('ignores accents when comparing the client address', function () {
+    $result = $this->checker->check(
+        invoice(['clientAddress' => 'Bessengue Rue Bertaut']),
+        null, null, null, 'Rue Bertaut Béssengué',
+        vendorRegime: 'RÉEL',
+    );
+
+    expect(collect($result->failed())->pluck('key'))->not->toContain('client_address_match');
+});
+
+it('still rejects a client address that names a different place', function () {
+    $result = $this->checker->check(
+        invoice(['clientAddress' => 'Rue Manga Bell Akwa']),
+        null, null, null, 'Rue Bertaut Bali',
+    );
+
+    expect(collect($result->failed())->pluck('key'))->toContain('client_address_match');
+});
+
 it('narrates how the control was performed and the origin of the variance', function () {
     // 1,000,000 × 19.25% = 192,500, but the invoice states 200,000 → variance 7,500.
     $result = $this->checker->check(invoice(['vatAmount' => 200_000, 'ttcAmount' => 1_200_000]));

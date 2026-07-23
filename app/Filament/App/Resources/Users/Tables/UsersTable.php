@@ -36,6 +36,11 @@ class UsersTable
                     ->copyable()
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('phone')
+                    ->label(__('app.user.phone'))
+                    ->placeholder(__('app.ui.placeholder_dash'))
+                    ->copyable()
+                    ->searchable(),
                 TextColumn::make('role')
                     ->label(__('app.user.role'))
                     ->badge()
@@ -78,9 +83,14 @@ class UsersTable
             ->label(__('app.user.edit'))
             ->icon('heroicon-o-pencil-square')
             ->color('gray')
-            ->fillForm(fn (User $record): array => ['name' => $record->name, 'role' => $record->role?->value])
+            ->fillForm(fn (User $record): array => [
+                'name' => $record->name,
+                'phone' => $record->phone,
+                'role' => $record->role?->value,
+            ])
             ->schema([
                 TextInput::make('name')->label(__('app.user.name'))->required()->maxLength(255),
+                TextInput::make('phone')->label(__('app.user.phone'))->helperText(__('app.user.phone_help'))->tel()->maxLength(30),
                 Select::make('role')->label(__('app.user.role'))->required()->options(UserRole::options())->native(false),
             ])
             ->action(function (User $record, array $data): void {
@@ -92,7 +102,13 @@ class UsersTable
                         return;
                     }
 
-                    $record->update(['name' => $data['name'], 'role' => $data['role']]);
+                    $phone = trim((string) ($data['phone'] ?? ''));
+
+                    $record->update([
+                        'name' => $data['name'],
+                        'phone' => $phone !== '' ? $phone : null,
+                        'role' => $data['role'],
+                    ]);
                 });
             });
     }

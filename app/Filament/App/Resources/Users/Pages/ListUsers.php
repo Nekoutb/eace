@@ -50,6 +50,13 @@ class ListUsers extends ListRecords
                                 }
                             };
                         }),
+                    // Optional contact detail — never used to sign in, only so the
+                    // organisation (and the operator) can reach the person.
+                    TextInput::make('phone')
+                        ->label(__('app.user.phone'))
+                        ->helperText(__('app.user.phone_help'))
+                        ->tel()
+                        ->maxLength(30),
                     Select::make('role')
                         ->label(__('app.user.role'))
                         ->required()
@@ -59,10 +66,12 @@ class ListUsers extends ListRecords
                 ])
                 ->action(function (array $data): void {
                     $temporaryPassword = TempPassword::generate();
+                    $phone = trim((string) ($data['phone'] ?? ''));
 
                     User::query()->create([
                         'name' => trim($data['name']),
                         'email' => trim($data['email']),
+                        'phone' => $phone !== '' ? $phone : null,
                         'password' => Hash::make($temporaryPassword),
                         'role' => $data['role'],
                         'must_change_password' => true,

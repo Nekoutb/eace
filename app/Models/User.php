@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  *
  * @property ?UserRole $role
  * @property ?StaffRole $staff_role
+ * @property ?string $phone
  * @property ?string $telegram_username
  * @property ?string $telegram_chat_id
  * @property bool $must_change_password
@@ -39,7 +40,7 @@ use Illuminate\Support\Carbon;
  * @property ?array<int, string> $app_authentication_recovery_codes
  */
 #[ObservedBy([TenantLoginObserver::class, FirmCredentialSyncObserver::class])]
-#[Fillable(['name', 'email', 'password', 'role', 'staff_role', 'telegram_username', 'telegram_chat_id', 'must_change_password', 'last_login_at'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role', 'staff_role', 'telegram_username', 'telegram_chat_id', 'must_change_password', 'last_login_at'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class User extends Authenticatable implements CanResetPassword, FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {

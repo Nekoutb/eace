@@ -29,7 +29,7 @@ final class WorkspaceUserDirectory
      * Every user across every client workspace, workspace by workspace.
      * Best-effort: a broken workspace database is skipped, never an error.
      *
-     * @return list<array{tenant_id: string, tenant_name: ?string, user_id: int, name: string, email: string, role: ?string, two_fa: bool, must_change: bool, last_login: ?string, is_last_admin: bool}>
+     * @return list<array{tenant_id: string, tenant_name: ?string, user_id: int, name: string, email: string, phone: ?string, role: ?string, two_fa: bool, must_change: bool, last_login: ?string, is_last_admin: bool}>
      */
     public function all(): array
     {
@@ -44,6 +44,7 @@ final class WorkspaceUserDirectory
                         'user_id' => (int) $u->getKey(),
                         'name' => (string) $u->name,
                         'email' => (string) $u->email,
+                        'phone' => $u->phone,
                         'role' => $u->role?->value,
                         'two_fa' => filled($u->app_authentication_secret),
                         'must_change' => (bool) $u->must_change_password,

@@ -11,6 +11,7 @@ use App\Http\Middleware\EnforcePasswordRotation;
 use App\Http\Middleware\ForcePasswordChange;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenant\WorkspaceUserDirectory;
 use Filament\Facades\Filament;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
@@ -182,4 +183,27 @@ it('clears the temporary-password flag when the user sets a new password', funct
     expect($user->must_change_password)->toBeFalse()
         ->and(Hash::check('brandNew123', $user->password))->toBeTrue()
         ->and($user->last_login_at)->not->toBeNull();
+});
+
+/*
+ * Phone number — an OPTIONAL contact detail captured from the admin console so
+ * the organisation (and the operator) can reach the person behind an account.
+ * It never authenticates anything.
+ */
+
+it('stores an optional phone number on a workspace user', function () {
+    $withPhone = makeUser(UserRole::Recorder, ['phone' => '+237 677 33 22 89']);
+    $withoutPhone = makeUser(UserRole::Recorder);
+
+    expect($withPhone->fresh()->phone)->toBe('+237 677 33 22 89')
+        ->and($withoutPhone->fresh()->phone)->toBeNull();
+});
+
+it('exposes the phone number to the operator’s cross-workspace directory', function () {
+    makeUser(UserRole::Admin, ['phone' => '+237 690 00 11 22']);
+
+    $rows = app(WorkspaceUserDirectory::class)->all();
+    $row = collect($rows)->firstWhere('phone', '+237 690 00 11 22');
+
+    expect($row)->not->toBeNull();
 });

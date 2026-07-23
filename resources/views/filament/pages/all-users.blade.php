@@ -9,6 +9,7 @@
                         __('app.allusers.col_workspace'),
                         __('app.user.name'),
                         __('app.user.email'),
+                        __('app.user.phone'),
                         __('app.user.role'),
                         __('app.allusers.col_two_fa'),
                         __('app.user.last_login'),
@@ -28,6 +29,7 @@
                             @endif
                         </td>
                         <td style="padding:.55rem .8rem;font-family:ui-monospace,Consolas,monospace">{{ $row['email'] }}</td>
+                        <td style="padding:.55rem .8rem;white-space:nowrap">{{ filled($row['phone'] ?? null) ? $row['phone'] : '—' }}</td>
                         <td style="padding:.55rem .8rem">{{ $row['role'] !== null ? __('app.role.'.$row['role']) : '—' }}</td>
                         <td style="padding:.55rem .8rem">{{ $row['two_fa'] ? '✓' : '—' }}</td>
                         <td style="padding:.55rem .8rem;white-space:nowrap">{{ $row['last_login'] ? \Illuminate\Support\Carbon::parse($row['last_login'])->format('d/m/Y H:i') : __('app.user.never') }}</td>

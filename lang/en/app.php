@@ -172,6 +172,8 @@ return [
         'empty_desc' => 'Add your first team member — they’ll sign in with a one-time password.',
         'name' => 'Name',
         'email' => 'Email',
+        'phone' => 'Phone',
+        'phone_help' => 'Optional — so we can reach this person if needed. Never used to sign in.',
         'role' => 'Role',
         'created' => 'Added',
         'last_login' => 'Last sign-in',

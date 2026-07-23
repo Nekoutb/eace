@@ -106,7 +106,7 @@ final class InvoiceConformityChecker
         if ($this->filled($expectedClientAddress)) {
             $findings[] = $this->fond(
                 'client_address_match',
-                $this->nameMatches($invoice->clientAddress, $expectedClientAddress),
+                $this->addressMatches($invoice->clientAddress, $expectedClientAddress),
                 $this->matchDetail($invoice->clientAddress, $expectedClientAddress),
             );
         }
@@ -183,6 +183,58 @@ final class InvoiceConformityChecker
         $b = $normalise((string) $expected);
 
         return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a));
+    }
+
+    /**
+     * Address comparison — deliberately order-INSENSITIVE. An address names the
+     * same place whether it is written « Rue Bertaut Bali » or « Bali Rue
+     * Bertaut », so the two sides are compared as WORD SETS rather than as
+     * substrings: it matches when every word of one side appears in the other.
+     * That also means extra detail on the invoice (BP, quartier, city) never
+     * rejects it. Accents, case and punctuation are ignored.
+     */
+    private function addressMatches(?string $invoiceValue, ?string $expected): bool
+    {
+        if (! $this->filled($invoiceValue) || ! $this->filled($expected)) {
+            return false;
+        }
+
+        $invoiceWords = $this->addressWords((string) $invoiceValue);
+        $expectedWords = $this->addressWords((string) $expected);
+
+        if ($invoiceWords === [] || $expectedWords === []) {
+            return false;
+        }
+
+        // Either side may carry more detail than the other — a subset in either
+        // direction is a match (mirrors the tolerant name comparison above).
+        return array_diff($expectedWords, $invoiceWords) === []
+            || array_diff($invoiceWords, $expectedWords) === [];
+    }
+
+    /**
+     * The distinct, comparable words of an address: lower-cased, accents folded
+     * (Bessengué = Bessengue), punctuation dropped.
+     *
+     * @return array<int, string>
+     */
+    private function addressWords(string $value): array
+    {
+        $folded = strtr(mb_strtolower(trim($value)), [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a',
+            'ç' => 'c', 'ñ' => 'n',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u', 'ÿ' => 'y',
+        ]);
+
+        $folded = (string) preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $folded);
+        $folded = (string) preg_replace('/\s+/u', ' ', $folded);
+
+        $words = array_filter(explode(' ', trim($folded)), static fn (string $w): bool => $w !== '');
+
+        return array_values(array_unique($words));
     }
 
     /**

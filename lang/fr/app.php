@@ -172,6 +172,8 @@ return [
         'empty_desc' => 'Ajoutez votre premier collaborateur — il se connectera avec un mot de passe à usage unique.',
         'name' => 'Nom',
         'email' => 'E-mail',
+        'phone' => 'Téléphone',
+        'phone_help' => 'Facultatif — pour pouvoir joindre cette personne au besoin. Jamais utilisé pour se connecter.',
         'role' => 'Rôle',
         'created' => 'Ajouté le',
         'last_login' => 'Dernière connexion',
