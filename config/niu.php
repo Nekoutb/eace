@@ -21,6 +21,15 @@ return [
     ],
 
     /*
+     * A workspace user is flagged "inactive" in the admin All-users console once
+     * more than this many WORKING days (Mon–Fri) have passed since their last
+     * sign-in — so the team can see who has gone quiet and reach out.
+     */
+    'inactivity' => [
+        'working_days' => (int) env('NIU_INACTIVITY_WORKING_DAYS', 5),
+    ],
+
+    /*
      * Audit-log retention. After this many months a verification's bulky evidence
      * (the scanned PDFs) is purged to free space, keeping only the tamper-proof
      * manifest. The scheduled job only runs when this is set — null disables the

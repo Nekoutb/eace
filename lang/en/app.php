@@ -403,7 +403,7 @@ return [
         'msg' => [
             'auth_authentic' => 'After authenticating the tax clearance certificate (ACF) on the DGI Harmony2 platform, it was confirmed genuine and recognised by the tax administration.',
             'auth_not_authentic' => 'After authenticating the tax clearance certificate (ACF) on the DGI Harmony2 platform, it was reported NOT authentic — the tax administration does not recognise this document. Ask the vendor for a genuine ACF issued by their tax centre before this invoice can be paid.',
-            'auth_unverified' => 'The tax clearance certificate (ACF) could not be authenticated on the DGI Harmony2 platform — no authenticated certificate is attached, or the portal was unreachable. Attach the vendor’s ACF and re-run the check before paying.',
+            'auth_unconfirmed' => 'The tax clearance certificate (ACF) is attached, but its authenticity could not be confirmed on the DGI Harmony2 platform — the portal was unreachable or the verdict is still pending. Re-run the authenticity check before paying; the certificate itself is present (its dates are covered by the validity check).',
             'status_actif_on_file' => 'After looking up the supplier’s NIU on the DGI taxpayer file, the taxpayer is active and listed on the active-taxpayer file.',
             'status_actif_off_file' => 'After looking up the supplier’s NIU on the DGI taxpayer file, the taxpayer is registered but no longer on the ACTIVE-taxpayer file. VAT on this invoice would not be deductible (CGI art. 143 (1)(b)). Ask the vendor to regularise their standing with their tax centre before paying.',
             'status_suspendu' => 'After looking up the supplier’s NIU on the DGI taxpayer file, the taxpayer is SUSPENDED. Do not pay this invoice until the DGI reactivates the NIU — ask the vendor to clear the cause of the suspension.',
@@ -446,6 +446,15 @@ return [
         'deleted_title' => 'User deleted',
         'action_failed' => 'The action failed — see the logs.',
         'empty' => 'No workspace users yet.',
+        'edit_phone' => 'Set phone number',
+        'add_phone' => 'add phone',
+        'phone_saved' => 'Phone number updated.',
+        'save' => 'Save',
+        'cancel' => 'Cancel',
+        'inactive_badge' => 'Inactive :days d',
+        'inactive_hint' => 'No sign-in for more than 5 working days — a good candidate to check in with.',
+        'filter_inactive' => 'Show only inactive customers (no sign-in > 5 working days)',
+        'none_inactive' => 'No inactive customers — everyone has signed in recently.',
     ],
 
     'regime' => [

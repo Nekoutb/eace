@@ -10,6 +10,7 @@ use App\Models\DataAccessLog;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TempPassword;
+use App\Support\WorkingDays;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
@@ -29,15 +30,18 @@ final class WorkspaceUserDirectory
      * Every user across every client workspace, workspace by workspace.
      * Best-effort: a broken workspace database is skipped, never an error.
      *
-     * @return list<array{tenant_id: string, tenant_name: ?string, user_id: int, name: string, email: string, phone: ?string, role: ?string, two_fa: bool, must_change: bool, last_login: ?string, is_last_admin: bool}>
+     * @return list<array{tenant_id: string, tenant_name: ?string, user_id: int, name: string, email: string, phone: ?string, role: ?string, two_fa: bool, must_change: bool, last_login: ?string, idle_working_days: ?int, inactive: bool, is_last_admin: bool}>
      */
     public function all(): array
     {
         $rows = [];
+        // A user is "inactive" once more than this many working days (Mon–Fri)
+        // have passed since their last sign-in — or if they never signed in.
+        $threshold = (int) config('niu.inactivity.working_days', 5);
 
         foreach (Tenant::query()->cursor() as $tenant) {
             try {
-                $users = $tenant->run(function () {
+                $users = $tenant->run(function () use ($threshold) {
                     $adminCount = User::query()->where('role', UserRole::Admin->value)->count();
 
                     return User::query()->orderBy('id')->get()->map(fn (User $u): array => [
@@ -49,6 +53,8 @@ final class WorkspaceUserDirectory
                         'two_fa' => filled($u->app_authentication_secret),
                         'must_change' => (bool) $u->must_change_password,
                         'last_login' => $u->last_login_at?->toDateTimeString(),
+                        'idle_working_days' => $u->last_login_at !== null ? WorkingDays::between($u->last_login_at, now()) : null,
+                        'inactive' => WorkingDays::isInactive($u->last_login_at, $threshold),
                         'is_last_admin' => $u->isAdmin() && $adminCount <= 1,
                     ])->all();
                 });
@@ -136,6 +142,32 @@ final class WorkspaceUserDirectory
         }
 
         DataAccessLog::record('admin_delete_user', 'tenant:'.$tenantId, 'user '.$email);
+    }
+
+    /**
+     * Set (or clear) a workspace user's phone number from the admin console — a
+     * contact detail only, so the team can reach the person; it never
+     * authenticates anything. An empty value clears it.
+     */
+    public function updatePhone(string $tenantId, int $userId, ?string $phone): void
+    {
+        $tenant = Tenant::query()->findOrFail($tenantId);
+        $clean = trim((string) $phone);
+        $value = $clean !== '' ? $clean : null;
+
+        try {
+            $email = $tenant->run(function () use ($userId, $value): string {
+                $user = User::query()->findOrFail($userId);
+                $user->update(['phone' => $value]);
+
+                return (string) $user->email;
+            });
+        } catch (Throwable $e) {
+            $this->restoreCentralContext();
+            throw $e;
+        }
+
+        DataAccessLog::record('admin_update_phone', 'tenant:'.$tenantId, 'user '.$email);
     }
 
     /** Tenant::run() does not restore context when the closure throws. */

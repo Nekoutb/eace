@@ -11,9 +11,10 @@ use Throwable;
 
 /**
  * Central admin. "All users" — every user across every client workspace in one
- * table (workspace, role, 2FA, last sign-in), with per-row actions: resend
- * credentials (fresh one-time password, emailed + shown once) and delete
- * (last-admin guarded). Operators (landlord) only.
+ * table (workspace, role, 2FA, last sign-in, phone), with per-row actions:
+ * resend credentials, set/edit the phone, and delete (last-admin guarded). It
+ * also flags users who have gone quiet (no sign-in for > N working days) and can
+ * filter to just them, so the team can reach out. Operators (landlord) only.
  */
 class AllUsers extends Page
 {
@@ -22,6 +23,27 @@ class AllUsers extends Page
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?int $navigationSort = 18;
+
+    /** Show only customers who have gone quiet (inactive > N working days). */
+    public bool $onlyInactive = false;
+
+    // Set-phone modal state.
+    public bool $showPhoneModal = false;
+
+    public ?string $editTenantId = null;
+
+    public ?int $editUserId = null;
+
+    public ?string $editUserLabel = null;
+
+    public ?string $phoneInput = null;
+
+    /**
+     * Memoised per request — all() walks every tenant DB, so never do it twice.
+     *
+     * @var list<array<string, mixed>>|null
+     */
+    private ?array $directoryCache = null;
 
     public static function canAccess(): bool
     {
@@ -46,9 +68,27 @@ class AllUsers extends Page
     /**
      * @return list<array<string, mixed>>
      */
+    private function directory(): array
+    {
+        return $this->directoryCache ??= app(WorkspaceUserDirectory::class)->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function rows(): array
     {
-        return app(WorkspaceUserDirectory::class)->all();
+        $rows = $this->directory();
+
+        return $this->onlyInactive
+            ? array_values(array_filter($rows, static fn (array $r): bool => (bool) ($r['inactive'] ?? false)))
+            : $rows;
+    }
+
+    /** How many users, across all workspaces, are currently inactive. */
+    public function inactiveCount(): int
+    {
+        return count(array_filter($this->directory(), static fn (array $r): bool => (bool) ($r['inactive'] ?? false)));
     }
 
     public function resend(string $tenantId, int $userId): void
@@ -84,5 +124,42 @@ class AllUsers extends Page
         }
 
         Notification::make()->title((string) __('app.allusers.deleted_title'))->success()->send();
+    }
+
+    /** Open the set-phone modal for one user. */
+    public function openPhone(string $tenantId, int $userId, ?string $current, string $label): void
+    {
+        $this->editTenantId = $tenantId;
+        $this->editUserId = $userId;
+        $this->editUserLabel = $label;
+        $this->phoneInput = $current;
+        $this->showPhoneModal = true;
+    }
+
+    public function savePhone(): void
+    {
+        if ($this->editTenantId === null || $this->editUserId === null) {
+            return;
+        }
+
+        $this->validate(['phoneInput' => ['nullable', 'string', 'max:30']]);
+
+        try {
+            app(WorkspaceUserDirectory::class)->updatePhone($this->editTenantId, (int) $this->editUserId, $this->phoneInput);
+        } catch (Throwable $e) {
+            report($e);
+            Notification::make()->title((string) __('app.allusers.action_failed'))->danger()->send();
+
+            return;
+        }
+
+        $this->closePhone();
+        Notification::make()->title((string) __('app.allusers.phone_saved'))->success()->send();
+    }
+
+    public function closePhone(): void
+    {
+        $this->showPhoneModal = false;
+        $this->reset(['editTenantId', 'editUserId', 'editUserLabel', 'phoneInput']);
     }
 }

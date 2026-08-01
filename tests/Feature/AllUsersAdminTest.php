@@ -149,3 +149,55 @@ it('emails the new one-time password when a workspace admin RESETS a user', func
 
     Mail::assertQueued(WorkspaceCredentialsMail::class, fn (WorkspaceCredentialsMail $m) => $m->hasTo('rec@a.test'));
 });
+
+/*
+ * Phone add/edit from the admin console + inactive-customer surfacing.
+ */
+
+it('lets the operator set and clear a user phone from the admin console', function () {
+    $tenant = usersWorkspace('au-a', 'admin@a.test');
+    $userId = $tenant->run(fn () => User::query()->where('email', 'admin@a.test')->value('id'));
+
+    app(WorkspaceUserDirectory::class)->updatePhone('au-a', (int) $userId, '  +237 677 33 22 89  ');
+    expect($tenant->run(fn () => User::query()->find($userId)->phone))->toBe('+237 677 33 22 89'); // trimmed
+
+    // An empty value clears it back to null.
+    app(WorkspaceUserDirectory::class)->updatePhone('au-a', (int) $userId, '   ');
+    expect($tenant->run(fn () => User::query()->find($userId)->phone))->toBeNull();
+});
+
+it('flags users who have gone quiet beyond the working-day threshold', function () {
+    $tenant = usersWorkspace('au-a', 'active@a.test', 'quiet@a.test');
+    tenancy()->initialize($tenant);
+    // Active user signed in today; quiet user signed in 3 weeks ago; a third never.
+    User::query()->where('email', 'active@a.test')->update(['last_login_at' => now()]);
+    User::query()->where('email', 'quiet@a.test')->update(['last_login_at' => now()->subWeeks(3)]);
+    User::query()->create(['name' => 'Never', 'email' => 'never@a.test', 'password' => Hash::make('x'), 'role' => UserRole::Recorder]);
+    tenancy()->end();
+
+    $rows = collect(app(WorkspaceUserDirectory::class)->all())->keyBy('email');
+
+    expect($rows['active@a.test']['inactive'])->toBeFalse()
+        ->and($rows['quiet@a.test']['inactive'])->toBeTrue()
+        ->and($rows['quiet@a.test']['idle_working_days'])->toBeGreaterThan(5)
+        ->and($rows['never@a.test']['inactive'])->toBeTrue()          // never signed in
+        ->and($rows['never@a.test']['idle_working_days'])->toBeNull();
+});
+
+it('filters the All-users page to only inactive customers', function () {
+    $tenant = usersWorkspace('au-a', 'active@a.test', 'quiet@a.test');
+    tenancy()->initialize($tenant);
+    User::query()->where('email', 'active@a.test')->update(['last_login_at' => now()]);
+    User::query()->where('email', 'quiet@a.test')->update(['last_login_at' => now()->subWeeks(3)]);
+    tenancy()->end();
+
+    $central = User::query()->create(['name' => 'Boss', 'email' => 'boss@central.test', 'password' => Hash::make('x')]);
+    $this->actingAs($central);
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(AllUsers::class)
+        ->assertSee('active@a.test')
+        ->set('onlyInactive', true)
+        ->assertSee('quiet@a.test')
+        ->assertDontSee('active@a.test');
+});

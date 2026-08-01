@@ -403,7 +403,7 @@ return [
         'msg' => [
             'auth_authentic' => 'Après authentification de l’attestation de conformité fiscale (ACF) sur la plateforme Harmony2 de la DGI, le document a été confirmé authentique et reconnu par l’administration fiscale.',
             'auth_not_authentic' => 'Après authentification de l’attestation de conformité fiscale (ACF) sur la plateforme Harmony2 de la DGI, le document a été déclaré NON authentique — l’administration fiscale ne le reconnaît pas. Demandez au fournisseur une ACF authentique délivrée par son centre des impôts avant de régler cette facture.',
-            'auth_unverified' => 'L’attestation de conformité fiscale (ACF) n’a pas pu être authentifiée sur la plateforme Harmony2 de la DGI — aucune attestation authentifiée n’est rattachée, ou le portail était inaccessible. Joignez l’ACF du fournisseur et relancez le contrôle avant de payer.',
+            'auth_unconfirmed' => 'L’attestation de conformité fiscale (ACF) est bien rattachée, mais son authenticité n’a pas pu être confirmée sur la plateforme Harmony2 de la DGI — le portail était inaccessible ou le verdict est encore en attente. Relancez le contrôle d’authenticité avant de payer ; l’attestation elle-même est présente (ses dates relèvent du contrôle de validité).',
             'status_actif_on_file' => 'Après consultation du NIU du fournisseur sur le fichier des contribuables de la DGI, le contribuable est actif et inscrit au fichier des contribuables actifs.',
             'status_actif_off_file' => 'Après consultation du NIU du fournisseur sur le fichier des contribuables de la DGI, le contribuable est immatriculé mais ne figure plus au fichier des contribuables ACTIFS. La TVA de cette facture ne serait pas déductible (CGI art. 143 (1)(b)). Demandez au fournisseur de régulariser sa situation auprès de son centre des impôts avant de payer.',
             'status_suspendu' => 'Après consultation du NIU du fournisseur sur le fichier des contribuables de la DGI, le contribuable est SUSPENDU. Ne réglez pas cette facture tant que la DGI n’a pas réactivé le NIU — demandez au fournisseur de lever la cause de la suspension.',
@@ -446,6 +446,15 @@ return [
         'deleted_title' => 'Utilisateur supprimé',
         'action_failed' => 'L’action a échoué — voir les journaux.',
         'empty' => 'Aucun utilisateur d’espace pour l’instant.',
+        'edit_phone' => 'Renseigner le téléphone',
+        'add_phone' => 'ajouter un téléphone',
+        'phone_saved' => 'Numéro de téléphone mis à jour.',
+        'save' => 'Enregistrer',
+        'cancel' => 'Annuler',
+        'inactive_badge' => 'Inactif :days j',
+        'inactive_hint' => 'Aucune connexion depuis plus de 5 jours ouvrés — un client à recontacter.',
+        'filter_inactive' => 'Afficher seulement les clients inactifs (aucune connexion > 5 jours ouvrés)',
+        'none_inactive' => 'Aucun client inactif — tout le monde s’est connecté récemment.',
     ],
 
     'regime' => [
