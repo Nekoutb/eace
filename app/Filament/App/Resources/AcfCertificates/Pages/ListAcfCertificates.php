@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources\AcfCertificates\Pages;
 
-use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Filament\App\Resources\AcfCertificates\AcfCertificateResource;
 use App\Services\Acf\AcfIngestionService;
@@ -46,16 +45,6 @@ class ListAcfCertificates extends ListRecords
                             ->title(__('app.ui.notif_import_failed'))
                             ->body($e->getMessage())
                             ->danger()
-                            ->send();
-
-                        return;
-                    } catch (SupersededAcfException $e) {
-                        // The register already holds a certificate running as
-                        // long or longer for this vendor — upload not applied.
-                        Notification::make()
-                            ->title(__('app.ui.notif_acf_superseded'))
-                            ->body($e->getMessage())
-                            ->warning()
                             ->send();
 
                         return;

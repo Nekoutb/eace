@@ -8,7 +8,6 @@ use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Acf\AcfExtract;
 use App\Domain\Acf\AcfReader;
 use App\Domain\Acf\AcfValidity;
-use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Models\AcfCertificate;
 use Illuminate\Support\Facades\Storage;
@@ -106,25 +105,19 @@ final class AcfIngestionService
             'niu' => $extract->niu?->value,
         ]);
 
-        // Newest-validity-wins: a DIFFERENT certificate arriving for a vendor
-        // that already has one enters the register only if it expires LATER —
-        // and then it overwrites the registered row in place (the id survives,
-        // so past verifications keep their evidence link). Same-or-earlier
-        // validity is refused. Re-uploading the same reference just refreshes it.
-        if (! $certificate->exists && $extract->niu !== null && $extract->issuedAt !== null) {
+        // One live certificate per vendor: a DIFFERENT certificate arriving for a
+        // vendor that already has one ALWAYS replaces it — the user decides which
+        // ACF is current, whatever the relative validity dates (a still-valid ACF
+        // can be replaced deliberately). The registered row is overwritten in
+        // place (the id survives, so past verifications keep their evidence link).
+        // Re-uploading the same reference just refreshes it.
+        if (! $certificate->exists && $extract->niu !== null) {
             $incumbent = AcfCertificate::query()
                 ->where('niu', $extract->niu->value)
                 ->orderByDesc('expires_at')
                 ->first();
 
             if ($incumbent !== null) {
-                $newExpiry = AcfValidity::expiresAt($extract->issuedAt, $validityMonths);
-
-                if ($newExpiry->lessThanOrEqualTo($incumbent->expires_at->startOfDay())) {
-                    throw SupersededAcfException::make($incumbent);
-                }
-
-                // One live certificate per vendor: reuse the registered row.
                 $certificate = $incumbent;
                 $certificate->reference = $extract->reference;
                 // A different physical document: prior authentication, its

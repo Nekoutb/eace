@@ -298,6 +298,19 @@ return [
         'format_invalide' => 'Invalid format',
     ],
 
+    'verification' => [
+        'override' => 'Override & proceed',
+        'override_edit' => 'Edit the override reason',
+        'override_heading' => 'Proceed despite the rejection',
+        'override_desc' => 'The system rejected this. If you believe it is a false rejection, record why you are proceeding. The rejection stays on the record; your justification is added to the evidence.',
+        'override_submit' => 'Save & proceed',
+        'override_reason_label' => 'Reason for proceeding',
+        'override_reason_ph' => 'e.g. the OCR misread the NIU; verified manually against the ACF — the supplier is compliant.',
+        'override_saved' => 'Override recorded.',
+        'override_banner' => 'Overridden by operator — proceeded',
+        'overridden_tag' => 'Overridden by operator',
+    ],
+
     'approval' => [
         'accepted' => 'Invoice accepted',
         'rejected' => 'Invoice rejected',
@@ -637,8 +650,6 @@ return [
         'decision_no_acf' => 'Cannot conclude — certificate absent',
         'vendor' => 'Vendor',
         'download_report' => 'Download report',
-        'notif_acf_superseded' => 'Certificate not applied',
-        'acf_superseded' => 'The register already holds certificate :reference for this vendor, valid until :date. A new certificate is only accepted when its validity date comes after the registered one.',
         'notif_stage_forbidden' => 'Your role does not allow this stage.',
         'output' => 'Output',
         'category' => 'Category',

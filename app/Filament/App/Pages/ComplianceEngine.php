@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Pages;
 
-use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Domain\Acf\VendorRegime;
 use App\Domain\Approval\ApprovalDecision;
@@ -207,13 +206,6 @@ class ComplianceEngine extends Page
             $certificate = app(AcfIngestionService::class)->ingestFromUpload($path, 'local', auth()->id());
         } catch (UnreadableAcfException $e) {
             Notification::make()->title(__('app.ui.notif_acf_unreadable'))->body($e->getMessage())->danger()->send();
-
-            return;
-        } catch (SupersededAcfException $e) {
-            // The register already holds a certificate running as long or
-            // longer for this vendor — the upload was not applied.
-            $this->acfUpload = null;
-            Notification::make()->title(__('app.ui.notif_acf_superseded'))->body($e->getMessage())->warning()->send();
 
             return;
         }

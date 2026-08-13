@@ -298,6 +298,19 @@ return [
         'format_invalide' => 'Format invalide',
     ],
 
+    'verification' => [
+        'override' => 'Passer outre et poursuivre',
+        'override_edit' => 'Modifier le motif de la dérogation',
+        'override_heading' => 'Poursuivre malgré le rejet',
+        'override_desc' => 'Le système a rejeté cette opération. Si vous estimez qu’il s’agit d’un rejet à tort, indiquez pourquoi vous poursuivez. Le rejet reste inscrit ; votre justification est ajoutée aux preuves.',
+        'override_submit' => 'Enregistrer et poursuivre',
+        'override_reason_label' => 'Motif de la poursuite',
+        'override_reason_ph' => 'ex. l’OCR a mal lu le NIU ; vérifié manuellement sur l’ACF — le fournisseur est en règle.',
+        'override_saved' => 'Dérogation enregistrée.',
+        'override_banner' => 'Dérogation opérateur — poursuivi',
+        'overridden_tag' => 'Dérogation opérateur',
+    ],
+
     'approval' => [
         'accepted' => 'Facture acceptée',
         'rejected' => 'Facture refusée',
@@ -639,8 +652,6 @@ return [
         'decision_no_acf' => 'Impossible de conclure — attestation absente',
         'vendor' => 'Fournisseur',
         'download_report' => 'Télécharger le rapport',
-        'notif_acf_superseded' => 'Attestation non appliquée',
-        'acf_superseded' => 'Le registre contient déjà l’attestation :reference pour ce fournisseur, valable jusqu’au :date. Une nouvelle attestation n’est acceptée que si sa date de validité est postérieure à celle enregistrée.',
         'notif_stage_forbidden' => 'Votre rôle ne permet pas cette étape.',
         'output' => 'Détail',
         'category' => 'Catégorie',

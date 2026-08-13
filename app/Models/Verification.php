@@ -32,6 +32,9 @@ use Illuminate\Support\Carbon;
  * @property int $exposure_xaf
  * @property ?string $invoice_file_path
  * @property array<string, mixed>|null $manifest
+ * @property ?string $override_reason
+ * @property ?int $overridden_by
+ * @property ?Carbon $overridden_at
  * @property ?Carbon $archived_at
  * @property ?FiscalisPresence $fiscalis_presence
  * @property ?string $fiscalis_snapshot_path
@@ -53,6 +56,7 @@ class Verification extends Model
             'triggered_rules' => 'array',
             'exposure_xaf' => 'integer',
             'manifest' => 'array',
+            'overridden_at' => 'datetime',
             'archived_at' => 'datetime',
             'fiscalis_presence' => FiscalisPresence::class,
             'fiscalis_checked_at' => 'datetime',
@@ -70,6 +74,22 @@ class Verification extends Model
     public function acfCertificate(): BelongsTo
     {
         return $this->belongsTo(AcfCertificate::class);
+    }
+
+    /**
+     * The operator who overrode the system's rejection to proceed, if any.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function overriddenBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'overridden_by');
+    }
+
+    /** Whether an operator has overridden this rejection to proceed. */
+    public function isOverridden(): bool
+    {
+        return $this->overridden_at !== null;
     }
 
     private ?NiuRegistrySnapshot $snapshotCache = null;

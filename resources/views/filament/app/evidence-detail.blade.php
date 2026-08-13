@@ -106,6 +106,25 @@
         </div>
     </div>
 
+    {{-- Operator override: the system rejected this, but a human decided to proceed.
+         The machine verdict above is untouched — this records who overrode it, and why. --}}
+    @if ($record->override_reason)
+        <div style="display:flex;gap:.6rem;align-items:flex-start;padding:.8rem 1rem;margin:0 0 1.1rem;border-radius:12px;
+                    background:#fef3c7;border:1px solid #fde68a;color:#7c5406">
+            @svg('heroicon-o-hand-raised', 'ev-ico', ['aria-hidden' => 'true', 'style' => 'margin-top:.15rem'])
+            <div>
+                <div style="font-weight:800;font-size:.82rem;letter-spacing:.01em">
+                    {{ __('app.verification.override_banner') }}
+                    <span style="font-weight:600">
+                        · {{ $record->overriddenBy?->name ?? __('app.user.never') }}
+                        · {{ $record->overridden_at?->format('d/m/Y') }}
+                    </span>
+                </div>
+                <div style="font-size:.86rem;line-height:1.5;margin-top:.25rem;white-space:pre-line">{{ $record->override_reason }}</div>
+            </div>
+        </div>
+    @endif
+
     {{-- The four checks --}}
     @if (filled($record->checks))
         <h3 class="ev-h">@svg('heroicon-o-shield-check', 'ev-ico', ['aria-hidden' => 'true']){{ __('app.ui.section_four_checks') }}</h3>

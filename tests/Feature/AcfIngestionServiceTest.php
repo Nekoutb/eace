@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Domain\Acf\AcfAuthenticityStatus;
 use App\Domain\Acf\AcfStatus;
-use App\Domain\Acf\SupersededAcfException;
 use App\Domain\Acf\UnreadableAcfException;
 use App\Models\AcfCertificate;
 use App\Models\Tenant;
@@ -46,7 +45,7 @@ it('rejects an unreadable document', function () {
     $this->service->ingestFromText('ceci n’est pas une attestation de conformité');
 })->throws(UnreadableAcfException::class);
 
-// ——— Newest-validity-wins: only a certificate expiring LATER may replace the registered one. ———
+// ——— One live certificate per vendor: a new upload ALWAYS replaces the registered one. ———
 
 /** The fixture, re-dated and re-referenced (fixture: ref 620264471967, issued 19/03/2026). */
 function acfVariant(string $text, string $reference, string $issuedOn): string
@@ -76,21 +75,28 @@ it('overwrites the registered certificate in place when a later-validity one arr
         ->and($replacement->last_verified_at)->toBeNull();
 });
 
-it('refuses a certificate whose validity ends before the registered one', function () {
-    $this->service->ingestFromText($this->text);
+it('replaces a still-valid registered certificate with an EARLIER-validity upload (deliberate override)', function () {
+    // The registered ACF is still valid, but the user chooses to replace it with
+    // a different (even earlier-expiring) one — the latest upload always wins.
+    $original = $this->service->ingestFromText($this->text); // issued 19/03/2026 → exp 19/06/2026
 
-    expect(fn () => $this->service->ingestFromText(acfVariant($this->text, '620211111111', '19/01/2026')))
-        ->toThrow(SupersededAcfException::class);
+    $replacement = $this->service->ingestFromText(acfVariant($this->text, '620211111111', '19/01/2026'));
 
     expect(AcfCertificate::query()->count())->toBe(1)
-        ->and(AcfCertificate::query()->sole()->reference)->toBe('620264471967');
+        ->and($replacement->id)->toBe($original->id)                 // same row
+        ->and($replacement->reference)->toBe('620211111111')         // new document wins
+        ->and($replacement->issued_at->toDateString())->toBe('2026-01-19')
+        ->and($replacement->authenticity_status)->toBe(AcfAuthenticityStatus::Unverified);
 });
 
-it('refuses a different certificate with the SAME validity date', function () {
-    $this->service->ingestFromText($this->text);
+it('replaces a certificate with a different one carrying the SAME validity date', function () {
+    $original = $this->service->ingestFromText($this->text);
 
-    expect(fn () => $this->service->ingestFromText(acfVariant($this->text, '620222222222', '19/03/2026')))
-        ->toThrow(SupersededAcfException::class);
+    $replacement = $this->service->ingestFromText(acfVariant($this->text, '620222222222', '19/03/2026'));
+
+    expect(AcfCertificate::query()->count())->toBe(1)
+        ->and($replacement->id)->toBe($original->id)
+        ->and($replacement->reference)->toBe('620222222222');
 });
 
 it('still refreshes a re-upload of the same reference without the validity gate', function () {

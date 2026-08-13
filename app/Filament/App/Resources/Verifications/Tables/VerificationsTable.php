@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\Verifications\Tables;
 use App\Domain\Approval\ApprovalDecision;
 use App\Domain\Approval\VerificationStage;
 use App\Domain\Niu\Verdict;
+use App\Models\Verification;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontFamily;
 use Filament\Tables\Columns\TextColumn;
@@ -46,7 +47,11 @@ class VerificationsTable
                     ->sortable()
                     ->formatStateUsing(fn (ApprovalDecision $state): string => $state->label())
                     ->color(fn (ApprovalDecision $state): string => $state->color())
-                    ->icon(fn (ApprovalDecision $state): string => $state->icon()),
+                    ->icon(fn (ApprovalDecision $state): string => $state->icon())
+                    // Flag a rejection an operator chose to proceed on anyway.
+                    ->description(fn (Verification $record): ?string => $record->overridden_at !== null
+                        ? '↳ '.__('app.verification.overridden_tag')
+                        : null),
                 TextColumn::make('verdict')
                     ->label(__('app.ui.verdict'))
                     ->badge()

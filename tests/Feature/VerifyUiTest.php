@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domain\Approval\ApprovalDecision;
+use App\Domain\Approval\VerificationStage;
 use App\Domain\Auth\UserRole;
 use App\Domain\Niu\Verdict;
 use App\Filament\App\Pages\AuditLogs;
@@ -11,6 +13,7 @@ use App\Filament\App\Resources\AuditLogs\Pages\ListAuditLogs;
 use App\Filament\App\Resources\AuditLogs\Pages\ViewAuditLog;
 use App\Filament\App\Resources\TaxpayerFiles\Pages\ListTaxpayerFiles;
 use App\Filament\App\Resources\Verifications\Pages\ListVerifications;
+use App\Filament\App\Resources\Verifications\Pages\ViewVerification;
 use App\Filament\App\Widgets\ComplianceStats;
 use App\Models\Tenant;
 use App\Models\User;
@@ -84,4 +87,67 @@ it('runs a verification inline and reveals the discrepancies on the same screen'
     expect($page->get('discrepancies'))->not->toBeEmpty()
         ->and(Verification::query()->where('niu', 'M222222222222A')->first()?->verdict)
         ->toBe(Verdict::Radie);
+});
+
+/*
+ * Operator override: on a REJECTED verification the operator can record a
+ * justification for proceeding. It's an additive audit note — the machine
+ * verdict/approval are never changed by it.
+ */
+
+function makeVerification(ApprovalDecision $approval): Verification
+{
+    return Verification::query()->create([
+        'stage' => VerificationStage::Recording,
+        'raw_input' => 'M058712345678X',
+        'niu' => 'M058712345678X',
+        'verdict' => Verdict::Radie,
+        'approval' => $approval,
+        'exposure_xaf' => 0,
+    ]);
+}
+
+it('records an operator override with the justification on a rejected verification', function () {
+    $v = makeVerification(ApprovalDecision::Rejected);
+
+    Livewire::test(ViewVerification::class, ['record' => $v->getKey()])
+        ->assertActionVisible('override')
+        ->callAction('override', ['reason' => 'OCR misread the NIU; verified manually against the ACF.'])
+        ->assertHasNoActionErrors();
+
+    $v->refresh();
+    expect($v->override_reason)->toBe('OCR misread the NIU; verified manually against the ACF.')
+        ->and($v->overridden_by)->toBe($this->user->getKey())
+        ->and($v->overridden_at)->not->toBeNull()
+        ->and($v->isOverridden())->toBeTrue()
+        // The machine decision is UNCHANGED — the override is an annotation.
+        ->and($v->approval)->toBe(ApprovalDecision::Rejected)
+        ->and($v->verdict)->toBe(Verdict::Radie);
+});
+
+it('requires a reason for the override', function () {
+    $v = makeVerification(ApprovalDecision::Rejected);
+
+    Livewire::test(ViewVerification::class, ['record' => $v->getKey()])
+        ->callAction('override', ['reason' => ''])
+        ->assertHasActionErrors(['reason']);
+
+    expect($v->refresh()->overridden_at)->toBeNull();
+});
+
+it('does not offer the override on an accepted verification', function () {
+    $v = makeVerification(ApprovalDecision::Accepted);
+
+    Livewire::test(ViewVerification::class, ['record' => $v->getKey()])
+        ->assertActionHidden('override');
+});
+
+it('shows the operator-override banner in the evidence view', function () {
+    $v = makeVerification(ApprovalDecision::Rejected);
+    $v->update(['override_reason' => 'Proceeded — supplier verified manually.', 'overridden_by' => $this->user->getKey(), 'overridden_at' => now()]);
+
+    Livewire::test(ViewVerification::class, ['record' => $v->getKey()])
+        ->assertOk()
+        ->assertSee(__('app.verification.override_banner'))
+        ->assertSee('Proceeded — supplier verified manually.');
 });
