@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Support;
 
 use App\Domain\Support\ConversationNature;
+use App\Services\Anthropic\AnthropicError;
 use App\Support\SupportKnowledge;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -65,7 +66,7 @@ final class ClaudeSupportBot implements SupportBotConnector
         ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Support bot failed: HTTP '.$response->status());
+            throw new RuntimeException('Support bot failed: '.AnthropicError::describe($response));
         }
 
         foreach ((array) $response->json('content', []) as $block) {

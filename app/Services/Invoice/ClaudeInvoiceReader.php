@@ -7,6 +7,7 @@ namespace App\Services\Invoice;
 use App\Domain\Invoice\InvoiceData;
 use App\Domain\Invoice\InvoiceReader;
 use App\Domain\Niu\NiuNumber;
+use App\Services\Anthropic\AnthropicError;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -143,7 +144,7 @@ final class ClaudeInvoiceReader implements InvoiceReader
         ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Claude invoice extraction failed: HTTP '.$response->status());
+            throw new RuntimeException('Claude invoice extraction failed: '.AnthropicError::describe($response));
         }
 
         foreach ((array) $response->json('content', []) as $block) {

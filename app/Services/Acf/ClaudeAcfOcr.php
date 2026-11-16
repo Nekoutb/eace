@@ -6,6 +6,7 @@ namespace App\Services\Acf;
 
 use App\Domain\Acf\AcfExtract;
 use App\Domain\Niu\NiuNumber;
+use App\Services\Anthropic\AnthropicError;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -111,7 +112,7 @@ final class ClaudeAcfOcr implements AcfOcr
         ]);
 
         if (! $response->successful()) {
-            throw new \RuntimeException('Claude ACF extraction failed: HTTP '.$response->status());
+            throw new \RuntimeException('Claude ACF extraction failed: '.AnthropicError::describe($response));
         }
 
         foreach ((array) $response->json('content', []) as $block) {
