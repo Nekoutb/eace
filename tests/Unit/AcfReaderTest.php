@@ -73,3 +73,13 @@ it('does not mistake the phone or NIU digits for the reference', function () {
 
     expect($extract->reference)->toBeNull();
 });
+
+it('reads a NIU whose final letter the DGI printed in lowercase', function () {
+    $text = "Le contribuable : ELITE ADVISORS SARLU de NIU: \nM032618476808k\n"
+        ."Réference ACF : 620264954241DOUALA : 27/10/2026\n"
+        .'Elle est valable pour une durée de 3 mois à compter du 27/10/2026.';
+
+    $extract = (new AcfReader)->fromText($text);
+
+    expect($extract->niu?->value)->toBe('M032618476808K');
+});

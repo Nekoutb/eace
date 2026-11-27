@@ -101,7 +101,7 @@ final class ClaudeInvoiceReader implements InvoiceReader
         }
 
         // 2) Otherwise the first valid NIU on the page that is not the client's.
-        if (preg_match_all('/([PM]\d{12}[A-Z])/u', $compact, $all) >= 1) {
+        if (preg_match_all('/([PM]\d{12}[A-Z])/iu', $compact, $all) >= 1) {
             foreach ($all[1] as $candidate) {
                 $niu = NiuNumber::tryFrom($candidate);
                 if ($niu !== null && $niu->value !== $clientValue) {

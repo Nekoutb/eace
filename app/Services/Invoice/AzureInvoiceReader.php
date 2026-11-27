@@ -155,7 +155,7 @@ final class AzureInvoiceReader implements InvoiceReader
 
     private function niuFromContent(string $content, string $which): ?string
     {
-        return preg_match('/\b([PM]\d{12}[A-Z])\b/u', $content, $m) === 1 ? $m[1] : null;
+        return preg_match('/\b([PM]\d{12}[A-Z])\b/iu', $content, $m) === 1 ? strtoupper($m[1]) : null;
     }
 
     private function rccm(string $content): ?string

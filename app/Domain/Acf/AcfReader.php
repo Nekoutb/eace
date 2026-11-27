@@ -53,9 +53,10 @@ final class AcfReader
         return preg_match('/\b(620\d{9})\b/u', $text, $m) === 1 ? $m[1] : null;
     }
 
+    /** Case-insensitive: some DGI certificates print the NIU's final letter in lowercase (M…808k). */
     private function niu(string $text): ?NiuNumber
     {
-        return preg_match('/\b([PM]\d{12}[A-Z])\b/u', $text, $m) === 1
+        return preg_match('/\b([PM]\d{12}[A-Z])\b/iu', $text, $m) === 1
             ? NiuNumber::tryFrom($m[1])
             : null;
     }
